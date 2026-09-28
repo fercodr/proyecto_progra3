@@ -1,7 +1,7 @@
 /* package pe.edu.pucp.entrefunciones.modelo.catalogo;
 import pe.edu.pucp.entrefunciones.modelo.IEliminable;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Sala;
-import pe.edu.pucp.entrefunciones.modelo.funciones.Funcion;
+import pe.edu.pucp.entrefunciones.modelo.catalogo.Funcion;
 import java.time.LocalDate;
 import java.time.LocalTime;
 /**
@@ -96,7 +96,7 @@ public class ActividadCultural extends Funcion implements IEliminable {
 }
 */
 package pe.edu.pucp.entrefunciones.modelo.catalogo;
-import pe.edu.pucp.entrefunciones.modelo.funciones.Funcion;
+
 public class ActividadCultural extends Evento {
 
     private String nombre;

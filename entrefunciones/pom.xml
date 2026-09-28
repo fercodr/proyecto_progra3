@@ -11,9 +11,9 @@
     <modules>
         <module>entrefunciones-dbmanager</module>
         <module>entrefunciones-app</module>
-        <module>entrefunciones-accesodatos</module>
         <module>entrefunciones-modelo</module>
         <module>entrefunciones-negocio</module>
+        <module>entrefunciones-accesodatos</module>
     </modules>
 
     <properties>

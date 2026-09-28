@@ -2,7 +2,6 @@ package pe.edu.pucp.entrefunciones.modelo.catalogo;
 
 import java.util.ArrayList;
 import pe.edu.pucp.entrefunciones.modelo.IEliminable;
-import pe.edu.pucp.entrefunciones.modelo.funciones.Funcion;
 
 public abstract class Evento implements IEliminable {
 
