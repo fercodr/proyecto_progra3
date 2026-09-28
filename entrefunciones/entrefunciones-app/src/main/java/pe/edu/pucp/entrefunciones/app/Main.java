@@ -21,7 +21,7 @@ import pe.edu.pucp.entrefunciones.modelo.catalogo.CategoriaGenero;
 import pe.edu.pucp.entrefunciones.modelo.catalogo.ClasificacionEdad;
 import pe.edu.pucp.entrefunciones.modelo.catalogo.TipoActividad;
 import pe.edu.pucp.entrefunciones.modelo.funciones.EstadoFuncion;
-import pe.edu.pucp.entrefunciones.modelo.funciones.Funcion;
+import pe.edu.pucp.entrefunciones.modelo.catalogo.Funcion;
 import pe.edu.pucp.entrefunciones.modelo.ventas.Reserva;
 import pe.edu.pucp.entrefunciones.modelo.ventas.EstadoReserva;
 import pe.edu.pucp.entrefunciones.modelo.ventas.Pago;

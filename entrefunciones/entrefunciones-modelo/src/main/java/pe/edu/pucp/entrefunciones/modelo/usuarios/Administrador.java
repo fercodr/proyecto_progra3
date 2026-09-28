@@ -1,5 +1,5 @@
 package pe.edu.pucp.entrefunciones.modelo.usuarios;
-import pe.edu.pucp.entrefunciones.modelo.funciones.Funcion;
+import pe.edu.pucp.entrefunciones.modelo.catalogo.Funcion;
 public class Administrador extends Usuario {
     private String codigoEmpleado;
 

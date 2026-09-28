@@ -1,6 +1,6 @@
 package pe.edu.pucp.entrefunciones.modelo.auditoria;
 import java.time.LocalDateTime;
-import pe.edu.pucp.entrefunciones.modelo.funciones.Funcion;
+import pe.edu.pucp.entrefunciones.modelo.catalogo.Funcion;
 /**
  * Cubre dos usos con la misma estructura: RF-M6-04 (registro de una incidencia
  * ocurrida durante una funcion, con descripcion, fecha, responsable y estado

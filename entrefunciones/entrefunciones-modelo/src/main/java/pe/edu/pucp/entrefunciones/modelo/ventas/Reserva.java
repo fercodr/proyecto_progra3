@@ -1,7 +1,7 @@
 package pe.edu.pucp.entrefunciones.modelo.ventas;
 import java.util.ArrayList;
 import java.time.LocalDateTime;
-import pe.edu.pucp.entrefunciones.modelo.funciones.Funcion;
+import pe.edu.pucp.entrefunciones.modelo.catalogo.Funcion;
 import pe.edu.pucp.entrefunciones.modelo.usuarios.Cliente;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Butaca;
 /**

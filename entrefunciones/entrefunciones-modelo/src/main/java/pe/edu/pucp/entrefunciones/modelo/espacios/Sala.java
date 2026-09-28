@@ -1,7 +1,7 @@
 package pe.edu.pucp.entrefunciones.modelo.espacios;
 import java.util.ArrayList;
 import pe.edu.pucp.entrefunciones.modelo.IEliminable;
-import pe.edu.pucp.entrefunciones.modelo.funciones.Funcion;
+import pe.edu.pucp.entrefunciones.modelo.catalogo.Funcion;
 public class Sala implements IEliminable {
     private int id;
     private Sede sede;
