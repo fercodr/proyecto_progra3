@@ -119,18 +119,12 @@ public class ActividadCultural extends Evento {
     public ActividadCultural(
             final ActividadCultural actividadCultural) {
 
-        super(actividadCultural.getId(),
-              actividadCultural.getPrecio());
+        super(actividadCultural);
 
         setNombre(actividadCultural.getNombre());
         setExpositor(actividadCultural.getExpositor());
         setTipoActividad(actividadCultural.getTipoActividad());
 
-        if (actividadCultural.estaActivo()) {
-            activar();
-        } else {
-            desactivar();
-        }
     }
 
     @Override
