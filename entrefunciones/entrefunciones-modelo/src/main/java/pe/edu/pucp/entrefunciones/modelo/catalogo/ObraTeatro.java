@@ -110,17 +110,11 @@ public class ObraTeatro extends Evento {
     /** Constructor de copia. */
     public ObraTeatro(final ObraTeatro obraTeatro) {
 
-        super(obraTeatro.getId(), obraTeatro.getPrecio());
-
+        super(obraTeatro);
+    
         setTitulo(obraTeatro.getTitulo());
         setNombreDirector(obraTeatro.getNombreDirector());
         setElenco(obraTeatro.getElenco());
-
-        if (obraTeatro.estaActivo()) {
-            activar();
-        } else {
-            desactivar();
-        }
     }
 
     @Override
