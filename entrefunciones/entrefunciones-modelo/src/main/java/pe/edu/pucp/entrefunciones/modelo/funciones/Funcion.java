@@ -3,6 +3,7 @@ import java.util.ArrayList;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.Duration;
+import pe.edu.pucp.entrefunciones.modelo.catalogo.Evento;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Sala;
 import pe.edu.pucp.entrefunciones.modelo.ventas.Entrada;
 /**
@@ -18,6 +19,7 @@ import pe.edu.pucp.entrefunciones.modelo.ventas.Entrada;
  */
 public abstract class Funcion {
     private int id;
+    private Evento evento;
     private Sala sala;
     private LocalDate fecha;
     private LocalTime horaInicio;
@@ -32,6 +34,7 @@ public abstract class Funcion {
             throw new IllegalArgumentException("horaFin debe ser posterior a horaInicio");
         }
         setId(id);
+        setEvento(evento);
         setSala(sala);
         setFecha(fecha);
         setHoraInicio(horaInicio);
@@ -39,6 +42,7 @@ public abstract class Funcion {
         setPrecio(precio);
         setIdioma(idioma);
         this.estado=EstadoFuncion.PROGRAMADA;
+        this.entradas = new ArrayList<>();
     }
 
     /** Constructor de copia (no copia la lista de entradas: usar agregarEntrada). Lo invocan las subclases con super(...). */
@@ -47,6 +51,7 @@ public abstract class Funcion {
             throw new IllegalArgumentException("funcion no puede ser nulo");
         }
         setId(funcion.getId());
+        setEvento(funcion.getEvento());
         setSala(funcion.getSala());
         setFecha(funcion.getFecha());
         setHoraInicio(funcion.getHoraInicio());
@@ -54,6 +59,7 @@ public abstract class Funcion {
         setPrecio(funcion.getPrecio());
         setIdioma(funcion.getIdioma());
         setEstado(funcion.getEstado());
+        this.entradas = new ArrayList<>(funcion.getEntradas());
     }
 
     /** Titulo del contenido que se proyecta en esta funcion; cada subclase concreta lo define. */
@@ -64,6 +70,11 @@ public abstract class Funcion {
     }
 
     public void agregarEntrada(Entrada entrada){
+        if (entrada == null) { 
+            throw new IllegalArgumentException( 
+                "entrada no puede ser nula" 
+            ); 
+        }
         entradas.add(entrada);
     }
 
@@ -98,7 +109,20 @@ public abstract class Funcion {
         }
         this.id=id;
     }
-
+    
+    public Evento getEvento() { 
+        return evento; 
+    } 
+    
+    public void setEvento(Evento evento) { 
+        if (evento == null) { 
+            throw new IllegalArgumentException( 
+                "evento no puede ser nulo" 
+            ); 
+        } 
+        this.evento = evento; 
+    }
+    
     public Sala getSala(){
         return sala;
     }
