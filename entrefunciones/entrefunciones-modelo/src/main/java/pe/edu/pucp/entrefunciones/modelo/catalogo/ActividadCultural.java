@@ -97,22 +97,15 @@ public class ActividadCultural extends Funcion implements IEliminable {
 */
 package pe.edu.pucp.entrefunciones.modelo.catalogo;
 
-import pe.edu.pucp.entrefunciones.modelo.IEliminable;
-
-/**
- * Representa una actividad cultural del catálogo.
- * Hereda de Evento sus datos generales, como id y precio,
- * y agrega los datos propios de una actividad cultural.
- */
-public class ActividadCultural extends Evento implements IEliminable {
+public class ActividadCultural extends Evento {
 
     private String nombre;
     private String expositor;
     private TipoActividad tipoActividad;
-    private boolean activo;
 
     public ActividadCultural(int id, double precio,
-                             String nombre, String expositor,
+                             String nombre,
+                             String expositor,
                              TipoActividad tipoActividad) {
 
         super(id, precio);
@@ -120,13 +113,14 @@ public class ActividadCultural extends Evento implements IEliminable {
         setNombre(nombre);
         setExpositor(expositor);
         setTipoActividad(tipoActividad);
-        this.activo = true;
     }
 
-    // Constructor copia
-    public ActividadCultural(final ActividadCultural actividadCultural) {
+    /** Constructor de copia. */
+    public ActividadCultural(
+            final ActividadCultural actividadCultural) {
 
-        super(actividadCultural.getId(), actividadCultural.getPrecio());
+        super(actividadCultural.getId(),
+              actividadCultural.getPrecio());
 
         setNombre(actividadCultural.getNombre());
         setExpositor(actividadCultural.getExpositor());
@@ -144,28 +138,15 @@ public class ActividadCultural extends Evento implements IEliminable {
         return nombre;
     }
 
-    @Override
-    public void activar() {
-        this.activo = true;
-    }
-
-    @Override
-    public void desactivar() {
-        this.activo = false;
-    }
-
-    @Override
-    public boolean estaActivo() {
-        return activo;
-    }
-
     public String getNombre() {
         return nombre;
     }
 
     public void setNombre(String nombre) {
         if (nombre == null || nombre.isEmpty()) {
-            throw new IllegalArgumentException("nombre no puede ser nulo o vacio");
+            throw new IllegalArgumentException(
+                    "nombre no puede ser nulo o vacio"
+            );
         }
         this.nombre = nombre;
     }
@@ -184,7 +165,9 @@ public class ActividadCultural extends Evento implements IEliminable {
 
     public void setTipoActividad(TipoActividad tipoActividad) {
         if (tipoActividad == null) {
-            throw new IllegalArgumentException("tipoActividad no puede ser nulo");
+            throw new IllegalArgumentException(
+                    "tipoActividad no puede ser nulo"
+            );
         }
         this.tipoActividad = tipoActividad;
     }
