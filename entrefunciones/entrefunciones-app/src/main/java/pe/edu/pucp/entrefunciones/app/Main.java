@@ -13,6 +13,7 @@ import pe.edu.pucp.entrefunciones.modelo.espacios.Sala;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Butaca;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Recurso;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Bloqueo;
+import pe.edu.pucp.entrefunciones.modelo.catalogo.Evento;
 import pe.edu.pucp.entrefunciones.modelo.catalogo.Pelicula;
 import pe.edu.pucp.entrefunciones.modelo.catalogo.ObraTeatro;
 import pe.edu.pucp.entrefunciones.modelo.catalogo.ActividadCultural;
@@ -20,6 +21,7 @@ import pe.edu.pucp.entrefunciones.modelo.catalogo.CategoriaGenero;
 import pe.edu.pucp.entrefunciones.modelo.catalogo.ClasificacionEdad;
 import pe.edu.pucp.entrefunciones.modelo.catalogo.TipoActividad;
 import pe.edu.pucp.entrefunciones.modelo.funciones.EstadoFuncion;
+import pe.edu.pucp.entrefunciones.modelo.funciones.Funcion;
 import pe.edu.pucp.entrefunciones.modelo.ventas.Reserva;
 import pe.edu.pucp.entrefunciones.modelo.ventas.EstadoReserva;
 import pe.edu.pucp.entrefunciones.modelo.ventas.Pago;
@@ -29,7 +31,7 @@ import pe.edu.pucp.entrefunciones.modelo.ventas.EstadoEntrada;
 import pe.edu.pucp.entrefunciones.modelo.auditoria.Auditoria;
 import pe.edu.pucp.entrefunciones.modelo.auditoria.EstadoAuditoria;
 /**
- Modulo de ejecucion: simula de principio a fin el modelo de negocio de
+ * Modulo de ejecucion: simula de principio a fin el modelo de negocio de
  * EntreFunciones usando unicamente las clases del modulo de dominio (no hay
  * base de datos ni interfaz grafica involucradas). El propio main() cumple el
  * rol de "codigo de prueba": ademas de narrar el flujo de negocio, la seccion
@@ -96,33 +98,57 @@ public class Main {
                 null, proyector);
         System.out.println("Bloqueo activo el 18/09 10:00? " + bloqueo.estaVigente(LocalDateTime.of(2026, 9, 18, 10, 0)));
 
-        // ---------- 3. Funciones: pelicula, obra de teatro y actividad cultural ----------
-        // Con herencia, cada horario de una pelicula/obra/actividad es un objeto
-        // distinto que ya "es" la funcion (hereda sala, fecha, horario, precio,
-        // idioma y estado de Funcion). Por eso, si la misma pelicula se programa
-        // en 2 horarios, sus datos de catalogo (titulo, genero, director) se
-        // repiten en cada objeto (ver seccion 8 del informe).
-        Pelicula funcion15h = new Pelicula(1, sala1, LocalDate.of(2026, 9, 20),
-                LocalTime.of(15, 0), LocalTime.of(17, 49), 25.00, "Espanol",
+        // ---------- 3. Eventos (catalogo) y Funciones (programacion) ----------
+        // Evento es abstracta: Pelicula, ObraTeatro y ActividadCultural HEREDAN de
+        // ella (id, precio, lista de funciones, activo/inactivo). Cada Evento se
+        // crea UNA sola vez y guarda su lista de Funciones; cada Funcion apunta al
+        // Evento que se presenta (sala, fecha, horario, idioma y estado son de la
+        // Funcion). Asi, si Interestelar se programa a las 15h y a las 18h, los
+        // datos de catalogo (titulo, genero, director) NO se repiten.
+        Pelicula interestelar = new Pelicula(1, 25.00,
                 "Interestelar", 169, CategoriaGenero.DRAMA, ClasificacionEdad.PG13, "Christopher Nolan");
-        Pelicula funcion18h = new Pelicula(2, sala1, LocalDate.of(2026, 9, 20),
-                LocalTime.of(18, 0), LocalTime.of(20, 49), 28.00, "Subtitulada",
-                "Interestelar", 169, CategoriaGenero.DRAMA, ClasificacionEdad.PG13, "Christopher Nolan");
-        ObraTeatro funcionObra = new ObraTeatro(3, sala2, LocalDate.of(2026, 9, 21),
-                LocalTime.of(19, 0), LocalTime.of(21, 0), 35.00, "Espanol",
+        ObraTeatro laMuralla = new ObraTeatro(2, 35.00,
                 "La Muralla", "Sofia Herrera", "Juan Perez, Maria Lopez");
-        ActividadCultural charla = new ActividadCultural(4, sala2, LocalDate.of(2026, 9, 22),
-                LocalTime.of(18, 0), LocalTime.of(19, 0), 15.00, "Espanol",
+        ActividadCultural charlaCine = new ActividadCultural(3, 15.00,
                 "Charla de Cine Peruano Contemporaneo", "Rodrigo Vega", TipoActividad.CHARLA);
+
+        Funcion funcion15h = new Funcion(1, interestelar, sala1, LocalDate.of(2026, 9, 20),
+                LocalTime.of(15, 0), LocalTime.of(17, 49), "Espanol");
+        Funcion funcion18h = new Funcion(2, interestelar, sala1, LocalDate.of(2026, 9, 20),
+                LocalTime.of(18, 0), LocalTime.of(20, 49), "Subtitulada");
+        Funcion funcionObra = new Funcion(3, laMuralla, sala2, LocalDate.of(2026, 9, 21),
+                LocalTime.of(19, 0), LocalTime.of(21, 0), "Espanol");
+        Funcion funcionCharla = new Funcion(4, charlaCine, sala2, LocalDate.of(2026, 9, 22),
+                LocalTime.of(18, 0), LocalTime.of(19, 0), "Espanol");
+
+        // Evento -> lista de Funciones
+        interestelar.getFunciones().add(funcion15h);
+        interestelar.getFunciones().add(funcion18h);
+        laMuralla.getFunciones().add(funcionObra);
+        charlaCine.getFunciones().add(funcionCharla);
+
+        // Sala -> lista de Funciones (y Funcion -> Sala)
         sala1.agregarFuncion(funcion15h);
         sala1.agregarFuncion(funcion18h);
         sala2.agregarFuncion(funcionObra);
-        sala2.agregarFuncion(charla);
+        sala2.agregarFuncion(funcionCharla);
 
-        System.out.println("\nInterestelar programada en 2 funciones distintas (id " + funcion15h.getId()
-                + " y " + funcion18h.getId() + "), duracion " + funcion15h.getDuracionMinutos() + " min cada vez.");
-        System.out.println("Son el MISMO objeto en memoria? " + (funcion15h == funcion18h)
-                + " (con herencia, cada horario es su propia Pelicula: titulo, genero y director quedan duplicados en ambas)");
+        // Polimorfismo: los 3 tipos se tratan como Evento
+        ArrayList<Evento> cartelera = new ArrayList<>();
+        cartelera.add(interestelar);
+        cartelera.add(laMuralla);
+        cartelera.add(charlaCine);
+        System.out.println("\nCartelera (" + cartelera.size() + " eventos):");
+        for (Evento e : cartelera) {
+            System.out.println("  - [" + e.getClass().getSimpleName() + "] " + e.getTitulo()
+                    + " | precio S/ " + e.getPrecio() + " | funciones: " + e.getFunciones().size());
+        }
+
+        System.out.println("Interestelar programada en 2 funciones (id " + funcion15h.getId()
+                + " y " + funcion18h.getId() + "), duracion " + interestelar.getDuracionMinutos() + " min cada vez.");
+        System.out.println("Ambas funciones apuntan al MISMO objeto Evento? "
+                + (funcion15h.getEvento() == funcion18h.getEvento())
+                + " (con la nueva estructura el catalogo no se duplica)");
 
         boolean funcion15hConfirmada = admin.gestionarFuncion(funcion15h);
         admin.gestionarFuncion(funcionObra);
@@ -137,11 +163,12 @@ public class Main {
         Reserva reserva1 = new Reserva(1, funcion15h, valeria, butacasReservadas, ahora, ahora.plusMinutes(15));
         System.out.println("Reserva creada, estado: " + reserva1.getEstado());
 
-        Pago pago1 = new Pago(1, "PAY-0001", 50.00, reserva1);
+        double totalReserva1 = funcion15h.getEvento().getPrecio() * butacasReservadas.size();
+        Pago pago1 = new Pago(1, "PAY-0001", totalReserva1, reserva1);
         System.out.println("Pago generado (" + pago1.getCodigoPago() + "), reserva.getPago() es el mismo objeto? "
                 + (reserva1.getPago() == pago1));
 
-        boolean pagoOk = pago1.procesarPago(50.00);
+        boolean pagoOk = pago1.procesarPago(totalReserva1);
         System.out.println("Cliente registra el pago: " + pagoOk);
         boolean validado = pago1.validar();
         System.out.println("Administrador valida el pago: " + validado + " (estado: " + pago1.getEstado() + ")");
@@ -153,8 +180,8 @@ public class Main {
             reserva1.confirmar();
             System.out.println("Reserva confirmada, estado: " + reserva1.getEstado());
 
-            entradaA1 = new Entrada(1, LocalDateTime.now(), "QR-0000000001", 25.00, a1, reserva1);
-            entradaA2 = new Entrada(2, LocalDateTime.now(), "QR-0000000002", 25.00, a2, reserva1);
+            entradaA1 = new Entrada(1, LocalDateTime.now(), "QR-0000000001", funcion15h.getEvento().getPrecio(), a1, reserva1);
+            entradaA2 = new Entrada(2, LocalDateTime.now(), "QR-0000000002", funcion15h.getEvento().getPrecio(), a2, reserva1);
             valeria.comprarEntrada(entradaA1);
             valeria.comprarEntrada(entradaA2);
             System.out.println("Entradas emitidas: " + entradaA1.getCodigoQR() + ", " + entradaA2.getCodigoQR());
@@ -171,7 +198,7 @@ public class Main {
         butacaDiego.add(a3);
         LocalDateTime creacionDiego = LocalDateTime.of(2026, 9, 10, 9, 0);
         Reserva reserva2 = new Reserva(2, funcion18h, diego, butacaDiego, creacionDiego, creacionDiego.plusMinutes(15));
-        Pago pago2 = new Pago(2, "PAY-0002", 28.00, reserva2);
+        Pago pago2 = new Pago(2, "PAY-0002", funcion18h.getEvento().getPrecio(), reserva2);
 
         LocalDateTime momentoDeRevision = creacionDiego.plusMinutes(20);
         boolean expiro = reserva2.expirarSiVencida(momentoDeRevision);
@@ -210,6 +237,36 @@ public class Main {
         System.out.println("La funcion de 'La Muralla' se cancelo? " + funcionObraCancelada
                 + " (estado: " + funcionObra.getEstado() + ")");
 
+        // 7.2b El Evento (no la funcion) tambien es IEliminable: se retira del catalogo sin borrarlo.
+        charlaCine.desactivar();
+        boolean eventoQuedoInactivo = !charlaCine.estaActivo();
+        charlaCine.activar();
+        boolean eventoQuedoActivoDeNuevo = charlaCine.estaActivo();
+        System.out.println("La charla se retiro del catalogo y luego se reactivo? "
+                + (eventoQuedoInactivo && eventoQuedoActivoDeNuevo));
+
+        // 7.2c Constructor de copia de Evento (Pelicula): campos iguales, objeto distinto.
+        Pelicula copiaInterestelar = new Pelicula(interestelar);
+        System.out.println("Copia de Interestelar: " + copiaInterestelar.getTitulo() + " ("
+                + copiaInterestelar.getFunciones().size() + " funciones), mismo objeto? "
+                + (copiaInterestelar == interestelar));
+
+        // 7.2d Validaciones del constructor de Funcion.
+        boolean rechazoEventoNulo = false;
+        try {
+            new Funcion(99, null, sala1, LocalDate.of(2026, 9, 25), LocalTime.of(10, 0), LocalTime.of(12, 0), "Espanol");
+        } catch (IllegalArgumentException ex) {
+            rechazoEventoNulo = true;
+        }
+        boolean rechazoHorarioInvalido = false;
+        try {
+            new Funcion(98, interestelar, sala1, LocalDate.of(2026, 9, 25), LocalTime.of(12, 0), LocalTime.of(10, 0), "Espanol");
+        } catch (IllegalArgumentException ex) {
+            rechazoHorarioInvalido = true;
+        }
+        System.out.println("Funcion sin evento rechazada? " + rechazoEventoNulo
+                + " | Funcion con horaFin < horaInicio rechazada? " + rechazoHorarioInvalido);
+
         // 7.3 Valeria pide reembolso de la entrada A2 antes de usarla.
         boolean entradaA2Cancelada = entradaA2 != null && entradaA2.cancelar();
         System.out.println("La entrada A2 se cancelo antes de usarse? " + entradaA2Cancelada
@@ -234,16 +291,43 @@ public class Main {
                 + expiroAntesDeTiempo + " (deberia ser false; estado: " + reserva4.getEstado() + ")");
 
         // ---------- 8. Verificacion de comportamiento esperado ----------
-        // Esta seccion es el "codigo de prueba" que exige el enunciado: compara el
-        // estado real de los objetos contra el estado esperado segun las reglas de
-        // negocio, e imprime [OK] o [ERROR] para cada una (sin usar JUnit).
         System.out.println("\n=== Verificacion de comportamiento esperado ===");
 
         verificar("Sala 1 conoce su Sede", sala1.getSede() == sede);
         verificar("Butaca A1 conoce su Sala", a1.getSala() == sala1);
         verificar("La funcion de las 15h conoce su Sala", funcion15h.getSala() == sala1);
-        verificar("Interestelar se repite como catalogo en sus 2 funciones (mismo titulo, objetos distintos)",
-                funcion15h.getTitulo().equals(funcion18h.getTitulo()) && funcion15h != funcion18h);
+        verificar("Pelicula, ObraTeatro y ActividadCultural son Evento (herencia)",
+                (Object) interestelar instanceof Evento && (Object) laMuralla instanceof Evento
+                        && (Object) charlaCine instanceof Evento);
+        verificar("getTitulo() es polimorfico segun el tipo de Evento",
+                interestelar.getTitulo().equals("Interestelar")
+                        && laMuralla.getTitulo().equals("La Muralla")
+                        && charlaCine.getTitulo().startsWith("Charla"));
+        verificar("Interestelar tiene 2 funciones en su lista",
+                interestelar.getFunciones().size() == 2
+                        && interestelar.getFunciones().contains(funcion15h)
+                        && interestelar.getFunciones().contains(funcion18h));
+        verificar("Las 2 funciones de Interestelar comparten el MISMO Evento (catalogo no duplicado)",
+                funcion15h.getEvento() == interestelar && funcion18h.getEvento() == interestelar
+                        && funcion15h != funcion18h);
+        verificar("Cada funcion conoce su Evento y el Evento la contiene (relacion bidireccional)",
+                funcionObra.getEvento() == laMuralla && laMuralla.getFunciones().contains(funcionObra)
+                        && funcionCharla.getEvento() == charlaCine && charlaCine.getFunciones().contains(funcionCharla));
+        verificar("El precio ahora vive en el Evento y se hereda a las 3 subclases",
+                interestelar.getPrecio() == 25.00 && laMuralla.getPrecio() == 35.00 && charlaCine.getPrecio() == 15.00);
+        verificar("calcularDuracion() de la funcion coincide con la duracion de la pelicula",
+                funcion15h.calcularDuracion() == interestelar.getDuracionMinutos());
+        verificar("El constructor de copia de Pelicula copia los datos en un objeto distinto",
+                copiaInterestelar != interestelar
+                        && copiaInterestelar.getTitulo().equals(interestelar.getTitulo())
+                        && copiaInterestelar.getGenero() == interestelar.getGenero()
+                        && copiaInterestelar.getPrecio() == interestelar.getPrecio());
+        verificar("Un Evento se puede retirar del catalogo y reactivar (IEliminable)",
+                eventoQuedoInactivo && eventoQuedoActivoDeNuevo);
+        verificar("Una Funcion sin Evento es rechazada", rechazoEventoNulo);
+        verificar("Una Funcion con horaFin anterior a horaInicio es rechazada", rechazoHorarioInvalido);
+        verificar("Pago de la reserva 1 = precio del evento x butacas",
+                pago1.getMonto() == 50.00);
         verificar("Reserva y Pago se referencian mutuamente",
                 reserva1.getPago() == pago1 && pago1.getReserva() == reserva1);
         verificar("El administrador confirmo la funcion de las 15h",
@@ -296,4 +380,3 @@ public class Main {
         System.out.println("\n=== Fin de la simulacion ===");
     }
 }
-
