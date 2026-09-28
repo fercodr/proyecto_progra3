@@ -26,7 +26,7 @@ public abstract class Evento implements IEliminable {
     protected Evento(Evento evento) {
         setId(evento.getId());
         setPrecio(evento.getPrecio());
-        setActivo(evento.isActivo());
+        this.activo = evento.estaActivo();
         funciones = new ArrayList<>();
     }
 
@@ -52,12 +52,28 @@ public abstract class Evento implements IEliminable {
         this.precio = precio;
     }
 
-    public boolean isActivo() {
+    @Override
+    public void activar() {
+        this.activo = true;
+    }
+
+    @Override
+    public void desactivar() {
+        this.activo = false;
+    }
+
+    @Override
+    public boolean estaActivo() {
         return activo;
     }
 
-    public void setActivo(boolean activo) {
-        this.activo = activo;
+    /**
+     * Indica si el contenido de este evento se vende por asiento numerado
+     * (Cineplanet) o por aforo general (Joinnus, sin butaca puntual).
+     * Por defecto es asiento numerado; ActividadCultural la sobreescribe.
+     */
+    public boolean requiereAsientoNumerado() {
+        return true;
     }
 
     public ArrayList<Funcion> getFunciones() {
@@ -68,20 +84,13 @@ public abstract class Evento implements IEliminable {
         if (funcion == null) {
             throw new IllegalArgumentException("La función no puede ser null.");
         }
-
         if (!funciones.contains(funcion)) {
             funciones.add(funcion);
         }
-
         if (funcion.getEvento() != this) {
             funcion.setEvento(this);
         }
     }
 
     public abstract String getTitulo();
-
-    @Override
-    public void eliminar() {
-        activo = false;
-    }
 }
