@@ -57,7 +57,7 @@ public abstract class Funcion {
     }
 
     /** Titulo del contenido que se proyecta en esta funcion; cada subclase concreta lo define. */
-    public abstract String getTitulo();
+    //public abstract String getTitulo();
 
     public int calcularDuracion(){
         return (int) Duration.between(horaInicio, horaFin).toMinutes();
