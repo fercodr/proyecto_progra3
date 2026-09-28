@@ -1,11 +1,72 @@
 package pe.edu.pucp.entrefunciones.modelo.funciones;
-import java.util.ArrayList;
+
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.Duration;
+
 import pe.edu.pucp.entrefunciones.modelo.catalogo.Evento;
-import pe.edu.pucp.entrefunciones.modelo.espacios.Sala;
-import pe.edu.pucp.entrefunciones.modelo.ventas.Entrada;
+import pe.edu.pucp.entrefunciones.modelo.catalogo.Sala;
+
+public class Funcion {
+
+    private int id;
+    private Evento evento;
+    private Sala sala;
+    private LocalDate fecha;
+    private LocalTime horaInicio;
+    private LocalTime horaFin;
+    private String idioma;
+    private EstadoFuncion estado;
+
+    // constructor normal
+    public Funcion(int id, Evento evento, Sala sala,
+                   LocalDate fecha, LocalTime horaInicio,
+                   LocalTime horaFin, String idioma) {
+
+        setId(id);
+        setEvento(evento);
+        setSala(sala);
+        setFecha(fecha);
+        setHoraInicio(horaInicio);
+        setHoraFin(horaFin);
+        setIdioma(idioma);
+    }
+
+    // constructor copia
+    public Funcion(Funcion funcion) {
+        setId(funcion.getId());
+        setEvento(funcion.getEvento());
+        setSala(funcion.getSala());
+        setFecha(funcion.getFecha());
+        setHoraInicio(funcion.getHoraInicio());
+        setHoraFin(funcion.getHoraFin());
+        setIdioma(funcion.getIdioma());
+        setEstado(funcion.getEstado());
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        if (id < 0) {
+            throw new IllegalArgumentException("El id no puede ser negativo.");
+        }
+        this.id = id;
+    }
+
+    public Evento getEvento() {
+        return evento;
+    }
+
+    public void setEvento(Evento evento) {
+        if (evento == null) {
+            throw new IllegalArgumentException("El evento no puede ser null.");
+        }
+        this.evento = evento;
+    }
+
+    // ... resto de getters y setters
+}
 /**
  * Una Funcion es la programacion concreta de un contenido en una fecha,
  * horario y precio determinados. Es una clase abstracta: Pelicula,
@@ -17,7 +78,7 @@ import pe.edu.pucp.entrefunciones.modelo.ventas.Entrada;
  * funcion es a la vez el contenido que se proyecta (ver seccion 8 del
  * informe).
  */
-public abstract class Funcion {
+public class Funcion {
     private int id;
     private Evento evento;
     private Sala sala;
