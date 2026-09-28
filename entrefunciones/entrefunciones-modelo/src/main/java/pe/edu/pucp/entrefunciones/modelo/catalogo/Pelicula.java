@@ -1,4 +1,4 @@
-package pe.edu.pucp.entrefunciones.modelo.catalogo;
+/*package pe.edu.pucp.entrefunciones.modelo.catalogo;
 import pe.edu.pucp.entrefunciones.modelo.IEliminable;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Sala;
 import pe.edu.pucp.entrefunciones.modelo.funciones.Funcion;
@@ -13,7 +13,7 @@ import java.time.LocalTime;
  * informe). Ademas de EstadoFuncion (heredado, para el flujo de negocio de
  * programacion), implementa IEliminable para poder retirarse del sistema de
  * forma administrativa sin perder el historial.
- */
+ 
 public class Pelicula extends Funcion implements IEliminable {
     private String nombrePelicula;
     private int duracionMinutos;
@@ -33,7 +33,7 @@ public class Pelicula extends Funcion implements IEliminable {
         this.activo=true;
     }
 
-    /** Constructor de copia. */
+    /** Constructor de copia. 
     public Pelicula (final Pelicula pelicula){
         super(pelicula);
         setNombrePelicula(pelicula.getNombrePelicula());
@@ -120,4 +120,116 @@ public class Pelicula extends Funcion implements IEliminable {
         this.director=director;
     }
 
+}
+*/
+package pe.edu.pucp.entrefunciones.modelo.catalogo;
+
+public class Pelicula extends Evento {
+
+    private String nombrePelicula;
+    private int duracionMinutos;
+    private CategoriaGenero genero;
+    private ClasificacionEdad clasificacionPorEdad;
+    private String director;
+
+    public Pelicula(int id, double precio,
+                    String nombrePelicula,
+                    int duracionMinutos,
+                    CategoriaGenero genero,
+                    ClasificacionEdad clasificacionPorEdad,
+                    String director) {
+
+        super(id, precio);
+
+        setNombrePelicula(nombrePelicula);
+        setDuracionMinutos(duracionMinutos);
+        setGenero(genero);
+        setClasificacionPorEdad(clasificacionPorEdad);
+        setDirector(director);
+    }
+
+    /** Constructor de copia. */
+    public Pelicula(final Pelicula pelicula) {
+
+        super(pelicula.getId(), pelicula.getPrecio());
+
+        setNombrePelicula(pelicula.getNombrePelicula());
+        setDuracionMinutos(pelicula.getDuracionMinutos());
+        setGenero(pelicula.getGenero());
+        setClasificacionPorEdad(pelicula.getClasificacionPorEdad());
+        setDirector(pelicula.getDirector());
+
+        if (pelicula.estaActivo()) {
+            activar();
+        } else {
+            desactivar();
+        }
+    }
+
+    @Override
+    public String getTitulo() {
+        return nombrePelicula;
+    }
+
+    public String getNombrePelicula() {
+        return nombrePelicula;
+    }
+
+    public void setNombrePelicula(String nombrePelicula) {
+        if (nombrePelicula == null || nombrePelicula.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "nombrePelicula no puede ser nulo o vacio"
+            );
+        }
+        this.nombrePelicula = nombrePelicula;
+    }
+
+    public int getDuracionMinutos() {
+        return duracionMinutos;
+    }
+
+    public void setDuracionMinutos(int duracionMinutos) {
+        if (duracionMinutos <= 0) {
+            throw new IllegalArgumentException(
+                    "duracionMinutos debe ser mayor a cero"
+            );
+        }
+        this.duracionMinutos = duracionMinutos;
+    }
+
+    public CategoriaGenero getGenero() {
+        return genero;
+    }
+
+    public void setGenero(CategoriaGenero genero) {
+        if (genero == null) {
+            throw new IllegalArgumentException(
+                    "genero no puede ser nulo"
+            );
+        }
+        this.genero = genero;
+    }
+
+    public ClasificacionEdad getClasificacionPorEdad() {
+        return clasificacionPorEdad;
+    }
+
+    public void setClasificacionPorEdad(
+            ClasificacionEdad clasificacionPorEdad) {
+
+        if (clasificacionPorEdad == null) {
+            throw new IllegalArgumentException(
+                    "clasificacionPorEdad no puede ser nulo"
+            );
+        }
+        this.clasificacionPorEdad = clasificacionPorEdad;
+    }
+
+    public String getDirector() {
+        return director;
+    }
+
+    public void setDirector(String director) {
+        this.director = director;
+    }
 }
