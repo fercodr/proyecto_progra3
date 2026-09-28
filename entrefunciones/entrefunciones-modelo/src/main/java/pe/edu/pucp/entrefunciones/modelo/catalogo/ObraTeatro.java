@@ -88,6 +88,7 @@ public class ObraTeatro extends Funcion implements IEliminable {
 }
 */
 package pe.edu.pucp.entrefunciones.modelo.catalogo;
+import pe.edu.pucp.entrefunciones.modelo.funciones.Funcion;
 
 public class ObraTeatro extends Evento {
 
@@ -115,6 +116,10 @@ public class ObraTeatro extends Evento {
         setTitulo(obraTeatro.getTitulo());
         setNombreDirector(obraTeatro.getNombreDirector());
         setElenco(obraTeatro.getElenco());
+        for (Funcion funcion : obraTeatro.getFunciones()) {
+            Funcion copiaFuncion = new Funcion(funcion);
+            agregarFuncion(copiaFuncion);
+        }
     }
 
     @Override
