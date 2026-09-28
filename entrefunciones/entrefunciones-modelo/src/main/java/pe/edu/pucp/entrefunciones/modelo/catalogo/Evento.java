@@ -23,6 +23,25 @@ public abstract class Evento implements IEliminable {
         this.funciones = new ArrayList<>();
         this.activo = true;
     }
+    
+    protected Evento(final Evento evento) {
+    
+        if (evento == null) {
+            throw new IllegalArgumentException(
+                    "evento no puede ser nulo"
+            );
+        }
+    
+        setId(evento.getId());
+        setPrecio(evento.getPrecio());
+        setFunciones(new ArrayList<>(evento.getFunciones()));
+    
+        if (evento.estaActivo()) {
+            activar();
+        } else {
+            desactivar();
+        }
+    }
 
     public int getId() {
         return id;
