@@ -123,6 +123,7 @@ public class Pelicula extends Funcion implements IEliminable {
 }
 */
 package pe.edu.pucp.entrefunciones.modelo.catalogo;
+import pe.edu.pucp.entrefunciones.modelo.funciones.Funcion;
 
 public class Pelicula extends Evento {
 
@@ -158,6 +159,10 @@ public class Pelicula extends Evento {
         setGenero(pelicula.getGenero());
         setClasificacionPorEdad(pelicula.getClasificacionPorEdad());
         setDirector(pelicula.getDirector());
+        for (Funcion funcion : pelicula.getFunciones()) {
+           Funcion copiaFuncion = new Funcion(funcion);
+           agregarFuncion(copiaFuncion);
+        }
     }
 
     @Override
