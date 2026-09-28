@@ -1,4 +1,4 @@
-package pe.edu.pucp.entrefunciones.modelo.catalogo;
+/*package pe.edu.pucp.entrefunciones.modelo.catalogo;
 import pe.edu.pucp.entrefunciones.modelo.IEliminable;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Sala;
 import pe.edu.pucp.entrefunciones.modelo.funciones.Funcion;
@@ -13,7 +13,7 @@ import java.time.LocalTime;
  * EstadoFuncion (heredado, para el flujo de negocio de programacion),
  * implementa IEliminable para poder retirarse del sistema de forma
  * administrativa sin perder el historial.
- */
+
 public class ObraTeatro extends Funcion implements IEliminable {
     private String titulo;
     private String nombreDirector;
@@ -85,4 +85,71 @@ public class ObraTeatro extends Funcion implements IEliminable {
         this.elenco=elenco;
     }
 
+}
+*/
+package pe.edu.pucp.entrefunciones.modelo.catalogo;
+
+public class ObraTeatro extends Evento {
+
+    private String titulo;
+    private String nombreDirector;
+    private String elenco;
+
+    public ObraTeatro(int id, double precio,
+                      String titulo,
+                      String nombreDirector,
+                      String elenco) {
+
+        super(id, precio);
+
+        setTitulo(titulo);
+        setNombreDirector(nombreDirector);
+        setElenco(elenco);
+    }
+
+    /** Constructor de copia. */
+    public ObraTeatro(final ObraTeatro obraTeatro) {
+
+        super(obraTeatro.getId(), obraTeatro.getPrecio());
+
+        setTitulo(obraTeatro.getTitulo());
+        setNombreDirector(obraTeatro.getNombreDirector());
+        setElenco(obraTeatro.getElenco());
+
+        if (obraTeatro.estaActivo()) {
+            activar();
+        } else {
+            desactivar();
+        }
+    }
+
+    @Override
+    public String getTitulo() {
+        return titulo;
+    }
+
+    public void setTitulo(String titulo) {
+        if (titulo == null || titulo.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "titulo no puede ser nulo o vacio"
+            );
+        }
+        this.titulo = titulo;
+    }
+
+    public String getNombreDirector() {
+        return nombreDirector;
+    }
+
+    public void setNombreDirector(String nombreDirector) {
+        this.nombreDirector = nombreDirector;
+    }
+
+    public String getElenco() {
+        return elenco;
+    }
+
+    public void setElenco(String elenco) {
+        this.elenco = elenco;
+    }
 }
