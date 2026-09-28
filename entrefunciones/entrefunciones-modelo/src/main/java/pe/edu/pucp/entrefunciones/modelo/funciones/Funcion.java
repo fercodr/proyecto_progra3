@@ -5,7 +5,8 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 
 import pe.edu.pucp.entrefunciones.modelo.catalogo.Evento;
-import pe.edu.pucp.entrefunciones.modelo.catalogo.Sala;
+import pe.edu.pucp.entrefunciones.modelo.espacios.Sala;      // antes decía .catalogo.Sala
+import pe.edu.pucp.entrefunciones.modelo.ventas.Entrada;      // faltaba
 
 public class Funcion {
 
@@ -69,6 +70,11 @@ public class Funcion {
         return (int) java.time.Duration
                 .between(horaInicio, horaFin)
                 .toMinutes();
+    }
+
+    //agregado
+    public boolean requiereAsientoNumerado() {
+        return evento.requiereAsientoNumerado();
     }
 
     public void agregarEntrada(Entrada entrada) {
