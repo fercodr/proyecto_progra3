@@ -22,7 +22,7 @@ public abstract class Funcion {
     private LocalDate fecha;
     private LocalTime horaInicio;
     private LocalTime horaFin;
-    private double precio;
+    //private double precio;
     private String idioma;
     private EstadoFuncion estado;
     private ArrayList<Entrada> entradas = new ArrayList<>();
@@ -143,7 +143,7 @@ public abstract class Funcion {
         this.horaFin=horaFin;
     }
 
-    public double getPrecio(){
+    /*public double getPrecio(){
         return precio;
     }
 
@@ -153,6 +153,7 @@ public abstract class Funcion {
         }
         this.precio=precio;
     }
+    */
 
     public String getIdioma(){
         return idioma;
