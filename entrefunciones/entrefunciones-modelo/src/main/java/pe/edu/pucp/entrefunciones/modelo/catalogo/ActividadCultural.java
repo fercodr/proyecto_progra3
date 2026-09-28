@@ -96,7 +96,7 @@ public class ActividadCultural extends Funcion implements IEliminable {
 }
 */
 package pe.edu.pucp.entrefunciones.modelo.catalogo;
-
+import pe.edu.pucp.entrefunciones.modelo.funciones.Funcion;
 public class ActividadCultural extends Evento {
 
     private String nombre;
@@ -124,6 +124,10 @@ public class ActividadCultural extends Evento {
         setNombre(actividadCultural.getNombre());
         setExpositor(actividadCultural.getExpositor());
         setTipoActividad(actividadCultural.getTipoActividad());
+        for (Funcion funcion : actividadCultural.getFunciones()) {
+            Funcion copiaFuncion = new Funcion(funcion);
+            agregarFuncion(copiaFuncion);
+        }
 
     }
 
