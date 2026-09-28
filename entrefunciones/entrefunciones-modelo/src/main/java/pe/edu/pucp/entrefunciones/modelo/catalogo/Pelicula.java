@@ -150,20 +150,14 @@ public class Pelicula extends Evento {
 
     /** Constructor de copia. */
     public Pelicula(final Pelicula pelicula) {
-
-        super(pelicula.getId(), pelicula.getPrecio());
-
+   
+        super(pelicula);
+    
         setNombrePelicula(pelicula.getNombrePelicula());
         setDuracionMinutos(pelicula.getDuracionMinutos());
         setGenero(pelicula.getGenero());
         setClasificacionPorEdad(pelicula.getClasificacionPorEdad());
         setDirector(pelicula.getDirector());
-
-        if (pelicula.estaActivo()) {
-            activar();
-        } else {
-            desactivar();
-        }
     }
 
     @Override
