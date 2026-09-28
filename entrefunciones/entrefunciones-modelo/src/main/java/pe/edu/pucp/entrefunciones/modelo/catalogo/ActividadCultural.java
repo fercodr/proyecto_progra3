@@ -132,6 +132,11 @@ public class ActividadCultural extends Evento {
     }
 
     @Override
+    public boolean requiereAsientoNumerado() {
+        return false;
+    }
+    
+    @Override
     public String getTitulo() {
         return nombre;
     }
