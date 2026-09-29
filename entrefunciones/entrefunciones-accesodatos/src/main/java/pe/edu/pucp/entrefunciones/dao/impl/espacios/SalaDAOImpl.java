@@ -2,7 +2,11 @@ package pe.edu.pucp.entrefunciones.dao.impl.espacios;
 
 import pe.edu.pucp.entrefunciones.dao.espacios.SalaDAO;
 import pe.edu.pucp.entrefunciones.dao.impl.espacios.SedeDAOImpl;
+<<<<<<< HEAD:entrefunciones/entrefunciones-accesodatos/src/main/java/pe/edu/pucp/entrefunciones/dao/impl/espacios/SalaDAOImpl.java
 import pe.edu.pucp.entrefunciones.dao.impl.funciones.FuncionDAOImpl;
+=======
+import pe.edu.pucp.entrefunciones.dao.impl.eventos.FuncionDAOImpl;
+>>>>>>> 8748590 (Cambios Fernando):entrefunciones-accesodatos/src/main/java/pe/edu/pucp/entrefunciones/dao/impl/espacios/SalaDAOImpl.java
 import pe.edu.pucp.entrefunciones.db.DBManager;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Butaca;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Sala;
@@ -97,7 +101,11 @@ public class SalaDAOImpl implements SalaDAO {
         sala.setTipoSala(rs.getString("tipo_sala"));
         List <Butaca> butacas = new ButacaDAOImpl().findBySalaId(rs.getInt("id"));
         sala.setButacas(rs.wasNull()?null:butacas);
+<<<<<<< HEAD:entrefunciones/entrefunciones-accesodatos/src/main/java/pe/edu/pucp/entrefunciones/dao/impl/espacios/SalaDAOImpl.java
         sala.setFunciones(rs.wasNull()?null:new FuncionDAOImpl().findByIdSala(rs.getInt("id")));
+=======
+        sala.setFunciones(rs.wasNull()?null:  new  FuncionDAOImpl().findBySalaId(rs.getInt("id"));
+>>>>>>> 8748590 (Cambios Fernando):entrefunciones-accesodatos/src/main/java/pe/edu/pucp/entrefunciones/dao/impl/espacios/SalaDAOImpl.java
         sala.setAforo(rs.getInt("aforo"));
         sala.setNombre(rs.getString("nombre"));
         return sala;

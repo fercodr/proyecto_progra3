@@ -1,7 +1,7 @@
 package pe.edu.pucp.entrefunciones.dao.impl.ventas;
 
 import pe.edu.pucp.entrefunciones.dao.ventas.ReservaDAO;
-import pe.edu.pucp.entrefunciones.dao.impl.catalogo.FuncionDAOImpl;
+import pe.edu.pucp.entrefunciones.dao.impl.eventos.FuncionDAOImpl;
 import pe.edu.pucp.entrefunciones.dao.impl.usuarios.ClienteDAOImpl;
 import pe.edu.pucp.entrefunciones.dao.impl.espacios.ButacaDAOImpl;
 import pe.edu.pucp.entrefunciones.db.DBManager;
