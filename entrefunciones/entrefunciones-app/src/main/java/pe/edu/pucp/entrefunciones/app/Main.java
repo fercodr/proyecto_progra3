@@ -93,10 +93,14 @@ public class Main {
         System.out.println("Butaca A1 pertenece a la sala: " + a1.getSala().getNombre());
 
         Recurso proyector = new Recurso(1, "Proyector 4K Sala 1", "Proyeccion");
-//        Bloqueo bloqueo = new Bloqueo(1, "Calibracion de proyector",
-//                LocalDateTime.of(2026, 9, 18, 9, 0), LocalDateTime.of(2026, 9, 18, 11, 0),
-//                null, proyector);
-        //System.out.println("Bloqueo activo el 18/09 10:00? " + bloqueo.estaVigente(LocalDateTime.of(2026, 9, 18, 10, 0)));
+        Bloqueo bloqueo = new Bloqueo();
+        bloqueo.setId(1);
+        bloqueo.setMotivo("Calibracion de proyector");
+        bloqueo.setFechaInicio(LocalDateTime.of(2026, 9, 18, 9, 0));
+        bloqueo.setFechaFin(LocalDateTime.of(2026, 9, 18, 11, 0));
+        bloqueo.setRecurso(proyector);
+        boolean bloqueoVigente = bloqueo.estaVigente(LocalDateTime.of(2026, 9, 18, 10, 0));
+        System.out.println("Bloqueo activo el 18/09 10:00? " + bloqueoVigente);
 
         // ---------- 3. Eventos (catalogo) y Funciones (programacion) ----------
         // Evento es abstracta: Pelicula, ObraTeatro y ActividadCultural HEREDAN de
@@ -180,8 +184,9 @@ public class Main {
             reserva1.confirmar();
             System.out.println("Reserva confirmada, estado: " + reserva1.getEstado());
 
-            entradaA1 = new Entrada(1, LocalDateTime.now(), "QR-0000000001", funcion15h.getEvento().getPrecio(), a1, reserva1);
-            entradaA2 = new Entrada(2, LocalDateTime.now(), "QR-0000000002", funcion15h.getEvento().getPrecio(), a2, reserva1);
+            LocalDateTime fechaEmision = ahora.plusMinutes(6);
+            entradaA1 = new Entrada(1, fechaEmision, "QR-0000000001", funcion15h.getEvento().getPrecio(), a1, reserva1);
+            entradaA2 = new Entrada(2, fechaEmision, "QR-0000000002", funcion15h.getEvento().getPrecio(), a2, reserva1);
             valeria.comprarEntrada(entradaA1);
             valeria.comprarEntrada(entradaA2);
             System.out.println("Entradas emitidas: " + entradaA1.getCodigoQR() + ", " + entradaA2.getCodigoQR());
@@ -295,6 +300,8 @@ public class Main {
 
         verificar("Sala 1 conoce su Sede", sala1.getSede() == sede);
         verificar("Butaca A1 conoce su Sala", a1.getSala() == sala1);
+        verificar("El bloqueo del proyector esta vigente dentro del intervalo configurado",
+                bloqueoVigente && bloqueo.getRecurso() == proyector && bloqueo.getSala() == null);
         verificar("La funcion de las 15h conoce su Sala", funcion15h.getSala() == sala1);
         verificar("Pelicula, ObraTeatro y ActividadCultural son Evento (herencia)",
                 (Object) interestelar instanceof Evento && (Object) laMuralla instanceof Evento
@@ -368,10 +375,9 @@ public class Main {
         // tenga los datos reales, esta seccion va a mostrar un mensaje de
         // error controlado en vez de interrumpir el resto de la simulacion.
         System.out.println("\n--- Conexion a la base de datos ---");
-        try {
-            Connection con = DBManager.getInstance().getConnection();
-            System.out.println("Conexion a la base de datos establecida correctamente.");
-            con.close();
+        try (Connection con = DBManager.getInstance().getConnection()) {
+            System.out.println("Conexion a la base de datos establecida correctamente. Valida: "
+                    + con.isValid(2));
         } catch (Exception e) {
             System.out.println("No se pudo conectar a la base de datos (revisar los datos en "
                     + "db.properties y que la instancia de AWS RDS este activa): " + e.getMessage());
