@@ -1,6 +1,6 @@
 package pe.edu.pucp.entrefunciones.dao.impl.catalogo;
 
-import pe.edu.pucp.entrefunciones.dao.catalogo.PeliculaDAO;
+import pe.edu.pucp.entrefunciones.dao.PeliculaDAO;
 import pe.edu.pucp.entrefunciones.db.DBManager;
 import pe.edu.pucp.entrefunciones.modelo.catalogo.CategoriaGenero;
 import pe.edu.pucp.entrefunciones.modelo.catalogo.ClasificacionEdad;
@@ -10,7 +10,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class PeliculaDAOImpl extends RegistroDAOImpl<Pelicula> implements PeliculaDAO {
+public class PeliculaDAOImpl implements PeliculaDAO {
 
     @Override
     public List<Pelicula> findAll() throws SQLException {
@@ -20,7 +20,7 @@ public class PeliculaDAOImpl extends RegistroDAOImpl<Pelicula> implements Pelicu
              ResultSet rs = cmd.executeQuery()) {
             List<Pelicula> peliculas = new ArrayList<>();
             while (rs.next()) {
-                peliculas.add(mapear(rs, new Pelicula()));
+                peliculas.add(mapear(rs));
             }
             return peliculas;
         }
@@ -36,7 +36,7 @@ public class PeliculaDAOImpl extends RegistroDAOImpl<Pelicula> implements Pelicu
              CallableStatement cmd = conn.prepareCall(sql)) {
             cmd.setInt("p_id", id);
             try (ResultSet rs = cmd.executeQuery()) {
-                return rs.next() ? mapear(rs, new Pelicula()) : null;
+                return rs.next() ? mapear(rs) : null;
             }
         }
     }
@@ -101,9 +101,9 @@ public class PeliculaDAOImpl extends RegistroDAOImpl<Pelicula> implements Pelicu
         }
     }
 
-    @Override
-    protected Pelicula mapear(ResultSet rs, Pelicula pelicula) throws SQLException {
-        super.mapear(rs, pelicula);
+    private Pelicula mapear(ResultSet rs) throws SQLException {
+        Pelicula pelicula = new Pelicula();
+        pelicula.setId(rs.getInt("id"));
         pelicula.setNombre(rs.getString("nombre_pelicula"));
         if (rs.getString("genero") != null) {
             pelicula.setGenero(Enum.valueOf(CategoriaGenero.class, rs.getString("genero")));
@@ -113,6 +113,7 @@ public class PeliculaDAOImpl extends RegistroDAOImpl<Pelicula> implements Pelicu
         }
         pelicula.setDirector(rs.getString("director"));
         pelicula.setDuracionMinutos(rs.getInt("duracion_minutos"));
+        pelicula.setActivo(rs.getBoolean("activo"));
         return pelicula;
     }
 }
