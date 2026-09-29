@@ -1,4 +1,4 @@
-package pe.edu.pucp.entrefunciones.bl.usuarios;
+package pe.edu.pucp.negocio.entrefunciones.bl.usuarios;
 
 import pe.edu.pucp.entrefunciones.modelo.usuarios.Usuario;
 import pe.edu.pucp.negocio.entrefunciones.bl.BL;
