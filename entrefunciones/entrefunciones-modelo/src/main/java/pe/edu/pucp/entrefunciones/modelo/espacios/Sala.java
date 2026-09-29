@@ -1,5 +1,7 @@
 package pe.edu.pucp.entrefunciones.modelo.espacios;
 import java.util.ArrayList;
+import java.util.List;
+
 import pe.edu.pucp.entrefunciones.modelo.IEliminable;
 import pe.edu.pucp.entrefunciones.modelo.catalogo.Funcion;
 public class Sala implements IEliminable {
@@ -9,8 +11,8 @@ public class Sala implements IEliminable {
     private int aforo;
     private String tipoSala;
     private boolean activo;
-    private ArrayList<Butaca> butacas = new ArrayList<>();
-    private ArrayList<Funcion> funciones = new ArrayList<>();
+    private List<Butaca> butacas = new ArrayList<>();
+    private List<Funcion> funciones = new ArrayList<>();
 
     public Sala(){
 
@@ -81,14 +83,14 @@ public class Sala implements IEliminable {
     }
 
     public Sede getSede(){
-        return sede;
+        return new Sede(sede);
     }
 
     public void setSede(Sede sede){
         if(sede == null){
             throw new IllegalArgumentException("sede no puede ser nulo");
         }
-        this.sede=sede;
+        this.sede=new Sede(sede);
     }
 
     public String getNombre(){
@@ -124,19 +126,20 @@ public class Sala implements IEliminable {
         this.tipoSala=tipoSala;
     }
 
-    public ArrayList<Butaca> getButacas(){
-        return butacas;
+    public List<Butaca> getButacas(){
+        return List.copyOf(butacas);
     }
 
-    public void setButacas(ArrayList<Butaca> butacas){
+    public void setButacas(List<Butaca> butacas){
         if(butacas == null){
             throw new IllegalArgumentException("butacas no puede ser nulo");
         }
         this.butacas=butacas;
     }
 
-    public ArrayList<Funcion> getFunciones(){
-        return funciones;
+    public List<Funcion> getFunciones(){
+
+        return List.copyOf(funciones);
     }
 
     public void setFunciones(ArrayList<Funcion> funciones){
