@@ -27,7 +27,6 @@ public class Butaca implements IEliminable {
         setTipoButaca(tipoButaca);
         this.activo=true;
     }
-
     /** Constructor de copia. */
     public Butaca (final Butaca butaca){
         if(butaca == null){

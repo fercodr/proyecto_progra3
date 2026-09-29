@@ -39,6 +39,9 @@ public class Reserva {
         if(reserva == null){
             throw new IllegalArgumentException("reserva no puede ser nulo");
         }
+        if(fechaCreacion != null && fechaExpiracion != null && !fechaExpiracion.isAfter(fechaCreacion)){
+            throw new IllegalArgumentException("fechaExpiracion debe ser posterior a fechaCreacion");
+        }
         setId(reserva.getId());
         setFuncion(reserva.getFuncion());
         setCliente(reserva.getCliente());

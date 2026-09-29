@@ -14,7 +14,7 @@ import java.util.List;
 public class BloqueoDAOImpl implements BloqueoDAO {
 
     @Override
-    public List<Bloqueo> findAll() throws SQLException {
+    public List<Bloqueo> findAll() throws SQLException { //devuelve una lista de todos los bloqueos posibles
         String sql = "{call listar_bloqueos()}";
         try (
                 Connection conn = DBManager.getInstance().getConnection();
@@ -28,7 +28,7 @@ public class BloqueoDAOImpl implements BloqueoDAO {
             return bloqueos;
         }
     }
-
+    //devuelve una lista de todos los bloqueos por id de sala
     @Override
     public List<Bloqueo> findBySalaId(int salaId) throws SQLException {
         String sql = "{call listar_bloqueos_por_sala(?)}";
@@ -47,7 +47,7 @@ public class BloqueoDAOImpl implements BloqueoDAO {
             }
         }
     }
-
+    //enlista todos los bloqueos realizados a todos los recursos
     @Override
     public List<Bloqueo> findByRecursoId(int recursoId) throws SQLException {
         String sql = "{call listar_bloqueos_por_recurso(?)}";
@@ -101,7 +101,6 @@ public class BloqueoDAOImpl implements BloqueoDAO {
             cmd.setTimestamp("p_fecha_inicio", Timestamp.valueOf(bloqueo.getFechaInicio()));
             cmd.setTimestamp("p_fecha_fin", Timestamp.valueOf(bloqueo.getFechaFin()));
 
-            // Solo uno de los dos debe tener valor, según tu CHECK de la BD
             if (bloqueo.getSala() != null) {
                 cmd.setInt("p_sala_id", bloqueo.getSala().getId());
                 cmd.setNull("p_recurso_id", Types.INTEGER);
@@ -109,9 +108,10 @@ public class BloqueoDAOImpl implements BloqueoDAO {
                 cmd.setNull("p_sala_id", Types.INTEGER);
                 cmd.setInt("p_recurso_id", bloqueo.getRecurso().getId());
             }
-
-            cmd.registerOutParameter("p_id", Types.INTEGER);
-
+            //es la variable que trae consigo el insertar_bloqueo, por eso se coloca registerOutParameter
+            //como no existe, tengo que completarlo con el dato que me dé la BD
+            cmd.registerOutParameter("p_id", Types.INTEGER); //types.INTEGER Porque necesitas especificar que tipo de dato es antes de setear un set(null)
+            //el programa debe saber en qué tipo de dato esta que coloca el null
             if (cmd.executeUpdate() == 0) {
                 throw new SQLException("No se pudo insertar el bloqueo");
             }
@@ -143,7 +143,7 @@ public class BloqueoDAOImpl implements BloqueoDAO {
                 cmd.setNull("p_sala_id", Types.INTEGER);
                 cmd.setInt("p_recurso_id", bloqueo.getRecurso().getId());
             }
-
+            //aqui no es necesario registerOutParameter porque ya existe el dato, solo estoy actualizando
             if (cmd.executeUpdate() == 0) {
                 throw new SQLException("No se pudo actualizar el bloqueo");
             }
