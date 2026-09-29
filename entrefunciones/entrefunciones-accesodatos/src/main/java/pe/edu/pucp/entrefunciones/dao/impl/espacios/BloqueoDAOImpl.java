@@ -2,7 +2,6 @@ package pe.edu.pucp.entrefunciones.dao.impl.espacios;
 
 import pe.edu.pucp.entrefunciones.dao.espacios.BloqueoDAO;
 import pe.edu.pucp.entrefunciones.dao.impl.espacios.SalaDAOImpl;
-import pe.edu.pucp.entrefunciones.dao.impl.espacios.RecursoDAOImpl;
 import pe.edu.pucp.entrefunciones.db.DBManager;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Bloqueo;
 
