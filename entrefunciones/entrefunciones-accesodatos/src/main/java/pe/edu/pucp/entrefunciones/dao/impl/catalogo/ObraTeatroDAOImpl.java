@@ -1,4 +1,4 @@
-package pe.edu.pucp.entrefunciones.dao.impl;
+package pe.edu.pucp.entrefunciones.dao.impl.catalogo;
 
 import pe.edu.pucp.entrefunciones.dao.catalogo.ObraTeatroDAO;
 import pe.edu.pucp.entrefunciones.db.DBManager;
@@ -10,7 +10,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ObraTeatroDAOImpl extends RegistroDAOImpl<ObraTeatro> implements ObraTeatroDAO {
+public class ObraTeatroDAOImpl  implements ObraTeatroDAO {
 
     @Override
     public List<ObraTeatro> findAll() throws SQLException {

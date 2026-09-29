@@ -3,7 +3,7 @@ package pe.edu.pucp.entrefunciones.bl.impl;
 import pe.edu.pucp.entrefunciones.bl.BLException;
 import pe.edu.pucp.entrefunciones.bl.ObraTeatroBL;
 import pe.edu.pucp.entrefunciones.dao.catalogo.ObraTeatroDAO;
-import pe.edu.pucp.entrefunciones.dao.impl.ObraTeatroDAOImpl;
+import pe.edu.pucp.entrefunciones.dao.impl.catalogo.ObraTeatroDAOImpl;
 import pe.edu.pucp.entrefunciones.modelo.catalogo.ObraTeatro;
 
 import java.sql.SQLException;

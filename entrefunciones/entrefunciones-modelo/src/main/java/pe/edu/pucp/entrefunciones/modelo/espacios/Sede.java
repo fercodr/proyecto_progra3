@@ -1,5 +1,7 @@
 package pe.edu.pucp.entrefunciones.modelo.espacios;
 import java.util.ArrayList;
+import java.util.List;
+
 import pe.edu.pucp.entrefunciones.modelo.IEliminable;
 public class Sede implements IEliminable {
     private int id;
@@ -8,7 +10,7 @@ public class Sede implements IEliminable {
     private String ciudad;
     private String telefonoContacto;
     private boolean activo;
-    private ArrayList<Sala> salas = new ArrayList<>();
+    private List<Sala> salas = new ArrayList<>();
 
     public Sede(){
     }
@@ -112,7 +114,7 @@ public class Sede implements IEliminable {
         this.telefonoContacto=telefonoContacto;
     }
 
-    public ArrayList<Sala> getSalas(){
+    public List<Sala> getSalas(){
         return salas;
     }
 

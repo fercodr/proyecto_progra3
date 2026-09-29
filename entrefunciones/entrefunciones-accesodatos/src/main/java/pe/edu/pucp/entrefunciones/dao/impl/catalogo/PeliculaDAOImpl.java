@@ -1,4 +1,4 @@
-package pe.edu.pucp.entrefunciones.dao.impl;
+package pe.edu.pucp.entrefunciones.dao.impl.catalogo;
 
 import pe.edu.pucp.entrefunciones.dao.catalogo.PeliculaDAO;
 import pe.edu.pucp.entrefunciones.db.DBManager;

@@ -60,12 +60,52 @@ public class SedeDAOImpl implements SedeDAO {
 
     @Override
     public void insert(Sede modelo) throws SQLException {
+        //PASO 1: PARCHE ANTI NULO
+        if(modelo==null)  throw new IllegalArgumentException("El cliente no puede ser nulo");
         String sql = """
-                INSERT INTO sede(id,razon_social,direccion,ciudad,telefono_contacto)
+                INSERT INTO sede(razon_social,direccion,ciudad,telefono_contacto,)
                     VALUES (?,?,?,?,?,?)
                 """;
+        //ABRIR CONECCION + PPST-> sql+ recibir PPST.key (por generar)
         try(Connection conn = DBManager.getInstance().getConnection();
             PreparedStatement cmd = conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)){
+
+            //LENAMOS CAMPOS
+            cmd.setString(1,modelo.getRazonSocial());
+            cmd.setString(2,modelo.getDireccion());
+            cmd.setString(3,modelo.getCiudad());
+            cmd.setString(4,modelo.getTelefonoContacto());
+            cmd.setBoolean(5, modelo.estaActivo());
+
+            //EXECUTE UPDATE PARCHE
+            if(cmd.executeUpdate()==0) throw new SQLException("No se pudo insertar");
+
+            //INSERTAMOS KEY CON TRY getGeneratedKey
+            try (ResultSet keys = cmd.getGeneratedKeys()){
+                if(!keys.next()) throw new SQLException("No se obtuvo el ID");
+                modelo.setId(keys.getInt(1));
+            }
+        }catch(SQLException ex){
+            throw new SQLException("",ex);
+        }
+    }
+
+    @Override
+    public void update(Sede modelo) throws SQLException {
+        if(modelo==null)  throw new IllegalArgumentException("El cliente no puede ser nulo");
+        String sql = """
+                UPDATE sede(razon_social,direccion,ciudad,telefono_contacto,activo)
+                     (?,?,?,?,?,?)
+                """;
+        try(Connection conn = DBManager.getInstance().getConnection();
+            PreparedStatement cmd = conn.prepareStatement(sql)){
+
+            cmd.setString(1,modelo.getRazonSocial());
+            cmd.setString(2,modelo.getDireccion());
+            cmd.setString(3,modelo.getCiudad());
+            cmd.setString(4,modelo.getTelefonoContacto());
+            cmd.setBoolean(5, modelo.estaActivo());
+            if(cmd.executeUpdate()==0) throw new SQLException("No se pudo actualizar");
 
         }catch(SQLException ex){
             throw new SQLException("",ex);
@@ -74,13 +114,19 @@ public class SedeDAOImpl implements SedeDAO {
     }
 
     @Override
-    public void update(Sede modelo) throws SQLException {
+    public void delete(Integer id) throws SQLException {
+        if(id==null)  throw new IllegalArgumentException("El id no puede ser nulo");
+        String sql = """
+                DELETE FORM sede WHERE id=?
+                """;
+        try(Connection conn = DBManager.getInstance().getConnection();
+            PreparedStatement cmd = conn.prepareStatement(sql)){
+            cmd.setInt(1,id);
+            if(cmd.executeUpdate()==0) throw new SQLException("No se pudo actualizar");
 
-    }
-
-    @Override
-    public void delete(Integer integer) throws SQLException {
-
+        }catch(SQLException ex){
+            throw new SQLException("",ex);
+        }
     }
     private Sede mapear(ResultSet rs, Sede sede)throws SQLException{
         sede.setId(rs.getInt("id"));

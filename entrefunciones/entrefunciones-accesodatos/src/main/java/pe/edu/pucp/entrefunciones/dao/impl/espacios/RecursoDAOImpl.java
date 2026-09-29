@@ -38,7 +38,7 @@ public class RecursoDAOImpl implements RecursoDAO {
         }
         //igual que findAll: sql + try(conn + conn.Pps(sql))
         String sql = """
-                SELECT id,nombre,tipo FROM recurso
+                SELECT id,nombre,tipo,activo FROM recurso
                 WHERE id=?
                 """;
         try(Connection conn = DBManager.getInstance().getConnection();
@@ -59,17 +59,67 @@ public class RecursoDAOImpl implements RecursoDAO {
 
     @Override
     public void insert(Recurso modelo) throws SQLException {
+        if(modelo==null)  throw new IllegalArgumentException("El recurso no puede ser nulo");
+
+        String sql = """
+                INSERT INTO recurso(nombre,tipo,activo)  
+                VALUES (?,?,?)
+                """;
+        try(Connection conn = DBManager.getInstance().getConnection();
+            PreparedStatement cmd = conn.prepareStatement(sql,PreparedStatement.RETURN_GENERATED_KEYS)){
+            cmd.setString(1,modelo.getNombre());
+            cmd.setString(2,modelo.getTipo());
+            cmd.setBoolean(3,modelo.estaActivo());
+
+            if(cmd.executeUpdate()==0) throw new  SQLException("No se pudo insertar");
+
+            try(ResultSet keys = cmd.getGeneratedKeys()){
+                if(!keys.next()) throw new SQLException("No se obtuvo el ID");
+                modelo.setId(keys.getInt(1));
+            }
+        }catch (SQLException e){
+            throw new SQLException("",e);
+        }
 
     }
 
     @Override
     public void update(Recurso modelo) throws SQLException {
+        if(modelo==null)  throw new IllegalArgumentException("El recurso no puede ser nulo");
+        String sql = """
+                UPDATE recurso 
+                SET nombre=?,tipo=?,activo=?
+                WHERE id=?
+                           """;
+        try(Connection conn = DBManager.getInstance().getConnection();
+            PreparedStatement cmd = conn.prepareStatement(sql)){
+            cmd.setInt(1,modelo.getId());
+            cmd.setString(2,modelo.getNombre());
+            cmd.setString(3,modelo.getTipo());
+            cmd.setBoolean(4,modelo.estaActivo());
+
+            if(cmd.executeUpdate()==0) throw new  SQLException("No se pudo insertar");
+        }catch (SQLException e){
+            throw new SQLException("",e);
+        }
 
     }
 
     @Override
-    public void delete(Integer integer) throws SQLException {
+    public void delete(Integer id) throws SQLException {
+        if(id==null)  throw new IllegalArgumentException("El id no puede ser nulo");
+        String sql = """
+                DELETE FROM recurso 
+                            WHERE id=?
+                           """;
+        try(Connection conn = DBManager.getInstance().getConnection();
+            PreparedStatement cmd = conn.prepareStatement(sql)){
+            cmd.setInt(1,id);
+            if(cmd.executeUpdate()==0) throw new  SQLException("No se pudo eliminar");
 
+        }catch (SQLException e){
+            throw new SQLException("",e);
+        }
     }
     private Recurso mapear(ResultSet rs,Recurso recurso) throws SQLException {
         recurso.setId(rs.getInt("id"));

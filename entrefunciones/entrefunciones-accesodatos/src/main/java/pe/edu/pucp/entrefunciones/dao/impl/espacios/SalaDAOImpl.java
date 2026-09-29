@@ -18,7 +18,7 @@ public class SalaDAOImpl implements SalaDAO {
     @Override
     public List<Sala> findAll() throws SQLException {
         String sql = """
-                SELECT id,sede_id,nombre,aforo,tipo_sala
+                SELECT id,sede_id,nombre,aforo,tipo_sala,activo
                 FROM sala
                 """;
         try(Connection conn = DBManager.getInstance().getConnection();
@@ -38,10 +38,10 @@ public class SalaDAOImpl implements SalaDAO {
     @Override
     public Sala findById(Integer id) throws SQLException {
         if(id==null){
-            throw new RuntimeException("el id no puede ser nulo");
+            throw new IllegalArgumentException("el id no puede ser nulo");
         }
         String sql = """
-                SELECT id,sede_id,nombre,aforo,tipo_sala
+                SELECT id,sede_id,nombre,aforo,tipo_sala,activo
                 FROM sala WHERE id=?
                 """;
 
@@ -60,7 +60,12 @@ public class SalaDAOImpl implements SalaDAO {
 
     @Override
     public void insert(Sala modelo) throws SQLException {
-
+        if(modelo==null)throw new IllegalArgumentException("el id no puede ser nulo");
+        String sql="""
+                INSERT INTO sala(sede_id,nombre,aforo,tipo_sala,activo)
+                VALUES (?,?,?,?,?,?)
+                """;
+        
     }
 
     @Override
@@ -69,8 +74,17 @@ public class SalaDAOImpl implements SalaDAO {
     }
 
     @Override
-    public void delete(Integer integer) throws SQLException {
-
+    public void delete(Integer id) throws SQLException {
+        if(id==null)throw new IllegalArgumentException("el id no puede ser nulo");
+        String sql="""
+                DELETE FROM sala 
+                WHERE id=?
+                """;
+        try (Connection conn = DBManager.getInstance().getConnection();
+             PreparedStatement cmd = conn.prepareStatement(sql)){
+            cmd.setInt(1,id);
+            if(cmd.executeUpdate() ==0) throw new SQLException();
+        }
     }
 
     private Sala mapear(ResultSet rs,Sala sala)throws SQLException{
