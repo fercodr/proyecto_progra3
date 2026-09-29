@@ -1,7 +1,7 @@
 package pe.edu.pucp.entrefunciones.bl.impl.ventas;
 import java.sql.SQLException;
 import java.util.List;
-import pe.edu.pucp.negocio.entrefunciones.bl.BLException;
+import pe.edu.pucp.entrefunciones.bl.BLException;
 import pe.edu.pucp.entrefunciones.bl.ventas.EntradaBL;
 import pe.edu.pucp.entrefunciones.dao.ventas.EntradaDAO;
 import pe.edu.pucp.entrefunciones.modelo.ventas.Entrada;
