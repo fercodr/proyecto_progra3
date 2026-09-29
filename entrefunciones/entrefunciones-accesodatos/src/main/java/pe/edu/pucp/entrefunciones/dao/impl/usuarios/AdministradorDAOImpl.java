@@ -9,7 +9,7 @@ import java.sql.SQLException;
 import java.sql.Types;
 
 import pe.edu.pucp.entrefunciones.db.DBManager;
-import pe.edu.pucp.accesodatos.dao.usuarios.AdministradorDAO;
+import pe.edu.pucp.entrefunciones.dao.usuarios.AdministradorDAO;
 
 public class AdministradorDAOImpl
         extends UsuarioDAOImpl<Administrador>
