@@ -1,7 +1,7 @@
-package pe.edu.pucp.negocio.entrefunciones.bl.ventas;
+package pe.edu.pucp.entrefunciones.bl.ventas;
 import java.util.List;
-import pe.edu.pucp.negocio.entrefunciones.bl.BL;
-import pe.edu.pucp.negocio.entrefunciones.bl.BLException;
+import pe.edu.pucp.entrefunciones.bl.BL;
+import pe.edu.pucp.entrefunciones.bl.BLException;
 import pe.edu.pucp.entrefunciones.modelo.ventas.Entrada;
 import pe.edu.pucp.entrefunciones.modelo.ventas.Pago;
 import pe.edu.pucp.entrefunciones.modelo.ventas.Reserva;
