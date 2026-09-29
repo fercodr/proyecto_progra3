@@ -3,14 +3,14 @@ package pe.edu.pucp.entrefunciones.dao.impl.espacios;
 import pe.edu.pucp.entrefunciones.dao.espacios.ButacaDAO;
 import pe.edu.pucp.entrefunciones.db.DBManager;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Butaca;
-import pe.edu.pucp.entrefunciones.dao.impl.espacios.SalaDAOImpl;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Sala;
+import pe.edu.pucp.entrefunciones.modelo.espacios.Sede;
 
-import java.sql.Types;
-import java.sql.CallableStatement;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,148 +18,200 @@ public class ButacaDAOImpl implements ButacaDAO {
 
     @Override
     public List<Butaca> findAll() throws SQLException {
-        String sql = "{call listar_butacas()}";
-        try (
-                Connection conn = DBManager.getInstance().getConnection();
-                CallableStatement cmd = conn.prepareCall(sql);
-                ResultSet rs = cmd.executeQuery()) {
-
-            List<Butaca> butacas = new ArrayList<>();
-            while (rs.next()) {
-                butacas.add(mapear(rs));
-            }
-            return butacas;
+        String sql = """
+                SELECT b.id, b.fila, b.columna, b.tipo_butaca,
+                       b.activo AS butaca_activo,
+                       b.sala_id AS sala_id, sa.nombre AS sala_nombre,
+                       sa.aforo AS sala_aforo, sa.tipo_sala,
+                       sa.activo AS sala_activo,
+                       se.id AS sede_id, se.razon_social AS sede_razon_social,
+                       se.direccion AS sede_direccion, se.ciudad AS sede_ciudad,
+                       se.telefono_contacto AS sede_telefono_contacto,
+                       se.activo AS sede_activo
+                FROM butaca b
+                INNER JOIN sala sa ON sa.id = b.sala_id
+                INNER JOIN sede se ON se.id = sa.sede_id
+                """;
+        try (Connection conn = DBManager.getInstance().getConnection();
+             PreparedStatement cmd = conn.prepareStatement(sql);
+             ResultSet rs = cmd.executeQuery()) {
+            return mapearLista(rs);
         }
     }
 
     @Override
     public List<Butaca> findBySalaId(int salaId) throws SQLException {
-        String sql = "{call listar_butacas_por_sala(?)}";
-        try (
-                Connection conn = DBManager.getInstance().getConnection();
-                CallableStatement cmd = conn.prepareCall(sql)) {
-
-            cmd.setInt("p_sala_id", salaId);
-
+        String sql = """
+                SELECT b.id, b.fila, b.columna, b.tipo_butaca,
+                       b.activo AS butaca_activo,
+                       b.sala_id AS sala_id, sa.nombre AS sala_nombre,
+                       sa.aforo AS sala_aforo, sa.tipo_sala,
+                       sa.activo AS sala_activo,
+                       se.id AS sede_id, se.razon_social AS sede_razon_social,
+                       se.direccion AS sede_direccion, se.ciudad AS sede_ciudad,
+                       se.telefono_contacto AS sede_telefono_contacto,
+                       se.activo AS sede_activo
+                FROM butaca b
+                INNER JOIN sala sa ON sa.id = b.sala_id
+                INNER JOIN sede se ON se.id = sa.sede_id
+                WHERE b.sala_id = ?
+                """;
+        try (Connection conn = DBManager.getInstance().getConnection();
+             PreparedStatement cmd = conn.prepareStatement(sql)) {
+            cmd.setInt(1, salaId);
             try (ResultSet rs = cmd.executeQuery()) {
-                List<Butaca> butacas = new ArrayList<>();
-                while (rs.next()) {
-                    butacas.add(mapear(rs));
-                }
-                return butacas;
+                return mapearLista(rs);
+            }
+        }
+    }
+
+    @Override
+    public List<Butaca> findByReservaId(int reservaId) throws SQLException {
+        String sql = """
+                SELECT b.id, b.fila, b.columna, b.tipo_butaca,
+                       b.activo AS butaca_activo,
+                       b.sala_id AS sala_id, sa.nombre AS sala_nombre,
+                       sa.aforo AS sala_aforo, sa.tipo_sala,
+                       sa.activo AS sala_activo,
+                       se.id AS sede_id, se.razon_social AS sede_razon_social,
+                       se.direccion AS sede_direccion, se.ciudad AS sede_ciudad,
+                       se.telefono_contacto AS sede_telefono_contacto,
+                       se.activo AS sede_activo
+                FROM butaca b
+                INNER JOIN sala sa ON sa.id = b.sala_id
+                INNER JOIN sede se ON se.id = sa.sede_id
+                INNER JOIN reserva_butaca rb ON rb.butaca_id = b.id
+                WHERE rb.reserva_id = ?
+                """;
+        try (Connection conn = DBManager.getInstance().getConnection();
+             PreparedStatement cmd = conn.prepareStatement(sql)) {
+            cmd.setInt(1, reservaId);
+            try (ResultSet rs = cmd.executeQuery()) {
+                return mapearLista(rs);
             }
         }
     }
 
     @Override
     public Butaca findById(Integer id) throws SQLException {
-        if (id == null) {
-            throw new IllegalArgumentException("El id no puede ser nulo");
-        }
-
-        String sql = "{call buscar_butaca_por_id(?)}";
-        try (
-                Connection conn = DBManager.getInstance().getConnection();
-                CallableStatement cmd = conn.prepareCall(sql)) {
-
-            cmd.setInt("p_id", id);
-
+        validarId(id);
+        String sql = """
+                SELECT b.id, b.fila, b.columna, b.tipo_butaca,
+                       b.activo AS butaca_activo,
+                       b.sala_id AS sala_id, sa.nombre AS sala_nombre,
+                       sa.aforo AS sala_aforo, sa.tipo_sala,
+                       sa.activo AS sala_activo,
+                       se.id AS sede_id, se.razon_social AS sede_razon_social,
+                       se.direccion AS sede_direccion, se.ciudad AS sede_ciudad,
+                       se.telefono_contacto AS sede_telefono_contacto,
+                       se.activo AS sede_activo
+                FROM butaca b
+                INNER JOIN sala sa ON sa.id = b.sala_id
+                INNER JOIN sede se ON se.id = sa.sede_id
+                WHERE b.id = ?
+                """;
+        try (Connection conn = DBManager.getInstance().getConnection();
+             PreparedStatement cmd = conn.prepareStatement(sql)) {
+            cmd.setInt(1, id);
             try (ResultSet rs = cmd.executeQuery()) {
-                return rs.next() ? mapear(rs, new Butaca()) : null;
+                return rs.next() ? mapear(rs) : null;
             }
         }
     }
 
     @Override
     public void insert(Butaca butaca) throws SQLException {
-        if (butaca == null) {
-            throw new IllegalArgumentException("La butaca no puede ser nula");
-        }
-
-        String sql = "{call insertar_butaca(?, ?, ?, ?, ?, ?)}";
-        try (
-                Connection conn = DBManager.getInstance().getConnection();
-                CallableStatement cmd = conn.prepareCall(sql)) {
-
-            cmd.setInt("p_sala_id", butaca.getSala().getId());
-            cmd.setString("p_fila", butaca.getFila());
-            cmd.setInt("p_columna", butaca.getColumna());
-            cmd.setString("p_tipo_butaca", butaca.getTipoButaca());
-            cmd.setBoolean("p_activo", butaca.estaActivo());
-            cmd.registerOutParameter("p_id", Types.INTEGER);
-
+        validarButaca(butaca);
+        String sql = """
+                INSERT INTO butaca (sala_id, fila, columna, tipo_butaca, activo)
+                VALUES (?, ?, ?, ?, ?)
+                """;
+        try (Connection conn = DBManager.getInstance().getConnection();
+             PreparedStatement cmd = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            asignarParametros(cmd, butaca);
             if (cmd.executeUpdate() == 0) {
                 throw new SQLException("No se pudo insertar la butaca");
             }
-
-            butaca.setId(cmd.getInt("p_id"));
+            asignarIdGenerado(cmd, butaca);
         }
     }
 
     @Override
     public void update(Butaca butaca) throws SQLException {
-        if (butaca == null) {
-            throw new IllegalArgumentException("La butaca no puede ser nula");
-        }
-
-        String sql = "{call modificar_butaca(?, ?, ?, ?, ?, ?)}";
-        try (
-                Connection conn = DBManager.getInstance().getConnection();
-                CallableStatement cmd = conn.prepareCall(sql)) {
-
-            cmd.setInt("p_id", butaca.getId());
-            cmd.setInt("p_sala_id", butaca.getSala().getId());
-            cmd.setString("p_fila", butaca.getFila());
-            cmd.setInt("p_columna", butaca.getColumna());
-            cmd.setString("p_tipo_butaca", butaca.getTipoButaca());
-            cmd.setBoolean("p_activo", butaca.estaActivo());
-
+        validarButaca(butaca);
+        String sql = """
+                UPDATE butaca
+                SET sala_id = ?, fila = ?, columna = ?, tipo_butaca = ?, activo = ?
+                WHERE id = ?
+                """;
+        try (Connection conn = DBManager.getInstance().getConnection();
+             PreparedStatement cmd = conn.prepareStatement(sql)) {
+            asignarParametros(cmd, butaca);
+            cmd.setInt(6, butaca.getId());
             if (cmd.executeUpdate() == 0) {
-                throw new SQLException("No se pudo actualizar la butaca");
+                throw new SQLException("No se pudo actualizar la butaca con id " + butaca.getId());
             }
         }
     }
 
     @Override
     public void delete(Integer id) throws SQLException {
-        if (id == null) {
-            throw new IllegalArgumentException("El id no puede ser nulo");
-        }
-
-        String sql = "{call eliminar_butaca(?)}";
-        try (
-                Connection conn = DBManager.getInstance().getConnection();
-                CallableStatement cmd = conn.prepareCall(sql)) {
-
-            cmd.setInt("p_id", id);
-
+        validarId(id);
+        String sql = """
+                UPDATE butaca
+                SET activo = FALSE
+                WHERE id = ?
+                """;
+        try (Connection conn = DBManager.getInstance().getConnection();
+             PreparedStatement cmd = conn.prepareStatement(sql)) {
+            cmd.setInt(1, id);
             if (cmd.executeUpdate() == 0) {
-                throw new SQLException("No se pudo eliminar la butaca");
+                throw new SQLException("No se pudo eliminar la butaca con id " + id);
             }
         }
     }
-    @Override
-    public List<Butaca> findByReservaId(int reservaId) throws SQLException {
-        String sql = "{call listar_butacas_por_reserva(?)}";
-        try (
-                Connection conn = DBManager.getInstance().getConnection();
-                CallableStatement cmd = conn.prepareCall(sql)) {
 
-            cmd.setInt(1, reservaId); // O cmd.setInt("p_reserva_id", reservaId);
+    private void asignarParametros(PreparedStatement cmd, Butaca butaca) throws SQLException {
+        cmd.setInt(1, butaca.getSala().getId());
+        cmd.setString(2, butaca.getFila());
+        cmd.setInt(3, butaca.getColumna());
+        cmd.setString(4, butaca.getTipoButaca());
+        cmd.setBoolean(5, butaca.estaActivo());
+    }
 
-            try (ResultSet rs = cmd.executeQuery()) {
-                List<Butaca> butacas = new ArrayList<>();
-                while (rs.next()) {
-                    butacas.add(mapear(rs));
-                }
-                return butacas;
-            }
+    private List<Butaca> mapearLista(ResultSet rs) throws SQLException {
+        List<Butaca> butacas = new ArrayList<>();
+        while (rs.next()) {
+            butacas.add(mapear(rs));
         }
+        return butacas;
     }
 
     private Butaca mapear(ResultSet rs) throws SQLException {
-        int salaId = rs.getInt("sala_id");
-        Sala sala = new SalaDAOImpl().findById(salaId);
+        Sede sede = new Sede();
+        sede.setId(rs.getInt("sede_id"));
+        sede.setRazonSocial(rs.getString("sede_razon_social"));
+        sede.setDireccion(rs.getString("sede_direccion"));
+        sede.setCiudad(rs.getString("sede_ciudad"));
+        sede.setTelefonoContacto(rs.getString("sede_telefono_contacto"));
+        if (rs.getBoolean("sede_activo")) {
+            sede.activar();
+        } else {
+            sede.desactivar();
+        }
+
+        Sala sala = new Sala(
+                rs.getInt("sala_id"),
+                sede,
+                rs.getString("sala_nombre"),
+                rs.getInt("sala_aforo"),
+                rs.getString("tipo_sala")
+        );
+        if (rs.getBoolean("sala_activo")) {
+            sala.activar();
+        } else {
+            sala.desactivar();
+        }
 
         Butaca butaca = new Butaca(
                 rs.getInt("id"),
@@ -168,10 +220,35 @@ public class ButacaDAOImpl implements ButacaDAO {
                 rs.getInt("columna"),
                 rs.getString("tipo_butaca")
         );
-
-        if (rs.getBoolean("activo")) butaca.activar();
-        else butaca.desactivar();
-
+        if (rs.getBoolean("butaca_activo")) {
+            butaca.activar();
+        } else {
+            butaca.desactivar();
+        }
         return butaca;
+    }
+
+    private void asignarIdGenerado(PreparedStatement cmd, Butaca butaca) throws SQLException {
+        try (ResultSet keys = cmd.getGeneratedKeys()) {
+            if (!keys.next()) {
+                throw new SQLException("No se obtuvo el id de la butaca insertada");
+            }
+            butaca.setId(keys.getInt(1));
+        }
+    }
+
+    private void validarButaca(Butaca butaca) {
+        if (butaca == null) {
+            throw new IllegalArgumentException("La butaca no puede ser nula");
+        }
+        if (butaca.getSala() == null) {
+            throw new IllegalArgumentException("La sala de la butaca no puede ser nula");
+        }
+    }
+
+    private void validarId(Integer id) {
+        if (id == null) {
+            throw new IllegalArgumentException("El id no puede ser nulo");
+        }
     }
 }

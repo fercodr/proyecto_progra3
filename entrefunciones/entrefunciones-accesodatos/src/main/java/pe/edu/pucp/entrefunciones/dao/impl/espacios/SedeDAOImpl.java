@@ -4,7 +4,11 @@ import pe.edu.pucp.entrefunciones.dao.espacios.SedeDAO;
 import pe.edu.pucp.entrefunciones.db.DBManager;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Sede;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,128 +16,131 @@ public class SedeDAOImpl implements SedeDAO {
 
     @Override
     public List<Sede> findAll() throws SQLException {
-        //PASO 1 GENERAR SENTENCIA SQL
         String sql = """
-                SELECT id,razon_social,direccion,ciudad,telefono_contacto
+                SELECT id, razon_social, direccion, ciudad, telefono_contacto, activo
                 FROM sede
                 """;
-        //PASO 2:TRY CATCH Abrir coneccion + asocioar conn->sql + rs= executeQuery
-        try(Connection conn = DBManager.getInstance().getConnection();
-        PreparedStatement cmd = conn.prepareStatement(sql);
-            ResultSet rs = cmd.executeQuery()){
-        //PASO 3: CREAMOS EL OBJETO A LLENAR COMO ARRAYLIST +
+        try (Connection conn = DBManager.getInstance().getConnection();
+             PreparedStatement cmd = conn.prepareStatement(sql);
+             ResultSet rs = cmd.executeQuery()) {
             List<Sede> sedes = new ArrayList<>();
-        //LENAMOS LOS CAMPOS Y AVANZAMOS CON "rs.next()"
-            while(rs.next()) {
-                sedes.add(mapear(rs,new Sede()));
+            while (rs.next()) {
+                sedes.add(mapear(rs));
             }
             return sedes;
-        }catch(SQLException e){
-            throw new SQLException("",e);
         }
-
     }
 
     @Override
     public Sede findById(Integer id) throws SQLException {
-        if(id==null){
-            throw new RuntimeException("el id no puede ser nulo");
-        }
+        validarId(id);
         String sql = """
-                SELECT id,razon_social,direccion,ciudad,telefono_contacto
-                FROM sede WHERE  id=?
+                SELECT id, razon_social, direccion, ciudad, telefono_contacto, activo
+                FROM sede
+                WHERE id = ?
                 """;
-        try(Connection conn = DBManager.getInstance().getConnection();
-            PreparedStatement cmd = conn.prepareStatement(sql)){
-
-            cmd.setInt(1,id);
-            try( ResultSet rs = cmd.executeQuery()){
-                return !rs.next()?null:mapear(rs,new Sede());
-            }catch (SQLException ex){
-                throw new SQLException("",ex);
+        try (Connection conn = DBManager.getInstance().getConnection();
+             PreparedStatement cmd = conn.prepareStatement(sql)) {
+            cmd.setInt(1, id);
+            try (ResultSet rs = cmd.executeQuery()) {
+                return rs.next() ? mapear(rs) : null;
             }
-        }catch(SQLException e){
-            throw new SQLException("",e);
-        }
-
-    }
-
-    @Override
-    public void insert(Sede modelo) throws SQLException {
-        //PASO 1: PARCHE ANTI NULO
-        if(modelo==null)  throw new IllegalArgumentException("El cliente no puede ser nulo");
-        String sql = """
-                INSERT INTO sede(razon_social,direccion,ciudad,telefono_contacto,)
-                    VALUES (?,?,?,?,?,?)
-                """;
-        //ABRIR CONECCION + PPST-> sql+ recibir PPST.key (por generar)
-        try(Connection conn = DBManager.getInstance().getConnection();
-            PreparedStatement cmd = conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)){
-
-            //LENAMOS CAMPOS
-            cmd.setString(1,modelo.getRazonSocial());
-            cmd.setString(2,modelo.getDireccion());
-            cmd.setString(3,modelo.getCiudad());
-            cmd.setString(4,modelo.getTelefonoContacto());
-            cmd.setBoolean(5, modelo.estaActivo());
-
-            //EXECUTE UPDATE PARCHE
-            if(cmd.executeUpdate()==0) throw new SQLException("No se pudo insertar");
-
-            //INSERTAMOS KEY CON TRY getGeneratedKey
-            try (ResultSet keys = cmd.getGeneratedKeys()){
-                if(!keys.next()) throw new SQLException("No se obtuvo el ID");
-                modelo.setId(keys.getInt(1));
-            }
-        }catch(SQLException ex){
-            throw new SQLException("",ex);
         }
     }
 
     @Override
-    public void update(Sede modelo) throws SQLException {
-        if(modelo==null)  throw new IllegalArgumentException("El cliente no puede ser nulo");
+    public void insert(Sede sede) throws SQLException {
+        validarSede(sede);
         String sql = """
-                UPDATE sede(razon_social,direccion,ciudad,telefono_contacto,activo)
-                     (?,?,?,?,?,?)
+                INSERT INTO sede (razon_social, direccion, ciudad, telefono_contacto, activo)
+                VALUES (?, ?, ?, ?, ?)
                 """;
-        try(Connection conn = DBManager.getInstance().getConnection();
-            PreparedStatement cmd = conn.prepareStatement(sql)){
-
-            cmd.setString(1,modelo.getRazonSocial());
-            cmd.setString(2,modelo.getDireccion());
-            cmd.setString(3,modelo.getCiudad());
-            cmd.setString(4,modelo.getTelefonoContacto());
-            cmd.setBoolean(5, modelo.estaActivo());
-            if(cmd.executeUpdate()==0) throw new SQLException("No se pudo actualizar");
-
-        }catch(SQLException ex){
-            throw new SQLException("",ex);
+        try (Connection conn = DBManager.getInstance().getConnection();
+             PreparedStatement cmd = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            asignarParametros(cmd, sede);
+            if (cmd.executeUpdate() == 0) {
+                throw new SQLException("No se pudo insertar la sede");
+            }
+            asignarIdGenerado(cmd, sede);
         }
+    }
 
+    @Override
+    public void update(Sede sede) throws SQLException {
+        validarSede(sede);
+        String sql = """
+                UPDATE sede
+                SET razon_social = ?, direccion = ?, ciudad = ?, telefono_contacto = ?, activo = ?
+                WHERE id = ?
+                """;
+        try (Connection conn = DBManager.getInstance().getConnection();
+             PreparedStatement cmd = conn.prepareStatement(sql)) {
+            asignarParametros(cmd, sede);
+            cmd.setInt(6, sede.getId());
+            if (cmd.executeUpdate() == 0) {
+                throw new SQLException("No se pudo actualizar la sede con id " + sede.getId());
+            }
+        }
     }
 
     @Override
     public void delete(Integer id) throws SQLException {
-        if(id==null)  throw new IllegalArgumentException("El id no puede ser nulo");
+        validarId(id);
         String sql = """
-                DELETE FORM sede WHERE id=?
+                UPDATE sede
+                SET activo = FALSE
+                WHERE id = ?
                 """;
-        try(Connection conn = DBManager.getInstance().getConnection();
-            PreparedStatement cmd = conn.prepareStatement(sql)){
-            cmd.setInt(1,id);
-            if(cmd.executeUpdate()==0) throw new SQLException("No se pudo actualizar");
-
-        }catch(SQLException ex){
-            throw new SQLException("",ex);
+        try (Connection conn = DBManager.getInstance().getConnection();
+             PreparedStatement cmd = conn.prepareStatement(sql)) {
+            cmd.setInt(1, id);
+            if (cmd.executeUpdate() == 0) {
+                throw new SQLException("No se pudo eliminar la sede con id " + id);
+            }
         }
     }
-    private Sede mapear(ResultSet rs, Sede sede)throws SQLException{
+
+    private void asignarParametros(PreparedStatement cmd, Sede sede) throws SQLException {
+        cmd.setString(1, sede.getRazonSocial());
+        cmd.setString(2, sede.getDireccion());
+        cmd.setString(3, sede.getCiudad());
+        cmd.setString(4, sede.getTelefonoContacto());
+        cmd.setBoolean(5, sede.estaActivo());
+    }
+
+    private Sede mapear(ResultSet rs) throws SQLException {
+        Sede sede = new Sede();
         sede.setId(rs.getInt("id"));
         sede.setRazonSocial(rs.getString("razon_social"));
         sede.setDireccion(rs.getString("direccion"));
         sede.setCiudad(rs.getString("ciudad"));
         sede.setTelefonoContacto(rs.getString("telefono_contacto"));
+        if (rs.getBoolean("activo")) {
+            sede.activar();
+        } else {
+            sede.desactivar();
+        }
         return sede;
+    }
+
+    private void asignarIdGenerado(PreparedStatement cmd, Sede sede) throws SQLException {
+        try (ResultSet keys = cmd.getGeneratedKeys()) {
+            if (!keys.next()) {
+                throw new SQLException("No se obtuvo el id de la sede insertada");
+            }
+            sede.setId(keys.getInt(1));
+        }
+    }
+
+    private void validarSede(Sede sede) {
+        if (sede == null) {
+            throw new IllegalArgumentException("La sede no puede ser nula");
+    }
+    }
+
+    private void validarId(Integer id) {
+        if (id == null) {
+            throw new IllegalArgumentException("El id no puede ser nulo");
+        }
     }
 }

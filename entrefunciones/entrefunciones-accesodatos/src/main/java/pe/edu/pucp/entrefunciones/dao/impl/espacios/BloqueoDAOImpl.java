@@ -1,174 +1,208 @@
 package pe.edu.pucp.entrefunciones.dao.impl.espacios;
 
 import pe.edu.pucp.entrefunciones.dao.espacios.BloqueoDAO;
-import pe.edu.pucp.entrefunciones.dao.impl.espacios.SalaDAOImpl;
 import pe.edu.pucp.entrefunciones.db.DBManager;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Bloqueo;
+import pe.edu.pucp.entrefunciones.modelo.espacios.Recurso;
+import pe.edu.pucp.entrefunciones.modelo.espacios.Sala;
+import pe.edu.pucp.entrefunciones.modelo.espacios.Sede;
 
-import java.sql.*;
-import java.time.LocalDateTime;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Timestamp;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 
 public class BloqueoDAOImpl implements BloqueoDAO {
 
     @Override
-    public List<Bloqueo> findAll() throws SQLException { //devuelve una lista de todos los bloqueos posibles
-        String sql = "{call listar_bloqueos()}";
-        try (
-                Connection conn = DBManager.getInstance().getConnection();
-                CallableStatement cmd = conn.prepareCall(sql);
-                ResultSet rs = cmd.executeQuery()) {
-
-            List<Bloqueo> bloqueos = new ArrayList<>();
-            while (rs.next()) {
-                bloqueos.add(mapear(rs, new Bloqueo()));
-            }
-            return bloqueos;
+    public List<Bloqueo> findAll() throws SQLException {
+        String sql = """
+                SELECT bl.id, bl.motivo, bl.fecha_inicio, bl.fecha_fin,
+                       bl.recurso_id AS recurso_id, r.nombre AS recurso_nombre,
+                       r.tipo AS recurso_tipo, r.activo AS recurso_activo,
+                       bl.sala_id AS sala_id, sa.nombre AS sala_nombre,
+                       sa.aforo AS sala_aforo, sa.tipo_sala,
+                       sa.activo AS sala_activo,
+                       se.id AS sede_id, se.razon_social AS sede_razon_social,
+                       se.direccion AS sede_direccion, se.ciudad AS sede_ciudad,
+                       se.telefono_contacto AS sede_telefono_contacto,
+                       se.activo AS sede_activo
+                FROM bloqueo bl
+                LEFT JOIN recurso r ON r.id = bl.recurso_id
+                LEFT JOIN sala sa ON sa.id = bl.sala_id
+                LEFT JOIN sede se ON se.id = sa.sede_id
+                """;
+        try (Connection conn = DBManager.getInstance().getConnection();
+             PreparedStatement cmd = conn.prepareStatement(sql);
+             ResultSet rs = cmd.executeQuery()) {
+            return mapearLista(rs);
         }
     }
-    //devuelve una lista de todos los bloqueos por id de sala
+
     @Override
     public List<Bloqueo> findBySalaId(int salaId) throws SQLException {
-        String sql = "{call listar_bloqueos_por_sala(?)}";
-        try (
-                Connection conn = DBManager.getInstance().getConnection();
-                CallableStatement cmd = conn.prepareCall(sql)) {
-
-            cmd.setInt("p_sala_id", salaId);
-
+        String sql = """
+                SELECT bl.id, bl.motivo, bl.fecha_inicio, bl.fecha_fin,
+                       bl.recurso_id AS recurso_id, r.nombre AS recurso_nombre,
+                       r.tipo AS recurso_tipo, r.activo AS recurso_activo,
+                       bl.sala_id AS sala_id, sa.nombre AS sala_nombre,
+                       sa.aforo AS sala_aforo, sa.tipo_sala,
+                       sa.activo AS sala_activo,
+                       se.id AS sede_id, se.razon_social AS sede_razon_social,
+                       se.direccion AS sede_direccion, se.ciudad AS sede_ciudad,
+                       se.telefono_contacto AS sede_telefono_contacto,
+                       se.activo AS sede_activo
+                FROM bloqueo bl
+                LEFT JOIN recurso r ON r.id = bl.recurso_id
+                LEFT JOIN sala sa ON sa.id = bl.sala_id
+                LEFT JOIN sede se ON se.id = sa.sede_id
+                WHERE bl.sala_id = ?
+                """;
+        try (Connection conn = DBManager.getInstance().getConnection();
+             PreparedStatement cmd = conn.prepareStatement(sql)) {
+            cmd.setInt(1, salaId);
             try (ResultSet rs = cmd.executeQuery()) {
-                List<Bloqueo> bloqueos = new ArrayList<>();
-                while (rs.next()) {
-                    bloqueos.add(mapear(rs, new Bloqueo()));
-                }
-                return bloqueos;
+                return mapearLista(rs);
             }
         }
     }
-    //enlista todos los bloqueos realizados a todos los recursos
+
     @Override
     public List<Bloqueo> findByRecursoId(int recursoId) throws SQLException {
-        String sql = "{call listar_bloqueos_por_recurso(?)}";
-        try (
-                Connection conn = DBManager.getInstance().getConnection();
-                CallableStatement cmd = conn.prepareCall(sql)) {
-
-            cmd.setInt("p_recurso_id", recursoId);
-
+        String sql = """
+                SELECT bl.id, bl.motivo, bl.fecha_inicio, bl.fecha_fin,
+                       bl.recurso_id AS recurso_id, r.nombre AS recurso_nombre,
+                       r.tipo AS recurso_tipo, r.activo AS recurso_activo,
+                       bl.sala_id AS sala_id, sa.nombre AS sala_nombre,
+                       sa.aforo AS sala_aforo, sa.tipo_sala,
+                       sa.activo AS sala_activo,
+                       se.id AS sede_id, se.razon_social AS sede_razon_social,
+                       se.direccion AS sede_direccion, se.ciudad AS sede_ciudad,
+                       se.telefono_contacto AS sede_telefono_contacto,
+                       se.activo AS sede_activo
+                FROM bloqueo bl
+                LEFT JOIN recurso r ON r.id = bl.recurso_id
+                LEFT JOIN sala sa ON sa.id = bl.sala_id
+                LEFT JOIN sede se ON se.id = sa.sede_id
+                WHERE bl.recurso_id = ?
+                """;
+        try (Connection conn = DBManager.getInstance().getConnection();
+             PreparedStatement cmd = conn.prepareStatement(sql)) {
+            cmd.setInt(1, recursoId);
             try (ResultSet rs = cmd.executeQuery()) {
-                List<Bloqueo> bloqueos = new ArrayList<>();
-                while (rs.next()) {
-                    bloqueos.add(mapear(rs, new Bloqueo()));
-                }
-                return bloqueos;
+                return mapearLista(rs);
             }
         }
     }
 
     @Override
     public Bloqueo findById(Integer id) throws SQLException {
-        if (id == null) {
-            throw new IllegalArgumentException("El id no puede ser nulo");
-        }
-
-        String sql = "{call buscar_bloqueo_por_id(?)}";
-        try (
-                Connection conn = DBManager.getInstance().getConnection();
-                CallableStatement cmd = conn.prepareCall(sql)) {
-
-            cmd.setInt("p_id", id);
-
+        validarId(id);
+        String sql = """
+                SELECT bl.id, bl.motivo, bl.fecha_inicio, bl.fecha_fin,
+                       bl.recurso_id AS recurso_id, r.nombre AS recurso_nombre,
+                       r.tipo AS recurso_tipo, r.activo AS recurso_activo,
+                       bl.sala_id AS sala_id, sa.nombre AS sala_nombre,
+                       sa.aforo AS sala_aforo, sa.tipo_sala,
+                       sa.activo AS sala_activo,
+                       se.id AS sede_id, se.razon_social AS sede_razon_social,
+                       se.direccion AS sede_direccion, se.ciudad AS sede_ciudad,
+                       se.telefono_contacto AS sede_telefono_contacto,
+                       se.activo AS sede_activo
+                FROM bloqueo bl
+                LEFT JOIN recurso r ON r.id = bl.recurso_id
+                LEFT JOIN sala sa ON sa.id = bl.sala_id
+                LEFT JOIN sede se ON se.id = sa.sede_id
+                WHERE bl.id = ?
+                """;
+        try (Connection conn = DBManager.getInstance().getConnection();
+             PreparedStatement cmd = conn.prepareStatement(sql)) {
+            cmd.setInt(1, id);
             try (ResultSet rs = cmd.executeQuery()) {
-                return rs.next() ? mapear(rs, new Bloqueo()) : null;
+                return rs.next() ? mapear(rs) : null;
             }
         }
     }
 
     @Override
     public void insert(Bloqueo bloqueo) throws SQLException {
-        if (bloqueo == null) {
-            throw new IllegalArgumentException("El bloqueo no puede ser nulo");
-        }
-
-        String sql = "{call insertar_bloqueo(?, ?, ?, ?, ?, ?)}";
-        try (
-                Connection conn = DBManager.getInstance().getConnection();
-                CallableStatement cmd = conn.prepareCall(sql)) {
-
-            cmd.setString("p_motivo", bloqueo.getMotivo());
-            cmd.setTimestamp("p_fecha_inicio", Timestamp.valueOf(bloqueo.getFechaInicio()));
-            cmd.setTimestamp("p_fecha_fin", Timestamp.valueOf(bloqueo.getFechaFin()));
-
-            if (bloqueo.getSala() != null) {
-                cmd.setInt("p_sala_id", bloqueo.getSala().getId());
-                cmd.setNull("p_recurso_id", Types.INTEGER);
-            } else {
-                cmd.setNull("p_sala_id", Types.INTEGER);
-                cmd.setInt("p_recurso_id", bloqueo.getRecurso().getId());
-            }
-            //es la variable que trae consigo el insertar_bloqueo, por eso se coloca registerOutParameter
-            //como no existe, tengo que completarlo con el dato que me dé la BD
-            cmd.registerOutParameter("p_id", Types.INTEGER); //types.INTEGER Porque necesitas especificar que tipo de dato es antes de setear un set(null)
-            //el programa debe saber en qué tipo de dato esta que coloca el null
+        validarBloqueo(bloqueo);
+        String sql = """
+                INSERT INTO bloqueo (motivo, fecha_inicio, fecha_fin, sala_id, recurso_id)
+                VALUES (?, ?, ?, ?, ?)
+                """;
+        try (Connection conn = DBManager.getInstance().getConnection();
+             PreparedStatement cmd = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            asignarParametros(cmd, bloqueo);
             if (cmd.executeUpdate() == 0) {
                 throw new SQLException("No se pudo insertar el bloqueo");
             }
-
-            bloqueo.setId(cmd.getInt("p_id"));
+            asignarIdGenerado(cmd, bloqueo);
         }
     }
 
     @Override
     public void update(Bloqueo bloqueo) throws SQLException {
-        if (bloqueo == null) {
-            throw new IllegalArgumentException("El bloqueo no puede ser nulo");
-        }
-
-        String sql = "{call modificar_bloqueo(?, ?, ?, ?, ?, ?)}";
-        try (
-                Connection conn = DBManager.getInstance().getConnection();
-                CallableStatement cmd = conn.prepareCall(sql)) {
-
-            cmd.setInt("p_id", bloqueo.getId());
-            cmd.setString("p_motivo", bloqueo.getMotivo());
-            cmd.setTimestamp("p_fecha_inicio", Timestamp.valueOf(bloqueo.getFechaInicio()));
-            cmd.setTimestamp("p_fecha_fin", Timestamp.valueOf(bloqueo.getFechaFin()));
-
-            if (bloqueo.getSala() != null) {
-                cmd.setInt("p_sala_id", bloqueo.getSala().getId());
-                cmd.setNull("p_recurso_id", Types.INTEGER);
-            } else {
-                cmd.setNull("p_sala_id", Types.INTEGER);
-                cmd.setInt("p_recurso_id", bloqueo.getRecurso().getId());
-            }
-            //aqui no es necesario registerOutParameter porque ya existe el dato, solo estoy actualizando
+        validarBloqueo(bloqueo);
+        String sql = """
+                UPDATE bloqueo
+                SET motivo = ?, fecha_inicio = ?, fecha_fin = ?, sala_id = ?, recurso_id = ?
+                WHERE id = ?
+                """;
+        try (Connection conn = DBManager.getInstance().getConnection();
+             PreparedStatement cmd = conn.prepareStatement(sql)) {
+            asignarParametros(cmd, bloqueo);
+            cmd.setInt(6, bloqueo.getId());
             if (cmd.executeUpdate() == 0) {
-                throw new SQLException("No se pudo actualizar el bloqueo");
+                throw new SQLException("No se pudo actualizar el bloqueo con id " + bloqueo.getId());
             }
         }
     }
 
     @Override
     public void delete(Integer id) throws SQLException {
-        if (id == null) {
-            throw new IllegalArgumentException("El id no puede ser nulo");
-        }
-
-        String sql = "{call eliminar_bloqueo(?)}";
-        try (
-                Connection conn = DBManager.getInstance().getConnection();
-                CallableStatement cmd = conn.prepareCall(sql)) {
-
-            cmd.setInt("p_id", id);
-
+        validarId(id);
+        String sql = """
+                DELETE FROM bloqueo
+                WHERE id = ?
+                """;
+        try (Connection conn = DBManager.getInstance().getConnection();
+             PreparedStatement cmd = conn.prepareStatement(sql)) {
+            cmd.setInt(1, id);
             if (cmd.executeUpdate() == 0) {
-                throw new SQLException("No se pudo eliminar el bloqueo");
+                throw new SQLException("No se pudo eliminar el bloqueo con id " + id);
             }
         }
     }
 
-    private Bloqueo mapear(ResultSet rs, Bloqueo bloqueo) throws SQLException {
+    private void asignarParametros(PreparedStatement cmd, Bloqueo bloqueo) throws SQLException {
+        cmd.setString(1, bloqueo.getMotivo());
+        cmd.setTimestamp(2, Timestamp.valueOf(bloqueo.getFechaInicio()));
+        cmd.setTimestamp(3, Timestamp.valueOf(bloqueo.getFechaFin()));
+        if (bloqueo.getSala() != null) {
+            cmd.setInt(4, bloqueo.getSala().getId());
+            cmd.setNull(5, Types.INTEGER);
+        } else {
+            cmd.setNull(4, Types.INTEGER);
+            cmd.setInt(5, bloqueo.getRecurso().getId());
+        }
+    }
+
+    private List<Bloqueo> mapearLista(ResultSet rs) throws SQLException {
+        List<Bloqueo> bloqueos = new ArrayList<>();
+        while (rs.next()) {
+            bloqueos.add(mapear(rs));
+        }
+        return bloqueos;
+    }
+
+    private Bloqueo mapear(ResultSet rs) throws SQLException {
+        Bloqueo bloqueo = new Bloqueo();
         bloqueo.setId(rs.getInt("id"));
         bloqueo.setMotivo(rs.getString("motivo"));
         bloqueo.setFechaInicio(rs.getTimestamp("fecha_inicio").toLocalDateTime());
@@ -176,18 +210,87 @@ public class BloqueoDAOImpl implements BloqueoDAO {
 
         int salaId = rs.getInt("sala_id");
         if (!rs.wasNull()) {
-            bloqueo.setSala(new SalaDAOImpl().findById(salaId));
-        } else {
-            bloqueo.setSala(null);
+            bloqueo.setSala(mapearSala(rs, salaId));
         }
 
         int recursoId = rs.getInt("recurso_id");
         if (!rs.wasNull()) {
-            bloqueo.setRecurso(new RecursoDAOImpl().findById(recursoId));
+            bloqueo.setRecurso(mapearRecurso(rs, recursoId));
+        }
+        return bloqueo;
+    }
+
+    private Sala mapearSala(ResultSet rs, int salaId) throws SQLException {
+        Sede sede = new Sede();
+        sede.setId(rs.getInt("sede_id"));
+        sede.setRazonSocial(rs.getString("sede_razon_social"));
+        sede.setDireccion(rs.getString("sede_direccion"));
+        sede.setCiudad(rs.getString("sede_ciudad"));
+        sede.setTelefonoContacto(rs.getString("sede_telefono_contacto"));
+        if (rs.getBoolean("sede_activo")) {
+            sede.activar();
         } else {
-            bloqueo.setRecurso(null);
+            sede.desactivar();
         }
 
-        return bloqueo;
+        Sala sala = new Sala(
+                salaId,
+                sede,
+                rs.getString("sala_nombre"),
+                rs.getInt("sala_aforo"),
+                rs.getString("tipo_sala")
+        );
+        if (rs.getBoolean("sala_activo")) {
+            sala.activar();
+        } else {
+            sala.desactivar();
+        }
+        return sala;
+    }
+
+    private Recurso mapearRecurso(ResultSet rs, int recursoId) throws SQLException {
+        Recurso recurso = new Recurso(
+                recursoId,
+                rs.getString("recurso_nombre"),
+                rs.getString("recurso_tipo")
+        );
+        if (rs.getBoolean("recurso_activo")) {
+            recurso.activar();
+        } else {
+            recurso.desactivar();
+        }
+        return recurso;
+    }
+
+    private void asignarIdGenerado(PreparedStatement cmd, Bloqueo bloqueo) throws SQLException {
+        try (ResultSet keys = cmd.getGeneratedKeys()) {
+            if (!keys.next()) {
+                throw new SQLException("No se obtuvo el id del bloqueo insertado");
+            }
+            bloqueo.setId(keys.getInt(1));
+        }
+    }
+
+    private void validarBloqueo(Bloqueo bloqueo) {
+        if (bloqueo == null) {
+            throw new IllegalArgumentException("El bloqueo no puede ser nulo");
+        }
+        if ((bloqueo.getSala() == null) == (bloqueo.getRecurso() == null)) {
+            throw new IllegalArgumentException(
+                    "El bloqueo debe tener exactamente una sala o un recurso");
+        }
+        if (bloqueo.getFechaInicio() == null || bloqueo.getFechaFin() == null) {
+            throw new IllegalArgumentException("Las fechas del bloqueo no pueden ser nulas");
+        }
+        if (!bloqueo.getFechaFin().isAfter(bloqueo.getFechaInicio())) {
+            throw new IllegalArgumentException(
+                    "La fecha de fin debe ser posterior a la fecha de inicio");
+        }
+    }
+
+    private void validarId(Integer id) {
+        if (id == null) {
+            throw new IllegalArgumentException("El id no puede ser nulo");
+        }
     }
 }
