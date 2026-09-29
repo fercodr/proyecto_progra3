@@ -1,6 +1,6 @@
-package pe.edu.pucp.entrefunciones.bl.impl;
+package pe.edu.pucp.negocio.entrefunciones.bl.impl;
 
-import pe.edu.pucp.entrefunciones.bl.BLException;
+import pe.edu.pucp.negocio.entrefunciones.bl.BLException;
 import pe.edu.pucp.entrefunciones.bl.PeliculaBL;
 import pe.edu.pucp.entrefunciones.dao.PeliculaDAO;
 import pe.edu.pucp.entrefunciones.dao.impl.PeliculaDAOImpl;
