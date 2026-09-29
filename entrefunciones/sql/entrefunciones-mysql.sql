@@ -7,9 +7,13 @@
 -- de mapeo objeto-relacional documentadas junto a cada tabla:
 --
 --   - Herencia Usuario/Administrador/Cliente y
---     Funcion/Pelicula/ObraTeatro/ActividadCultural: tabla por subtipo (la
+--     Evento/Pelicula/ObraTeatro/ActividadCultural: tabla por subtipo (la
 --     tabla base guarda los atributos comunes; cada subtipo comparte su
 --     clave primaria con la base mediante una FK 1 a 1).
+--   - Funcion no hereda de Evento: cada Funcion referencia al Evento que
+--     programa mediante evento_id (FK simple, no comparte clave primaria),
+--     para que varias funciones (horarios distintos) puedan compartir el
+--     mismo Evento sin repetir su catalogo.
 --   - Enumeraciones Java (EstadoFuncion, EstadoReserva, EstadoPago,
 --     EstadoEntrada, EstadoAuditoria, CategoriaGenero, ClasificacionEdad,
 --     TipoActividad): tipo ENUM nativo de MySQL, con los mismos valores
@@ -129,90 +133,102 @@ CREATE TABLE bloqueo (
 );
 
 -- ---------------------------------------------------------------------
--- Paquete funciones: Funcion (tabla BASE de la herencia Funcion ->
--- Pelicula/ObraTeatro/ActividadCultural; ver paquete catalogo mas abajo).
--- Ya no tiene contenido_id: el contenido programado ya no es una
--- referencia aparte, es la propia fila de pelicula/obra_teatro/
--- actividad_cultural que comparte este mismo id.
+-- Paquete catalogo: Evento (tabla BASE de la herencia Evento ->
+-- Pelicula/ObraTeatro/ActividadCultural). Guarda lo que es propio del
+-- contenido en si (precio, activo/IEliminable) y no de una programacion
+-- puntual, que es responsabilidad de Funcion (ver mas abajo).
 -- ---------------------------------------------------------------------
 
-CREATE TABLE funcion (
-    id            INT AUTO_INCREMENT PRIMARY KEY,
-    sala_id       INT           NOT NULL,
-    fecha         DATE          NOT NULL,
-    hora_inicio   TIME          NOT NULL,
-    hora_fin      TIME          NOT NULL,
-    precio        DECIMAL(8,2)  NOT NULL,
-    idioma        VARCHAR(30)   NOT NULL,
-    estado        ENUM('PROGRAMADA','CONFIRMADA','CANCELADA') NOT NULL DEFAULT 'PROGRAMADA',
-    CONSTRAINT fk_funcion_sala FOREIGN KEY (sala_id) REFERENCES sala (id),
-    CONSTRAINT chk_funcion_horario CHECK (hora_fin > hora_inicio),
-    CONSTRAINT chk_funcion_precio CHECK (precio >= 0)
+CREATE TABLE evento (
+    id      INT AUTO_INCREMENT PRIMARY KEY,
+    precio  DECIMAL(8,2) NOT NULL,
+    activo  BOOLEAN      NOT NULL DEFAULT TRUE,
+    CONSTRAINT chk_evento_precio CHECK (precio >= 0)
 );
 
-CREATE INDEX ix_funcion_fecha ON funcion (fecha);
-CREATE INDEX ix_funcion_sala_fecha ON funcion (sala_id, fecha);
-
--- ---------------------------------------------------------------------
--- Paquete catalogo: Pelicula / ObraTeatro / ActividadCultural heredan de
--- Funcion (tabla por subtipo: su PK es a la vez FK 1 a 1 hacia funcion).
--- Cada una tiene su propio `activo` (eliminado logico, IEliminable), que
--- es independiente del `estado` de la funcion (flujo de negocio de
--- programacion) heredado de la tabla base.
--- ---------------------------------------------------------------------
-
 CREATE TABLE pelicula (
-    funcion_id         INT PRIMARY KEY,
+    evento_id          INT PRIMARY KEY,
     nombre_pelicula    VARCHAR(150) NOT NULL,
     duracion_minutos   INT          NOT NULL,
     genero             ENUM('ACCION','COMEDIA','DRAMA','TERROR','ANIMACION','DOCUMENTAL') NOT NULL,
     clasificacion_edad ENUM('APTA_TODO_PUBLICO','PG13','MAYORES_18') NOT NULL,
     director           VARCHAR(100),
-    activo             BOOLEAN      NOT NULL DEFAULT TRUE,
-    CONSTRAINT fk_pelicula_funcion FOREIGN KEY (funcion_id)
-        REFERENCES funcion (id) ON DELETE CASCADE,
+    CONSTRAINT fk_pelicula_evento FOREIGN KEY (evento_id)
+        REFERENCES evento (id) ON DELETE CASCADE,
     CONSTRAINT chk_pelicula_duracion CHECK (duracion_minutos > 0)
 );
 
 CREATE TABLE obra_teatro (
-    funcion_id       INT PRIMARY KEY,
+    evento_id        INT PRIMARY KEY,
     titulo           VARCHAR(150) NOT NULL,
     nombre_director  VARCHAR(100),
     elenco           VARCHAR(300),
-    activo           BOOLEAN      NOT NULL DEFAULT TRUE,
-    CONSTRAINT fk_obra_teatro_funcion FOREIGN KEY (funcion_id)
-        REFERENCES funcion (id) ON DELETE CASCADE
+    CONSTRAINT fk_obra_teatro_evento FOREIGN KEY (evento_id)
+        REFERENCES evento (id) ON DELETE CASCADE
 );
 
 CREATE TABLE actividad_cultural (
-    funcion_id      INT PRIMARY KEY,
+    evento_id       INT PRIMARY KEY,
     nombre          VARCHAR(150) NOT NULL,
     expositor       VARCHAR(100),
     tipo_actividad  ENUM('CHARLA','TALLER','EXPOSICION','CONVERSATORIO') NOT NULL,
-    activo          BOOLEAN      NOT NULL DEFAULT TRUE,
-    CONSTRAINT fk_actividad_cultural_funcion FOREIGN KEY (funcion_id)
-        REFERENCES funcion (id) ON DELETE CASCADE
+    CONSTRAINT fk_actividad_cultural_evento FOREIGN KEY (evento_id)
+        REFERENCES evento (id) ON DELETE CASCADE
 );
+
+-- ---------------------------------------------------------------------
+-- Paquete funciones: Funcion es la programacion puntual de un Evento en
+-- una sala, fecha y horario. Varias Funcion pueden compartir el mismo
+-- evento_id (el mismo contenido en mas de un horario) sin repetir su
+-- catalogo, que vive una sola vez en evento/pelicula/obra_teatro/
+-- actividad_cultural.
+-- ---------------------------------------------------------------------
+
+CREATE TABLE funcion (
+    id            INT AUTO_INCREMENT PRIMARY KEY,
+    evento_id     INT           NOT NULL,
+    sala_id       INT           NOT NULL,
+    fecha         DATE          NOT NULL,
+    hora_inicio   TIME          NOT NULL,
+    hora_fin      TIME          NOT NULL,
+    idioma        VARCHAR(30)   NOT NULL,
+    estado        ENUM('PROGRAMADA','CONFIRMADA','CANCELADA') NOT NULL DEFAULT 'PROGRAMADA',
+    CONSTRAINT fk_funcion_evento FOREIGN KEY (evento_id) REFERENCES evento (id),
+    CONSTRAINT fk_funcion_sala FOREIGN KEY (sala_id) REFERENCES sala (id),
+    CONSTRAINT chk_funcion_horario CHECK (hora_fin > hora_inicio)
+);
+
+CREATE INDEX ix_funcion_fecha ON funcion (fecha);
+CREATE INDEX ix_funcion_sala_fecha ON funcion (sala_id, fecha);
+CREATE INDEX ix_funcion_evento ON funcion (evento_id);
 
 -- ---------------------------------------------------------------------
 -- Paquete ventas: Reserva, Pago, Entrada
 -- ---------------------------------------------------------------------
 
+-- `cantidad` solo aplica a una reserva de aforo general (actividad_cultural):
+-- una reserva de asiento numerado deja `cantidad` en NULL y su conteo real
+-- se obtiene de sus filas en reserva_butaca (ver trigger mas abajo, que
+-- valida cual de los dos casos corresponde segun el tipo de la funcion).
 CREATE TABLE reserva (
     id                 INT AUTO_INCREMENT PRIMARY KEY,
     funcion_id         INT       NOT NULL,
     cliente_id         INT       NOT NULL,
+    cantidad           INT       NULL,
     fecha_creacion     DATETIME  NOT NULL,
     fecha_expiracion   DATETIME  NOT NULL,
     estado             ENUM('ACTIVA','CONFIRMADA','EXPIRADA','CANCELADA') NOT NULL DEFAULT 'ACTIVA',
     CONSTRAINT fk_reserva_funcion FOREIGN KEY (funcion_id) REFERENCES funcion (id),
     CONSTRAINT fk_reserva_cliente FOREIGN KEY (cliente_id) REFERENCES cliente (usuario_id),
-    CONSTRAINT chk_reserva_expiracion CHECK (fecha_expiracion > fecha_creacion)
+    CONSTRAINT chk_reserva_expiracion CHECK (fecha_expiracion > fecha_creacion),
+    CONSTRAINT chk_reserva_cantidad CHECK (cantidad IS NULL OR cantidad > 0)
 );
 
 CREATE INDEX ix_reserva_estado ON reserva (estado);
 
--- Tabla puente: una Reserva ocupa varias Butacas de la misma Funcion.
+-- Tabla puente: una Reserva de asiento numerado ocupa varias Butacas de la
+-- misma Funcion. Una reserva de aforo general (actividad_cultural) no tiene
+-- filas aqui: usa reserva.cantidad en su lugar.
 CREATE TABLE reserva_butaca (
     reserva_id  INT NOT NULL,
     butaca_id   INT NOT NULL,
@@ -248,6 +264,55 @@ BEGIN
             SET MESSAGE_TEXT = 'La butaca ya esta reservada/confirmada para esta funcion';
     END IF;
 END$$
+
+-- Cada funcion vende de una sola forma (ver Funcion.requiereAsientoNumerado
+-- en el modelo): una actividad_cultural es de aforo general (cantidad NOT
+-- NULL, sin filas en reserva_butaca) y todo lo demas (pelicula, obra_teatro)
+-- es de asiento numerado (cantidad NULL, butacas via reserva_butaca). Esta
+-- misma regla ya se valida en el constructor de Reserva.java; aqui se repite
+-- a nivel de base de datos para quien inserte directamente por SQL. Ademas,
+-- en el caso de aforo general, valida que no se supere el aforo de la sala
+-- sumando las reservas ACTIVA/CONFIRMADA existentes para esa funcion.
+CREATE TRIGGER trg_reserva_tipo_y_aforo
+BEFORE INSERT ON reserva
+FOR EACH ROW
+BEGIN
+    DECLARE v_es_aforo_general INT;
+    DECLARE v_aforo_sala INT;
+    DECLARE v_ya_reservado INT;
+
+    SELECT COUNT(*) INTO v_es_aforo_general
+    FROM funcion f
+    INNER JOIN actividad_cultural ac ON ac.evento_id = f.evento_id
+    WHERE f.id = NEW.funcion_id;
+
+    IF v_es_aforo_general > 0 THEN
+        IF NEW.cantidad IS NULL THEN
+            SIGNAL SQLSTATE '45000'
+                SET MESSAGE_TEXT = 'Una reserva de actividad cultural (aforo general) requiere cantidad';
+        END IF;
+
+        SELECT s.aforo INTO v_aforo_sala
+        FROM funcion f
+        INNER JOIN sala s ON s.id = f.sala_id
+        WHERE f.id = NEW.funcion_id;
+
+        SELECT COALESCE(SUM(r.cantidad), 0) INTO v_ya_reservado
+        FROM reserva r
+        WHERE r.funcion_id = NEW.funcion_id
+          AND r.estado IN ('ACTIVA', 'CONFIRMADA');
+
+        IF v_ya_reservado + NEW.cantidad > v_aforo_sala THEN
+            SIGNAL SQLSTATE '45000'
+                SET MESSAGE_TEXT = 'La cantidad solicitada supera el aforo disponible de la sala para esta funcion';
+        END IF;
+    ELSE
+        IF NEW.cantidad IS NOT NULL THEN
+            SIGNAL SQLSTATE '45000'
+                SET MESSAGE_TEXT = 'Una reserva de pelicula/obra de teatro es por asiento numerado: cantidad debe quedar NULL, se reservan butacas especificas';
+        END IF;
+    END IF;
+END$$
 DELIMITER ;
 
 -- Reserva "1" --> "1" Pago (relación uno a uno: reserva_id es UNIQUE).
@@ -264,18 +329,23 @@ CREATE TABLE pago (
     CONSTRAINT chk_pago_monto CHECK (monto >= 0)
 );
 
--- Entrada referencia el PAR (reserva_id, butaca_id) que sí fue reservado
--- (FK compuesta hacia reserva_butaca), no dos FK sueltas.
+-- Entrada de asiento numerado referencia el PAR (reserva_id, butaca_id) que
+-- si fue reservado (FK compuesta hacia reserva_butaca, no dos FK sueltas).
+-- butaca_id es NULL para una entrada de aforo general (actividad_cultural):
+-- ahi la FK compuesta no aplica (MySQL/MariaDB no evalua un FK compuesto
+-- cuando alguna de sus columnas es NULL), asi que se agrega ademas una FK
+-- simple hacia reserva para no perder esa referencia en ese caso.
 CREATE TABLE entrada (
     id             INT AUTO_INCREMENT PRIMARY KEY,
     reserva_id     INT           NOT NULL,
-    butaca_id      INT           NOT NULL,
+    butaca_id      INT           NULL,
     fecha_emision  DATETIME      NOT NULL,
     codigo_qr      VARCHAR(100)  NOT NULL,
     precio_final   DECIMAL(8,2)  NOT NULL,
     estado         ENUM('VIGENTE','UTILIZADA','CANCELADA') NOT NULL DEFAULT 'VIGENTE',
     UNIQUE KEY uk_entrada_reserva_butaca (reserva_id, butaca_id),
     UNIQUE KEY uk_entrada_qr (codigo_qr),
+    CONSTRAINT fk_entrada_reserva FOREIGN KEY (reserva_id) REFERENCES reserva (id),
     CONSTRAINT fk_entrada_reserva_butaca FOREIGN KEY (reserva_id, butaca_id)
         REFERENCES reserva_butaca (reserva_id, butaca_id),
     CONSTRAINT chk_entrada_precio CHECK (precio_final >= 0)
@@ -299,14 +369,194 @@ CREATE TABLE auditoria (
 );
 
 -- =====================================================================
+-- Procedimientos almacenados para los DAO (patron visto en clase: cada
+-- DAO llama procedimientos via CallableStatement en vez de armar SQL
+-- directo). De momento solo se agregan los de `sede` y `cliente`, como
+-- referencia para el resto del equipo (ver SedeDAO/ClienteDAO en
+-- entrefunciones-accesodatos y la seccion "Patron de DAOs" del
+-- README.md): cada quien agrega aqui mismo los procedimientos de sus
+-- entidades asignadas, siguiendo el mismo patron de nombres
+-- (listar_x, buscar_x_por_id, insertar_x, modificar_x, eliminar_x).
+-- =====================================================================
+
+DELIMITER $$
+
+-- --- sede (entidad de una sola tabla) --------------------------------
+
+CREATE PROCEDURE listar_sedes()
+BEGIN
+    SELECT id, razon_social, direccion, ciudad, telefono_contacto, activo
+    FROM sede;
+END$$
+
+CREATE PROCEDURE buscar_sede_por_id(IN p_id INT)
+BEGIN
+    SELECT id, razon_social, direccion, ciudad, telefono_contacto, activo
+    FROM sede
+    WHERE id = p_id;
+END$$
+
+CREATE PROCEDURE buscar_sede_por_razon_social(IN p_razon_social VARCHAR(150))
+BEGIN
+    SELECT id, razon_social, direccion, ciudad, telefono_contacto, activo
+    FROM sede
+    WHERE razon_social = p_razon_social;
+END$$
+
+CREATE PROCEDURE insertar_sede(
+    IN p_razon_social VARCHAR(150),
+    IN p_direccion VARCHAR(200),
+    IN p_ciudad VARCHAR(80),
+    IN p_telefono_contacto VARCHAR(20),
+    IN p_activo BOOLEAN,
+    OUT p_id INT
+)
+BEGIN
+    INSERT INTO sede (razon_social, direccion, ciudad, telefono_contacto, activo)
+    VALUES (p_razon_social, p_direccion, p_ciudad, p_telefono_contacto, p_activo);
+    SET p_id = LAST_INSERT_ID();
+END$$
+
+CREATE PROCEDURE modificar_sede(
+    IN p_id INT,
+    IN p_razon_social VARCHAR(150),
+    IN p_direccion VARCHAR(200),
+    IN p_ciudad VARCHAR(80),
+    IN p_telefono_contacto VARCHAR(20),
+    IN p_activo BOOLEAN
+)
+BEGIN
+    UPDATE sede
+    SET razon_social = p_razon_social,
+        direccion = p_direccion,
+        ciudad = p_ciudad,
+        telefono_contacto = p_telefono_contacto,
+        activo = p_activo
+    WHERE id = p_id;
+END$$
+
+CREATE PROCEDURE eliminar_sede(IN p_id INT)
+BEGIN
+    -- Eliminado logico: nunca se borra la fila, solo se desactiva.
+    UPDATE sede SET activo = FALSE WHERE id = p_id;
+END$$
+
+-- --- cliente (tabla por subtipo: usuario + cliente) -------------------
+-- Cada procedimiento que escribe toca ambas tablas dentro de UNA sola
+-- transaccion (START TRANSACTION/COMMIT, con ROLLBACK automatico si algo
+-- falla), para que nunca quede un usuario sin su fila de cliente o
+-- viceversa.
+
+CREATE PROCEDURE listar_clientes()
+BEGIN
+    SELECT u.id, u.nombres, u.apellidos, u.correo, u.contrasena, u.dni, u.activo,
+           c.fecha_registro, c.telefono
+    FROM usuario u
+    INNER JOIN cliente c ON c.usuario_id = u.id;
+END$$
+
+CREATE PROCEDURE buscar_cliente_por_id(IN p_id INT)
+BEGIN
+    SELECT u.id, u.nombres, u.apellidos, u.correo, u.contrasena, u.dni, u.activo,
+           c.fecha_registro, c.telefono
+    FROM usuario u
+    INNER JOIN cliente c ON c.usuario_id = u.id
+    WHERE u.id = p_id;
+END$$
+
+CREATE PROCEDURE buscar_cliente_por_correo(IN p_correo VARCHAR(150))
+BEGIN
+    SELECT u.id, u.nombres, u.apellidos, u.correo, u.contrasena, u.dni, u.activo,
+           c.fecha_registro, c.telefono
+    FROM usuario u
+    INNER JOIN cliente c ON c.usuario_id = u.id
+    WHERE u.correo = p_correo;
+END$$
+
+CREATE PROCEDURE insertar_cliente(
+    IN p_nombres VARCHAR(100),
+    IN p_apellidos VARCHAR(100),
+    IN p_correo VARCHAR(150),
+    IN p_contrasena VARCHAR(255),
+    IN p_dni VARCHAR(15),
+    IN p_activo BOOLEAN,
+    IN p_fecha_registro DATE,
+    IN p_telefono VARCHAR(20),
+    OUT p_id INT
+)
+BEGIN
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+
+    START TRANSACTION;
+
+    INSERT INTO usuario (nombres, apellidos, correo, contrasena, dni, activo)
+    VALUES (p_nombres, p_apellidos, p_correo, p_contrasena, p_dni, p_activo);
+    SET p_id = LAST_INSERT_ID();
+
+    INSERT INTO cliente (usuario_id, fecha_registro, telefono)
+    VALUES (p_id, p_fecha_registro, p_telefono);
+
+    COMMIT;
+END$$
+
+CREATE PROCEDURE modificar_cliente(
+    IN p_id INT,
+    IN p_nombres VARCHAR(100),
+    IN p_apellidos VARCHAR(100),
+    IN p_correo VARCHAR(150),
+    IN p_contrasena VARCHAR(255),
+    IN p_dni VARCHAR(15),
+    IN p_activo BOOLEAN,
+    IN p_fecha_registro DATE,
+    IN p_telefono VARCHAR(20)
+)
+BEGIN
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+
+    START TRANSACTION;
+
+    UPDATE usuario
+    SET nombres = p_nombres,
+        apellidos = p_apellidos,
+        correo = p_correo,
+        contrasena = p_contrasena,
+        dni = p_dni,
+        activo = p_activo
+    WHERE id = p_id;
+
+    UPDATE cliente
+    SET fecha_registro = p_fecha_registro,
+        telefono = p_telefono
+    WHERE usuario_id = p_id;
+
+    COMMIT;
+END$$
+
+CREATE PROCEDURE eliminar_cliente(IN p_id INT)
+BEGIN
+    -- Eliminado logico: solo se desactiva la fila base en usuario; la
+    -- fila de cliente no se toca (sigue existiendo el historial).
+    UPDATE usuario SET activo = FALSE WHERE id = p_id;
+END$$
+
+DELIMITER ;
+
+-- =====================================================================
 -- Datos de prueba
 --
 -- Cubren cada tabla y cada valor de cada enumeración. Incluyen
 -- deliberadamente la MISMA película (Interestelar) programada en DOS
--- funciones distintas (funcion.id = 1 y 3): como Pelicula hereda de
--- Funcion, eso significa DOS filas en `pelicula` (funcion_id = 1 y
--- funcion_id = 3) que repiten titulo, duracion, genero, clasificacion y
--- director.
+-- funciones distintas (funcion.id = 1 y 3, mismo evento_id = 1): el
+-- catalogo (titulo, duracion, genero, clasificacion, director, precio)
+-- vive una sola vez en evento/pelicula, sin repetirse por horario.
 -- =====================================================================
 
 -- Usuarios: 1 administrador + 3 clientes.
@@ -349,49 +599,68 @@ INSERT INTO bloqueo (id, motivo, fecha_inicio, fecha_fin, sala_id, recurso_id) V
     (1, 'Mantenimiento preventivo de butacas', '2026-09-20 08:00:00', '2026-09-20 12:00:00', 2, NULL),
     (2, 'Calibracion de proyector', '2026-09-18 09:00:00', '2026-09-18 11:00:00', NULL, 1);
 
--- Funciones: 5 en total. La 1 y la 3 son la MISMA pelicula (Interestelar)
--- en dos horarios distintos; cada una tendra su propia fila en `pelicula`.
-INSERT INTO funcion (id, sala_id, fecha, hora_inicio, hora_fin, precio, idioma, estado) VALUES
-    (1, 1, '2026-09-20', '15:00:00', '17:49:00', 25.00, 'Español',     'CONFIRMADA'),
-    (2, 1, '2026-09-20', '20:00:00', '21:35:00', 22.00, 'Subtitulada', 'PROGRAMADA'),
-    (3, 1, '2026-09-20', '18:00:00', '20:49:00', 28.00, 'Subtitulada', 'CONFIRMADA'),
-    (4, 2, '2026-09-21', '19:00:00', '21:00:00', 35.00, 'Español',     'PROGRAMADA'),
-    (5, 3, '2026-09-19', '17:00:00', '18:30:00', 10.00, 'Español',     'CANCELADA');
+-- Catalogo: 5 eventos. Interestelar (evento 1) tiene DOS funciones (1 y 3,
+-- horarios distintos) que comparten el mismo evento_id: el catalogo
+-- (titulo, genero, director, precio) vive una sola vez.
+INSERT INTO evento (id, precio, activo) VALUES
+    (1, 25.00, TRUE),  -- Interestelar
+    (2, 22.00, TRUE),  -- La Casa del Terror
+    (3, 35.00, TRUE),  -- La Muralla
+    (4, 10.00, TRUE),  -- Charla de Cine Peruano Contemporaneo
+    (5, 15.00, TRUE);  -- Taller de Fotografia
 
--- Catalogo: Interestelar se repite (funcion_id 1 y 3) porque Pelicula
--- hereda de Funcion; cada horario es su propia fila de pelicula.
-INSERT INTO pelicula (funcion_id, nombre_pelicula, duracion_minutos, genero, clasificacion_edad, director, activo) VALUES
-    (1, 'Interestelar', 169, 'DRAMA', 'PG13', 'Christopher Nolan', TRUE),
-    (2, 'La Casa del Terror', 95, 'TERROR', 'MAYORES_18', 'Ana Ramirez', TRUE),
-    (3, 'Interestelar', 169, 'DRAMA', 'PG13', 'Christopher Nolan', TRUE);
+INSERT INTO pelicula (evento_id, nombre_pelicula, duracion_minutos, genero, clasificacion_edad, director) VALUES
+    (1, 'Interestelar', 169, 'DRAMA', 'PG13', 'Christopher Nolan'),
+    (2, 'La Casa del Terror', 95, 'TERROR', 'MAYORES_18', 'Ana Ramirez');
 
-INSERT INTO obra_teatro (funcion_id, titulo, nombre_director, elenco, activo) VALUES
-    (4, 'La Muralla', 'Sofia Herrera', 'Juan Perez, Maria Lopez', TRUE);
+INSERT INTO obra_teatro (evento_id, titulo, nombre_director, elenco) VALUES
+    (3, 'La Muralla', 'Sofia Herrera', 'Juan Perez, Maria Lopez');
 
-INSERT INTO actividad_cultural (funcion_id, nombre, expositor, tipo_actividad, activo) VALUES
-    (5, 'Charla de Cine Peruano Contemporaneo', 'Rodrigo Vega', 'CHARLA', TRUE);
+INSERT INTO actividad_cultural (evento_id, nombre, expositor, tipo_actividad) VALUES
+    (4, 'Charla de Cine Peruano Contemporaneo', 'Rodrigo Vega', 'CHARLA'),
+    (5, 'Taller de Fotografia', 'Rodrigo Vega', 'TALLER');
 
--- Reservas: una confirmada (flujo completo), una pendiente de pago, una expirada.
-INSERT INTO reserva (id, funcion_id, cliente_id, fecha_creacion, fecha_expiracion, estado) VALUES
-    (1, 1, 2, '2026-09-14 10:00:00', '2026-09-14 10:15:00', 'CONFIRMADA'),
-    (2, 3, 3, '2026-09-14 11:00:00', '2026-09-14 11:15:00', 'ACTIVA'),
-    (3, 2, 2, '2026-09-10 09:00:00', '2026-09-10 09:15:00', 'EXPIRADA');
+-- Funciones: 6 en total (una por horario). Las funciones 1 y 3 programan
+-- el mismo evento (Interestelar) en dos horarios distintos. La funcion 6
+-- programa una actividad cultural (evento 5): vende por cupo, no por
+-- butaca (ver reserva 4 mas abajo).
+INSERT INTO funcion (id, evento_id, sala_id, fecha, hora_inicio, hora_fin, idioma, estado) VALUES
+    (1, 1, 1, '2026-09-20', '15:00:00', '17:49:00', 'Español',     'CONFIRMADA'),
+    (2, 2, 1, '2026-09-20', '20:00:00', '21:35:00', 'Subtitulada', 'PROGRAMADA'),
+    (3, 1, 1, '2026-09-20', '18:00:00', '20:49:00', 'Subtitulada', 'CONFIRMADA'),
+    (4, 3, 2, '2026-09-21', '19:00:00', '21:00:00', 'Español',     'PROGRAMADA'),
+    (5, 4, 3, '2026-09-19', '17:00:00', '18:30:00', 'Español',     'CANCELADA'),
+    (6, 5, 2, '2026-09-22', '18:00:00', '19:00:00', 'Español',     'CONFIRMADA');
+
+-- Reservas: una confirmada (flujo completo), una pendiente de pago, una
+-- expirada, y una de aforo general (funcion 6, actividad cultural: cantidad
+-- en vez de butacas, sin filas en reserva_butaca).
+INSERT INTO reserva (id, funcion_id, cliente_id, cantidad, fecha_creacion, fecha_expiracion, estado) VALUES
+    (1, 1, 2, NULL, '2026-09-14 10:00:00', '2026-09-14 10:15:00', 'CONFIRMADA'),
+    (2, 3, 3, NULL, '2026-09-14 11:00:00', '2026-09-14 11:15:00', 'ACTIVA'),
+    (3, 2, 2, NULL, '2026-09-10 09:00:00', '2026-09-10 09:15:00', 'EXPIRADA'),
+    (4, 6, 3, 2,    '2026-09-16 10:00:00', '2026-09-16 10:15:00', 'CONFIRMADA');
 
 INSERT INTO reserva_butaca (reserva_id, butaca_id) VALUES
     (1, 1), (1, 2),   -- Valeria reservo A1 y A2 para la funcion 1
     (2, 3),           -- Diego reservo A3 (VIP) para la funcion 3
     (3, 1);           -- reserva vencida de Valeria para la funcion 2 (butaca A1, otra funcion: sin conflicto)
+                      -- la reserva 4 (aforo general) no tiene filas aqui: usa reserva.cantidad.
 
--- Pagos: uno validado, uno pendiente, uno rechazado (para la reserva vencida).
+-- Pagos: uno validado, uno pendiente, uno rechazado (para la reserva vencida), uno validado (aforo general).
 INSERT INTO pago (id, reserva_id, codigo_pago, monto, fecha_pago, estado) VALUES
     (1, 1, 'PAY-0001', 50.00, '2026-09-14 10:05:00', 'VALIDADO'),
-    (2, 2, 'PAY-0002', 28.00, NULL, 'PENDIENTE'),
-    (3, 3, 'PAY-0003', 25.00, '2026-09-10 09:10:00', 'RECHAZADO');
+    (2, 2, 'PAY-0002', 25.00, NULL, 'PENDIENTE'),
+    (3, 3, 'PAY-0003', 25.00, '2026-09-10 09:10:00', 'RECHAZADO'),
+    (4, 4, 'PAY-0004', 30.00, '2026-09-16 10:05:00', 'VALIDADO');
 
--- Entradas: solo se emiten para la reserva ya confirmada/pagada (reserva 1).
+-- Entradas: se emiten para las reservas ya confirmadas/pagadas (reserva 1 y
+-- reserva 4). Las de la reserva 4 son de aforo general: butaca_id queda NULL.
 INSERT INTO entrada (id, reserva_id, butaca_id, fecha_emision, codigo_qr, precio_final, estado) VALUES
-    (1, 1, 1, '2026-09-14 10:05:30', 'QR-0000000001', 25.00, 'VIGENTE'),
-    (2, 1, 2, '2026-09-14 10:05:30', 'QR-0000000002', 25.00, 'VIGENTE');
+    (1, 1, 1,    '2026-09-14 10:05:30', 'QR-0000000001', 25.00, 'VIGENTE'),
+    (2, 1, 2,    '2026-09-14 10:05:30', 'QR-0000000002', 25.00, 'VIGENTE'),
+    (3, 4, NULL, '2026-09-16 10:05:30', 'QR-0000000003', 15.00, 'VIGENTE'),
+    (4, 4, NULL, '2026-09-16 10:05:30', 'QR-0000000004', 15.00, 'VIGENTE');
 
 -- Auditoria: una incidencia ligada a una funcion (RF-M6-04) y un registro
 -- de trazabilidad general sin funcion asociada (RNF-SEG-01).
