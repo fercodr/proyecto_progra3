@@ -1,0 +1,374 @@
+package pe.edu.pucp.entrefunciones.bl.impl.espacios;
+
+import org.junit.jupiter.api.Test;
+import pe.edu.pucp.entrefunciones.bl.BLException;
+import pe.edu.pucp.entrefunciones.dao.espacios.BloqueoDAO;
+import pe.edu.pucp.entrefunciones.dao.espacios.ButacaDAO;
+import pe.edu.pucp.entrefunciones.dao.espacios.RecursoDAO;
+import pe.edu.pucp.entrefunciones.dao.espacios.SalaDAO;
+import pe.edu.pucp.entrefunciones.dao.espacios.SedeDAO;
+import pe.edu.pucp.entrefunciones.modelo.espacios.Bloqueo;
+import pe.edu.pucp.entrefunciones.modelo.espacios.Butaca;
+import pe.edu.pucp.entrefunciones.modelo.espacios.Recurso;
+import pe.edu.pucp.entrefunciones.modelo.espacios.Sala;
+import pe.edu.pucp.entrefunciones.modelo.espacios.Sede;
+
+import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class EspaciosBLImplTest {
+
+    @Test
+    void salaRechazaNombreDuplicadoEnLaMismaSede() {
+        Contexto contexto = new Contexto();
+        contexto.salaDAO.guardar(sala(1, contexto.sede, "Principal", 20));
+        SalaBLImpl bl = contexto.salaBL();
+
+        BLException error = assertThrows(BLException.class,
+                () -> bl.insert(sala(0, contexto.sede, " principal ", 30)));
+
+        assertTrue(error.getMessage().contains("Ya existe una sala"));
+    }
+
+    @Test
+    void salaPuedeActualizarseConservandoSuPropioNombre() {
+        Contexto contexto = new Contexto();
+        Sala registrada = sala(1, contexto.sede, "Principal", 20);
+        contexto.salaDAO.guardar(registrada);
+        Sala actualizada = sala(1, contexto.sede, "Principal", 25);
+
+        assertDoesNotThrow(() -> contexto.salaBL().update(actualizada));
+        assertEquals(25, contexto.salaDAO.salas.get(1).getAforo());
+    }
+
+    @Test
+    void salaNoReduceAforoDebajoDeButacasActivas() {
+        Contexto contexto = new Contexto();
+        Sala registrada = sala(1, contexto.sede, "Principal", 3);
+        contexto.salaDAO.guardar(registrada);
+        contexto.butacaDAO.guardar(butaca(1, registrada, "A", 1));
+        contexto.butacaDAO.guardar(butaca(2, registrada, "A", 2));
+
+        BLException error = assertThrows(BLException.class,
+                () -> contexto.salaBL().update(sala(1, contexto.sede, "Principal", 1)));
+
+        assertTrue(error.getMessage().contains("aforo"));
+    }
+
+    @Test
+    void butacaNoSeConfundeConsigoMismaAlActualizar() {
+        Contexto contexto = new Contexto();
+        Sala sala = sala(1, contexto.sede, "Principal", 3);
+        contexto.salaDAO.guardar(sala);
+        Butaca registrada = butaca(1, sala, "A", 1);
+        contexto.butacaDAO.guardar(registrada);
+
+        assertDoesNotThrow(() -> contexto.butacaBL().update(butaca(1, sala, "A", 1)));
+        assertEquals(1, contexto.butacaDAO.actualizaciones);
+    }
+
+    @Test
+    void butacaRechazaPosicionOcupadaPorOtroRegistro() {
+        Contexto contexto = new Contexto();
+        Sala sala = sala(1, contexto.sede, "Principal", 3);
+        contexto.salaDAO.guardar(sala);
+        contexto.butacaDAO.guardar(butaca(1, sala, "A", 1));
+        contexto.butacaDAO.guardar(butaca(2, sala, "A", 2));
+
+        BLException error = assertThrows(BLException.class,
+                () -> contexto.butacaBL().update(butaca(2, sala, "A", 1)));
+
+        assertTrue(error.getMessage().contains("otra butaca"));
+    }
+
+    @Test
+    void insertarEnPosicionInactivaReutilizaElRegistro() {
+        Contexto contexto = new Contexto();
+        Sala sala = sala(1, contexto.sede, "Principal", 3);
+        contexto.salaDAO.guardar(sala);
+        Butaca inactiva = butaca(7, sala, "A", 1);
+        inactiva.desactivar();
+        contexto.butacaDAO.guardar(inactiva);
+        Butaca nueva = butaca(0, sala, "A", 1);
+
+        assertDoesNotThrow(() -> contexto.butacaBL().insert(nueva));
+
+        assertEquals(7, nueva.getId());
+        assertEquals(1, contexto.butacaDAO.actualizaciones);
+        assertEquals(0, contexto.butacaDAO.inserciones);
+    }
+
+    @Test
+    void butacaActivaNoPuedeSuperarElAforo() {
+        Contexto contexto = new Contexto();
+        Sala sala = sala(1, contexto.sede, "Principal", 1);
+        contexto.salaDAO.guardar(sala);
+        contexto.butacaDAO.guardar(butaca(1, sala, "A", 1));
+
+        BLException error = assertThrows(BLException.class,
+                () -> contexto.butacaBL().insert(butaca(0, sala, "A", 2)));
+
+        assertTrue(error.getMessage().contains("aforo"));
+    }
+
+    @Test
+    void bloqueoRechazaSolapamientoSobreLaMismaSala() {
+        Contexto contexto = new Contexto();
+        Sala sala = sala(1, contexto.sede, "Principal", 20);
+        contexto.salaDAO.guardar(sala);
+        contexto.bloqueoDAO.guardar(bloqueoSala(1, sala, 10, 12));
+
+        BLException error = assertThrows(BLException.class,
+                () -> contexto.bloqueoBL().insert(bloqueoSala(0, sala, 11, 13)));
+
+        assertTrue(error.getMessage().contains("superpone"));
+    }
+
+    @Test
+    void bloqueoPermitePeriodosContiguos() {
+        Contexto contexto = new Contexto();
+        Sala sala = sala(1, contexto.sede, "Principal", 20);
+        contexto.salaDAO.guardar(sala);
+        contexto.bloqueoDAO.guardar(bloqueoSala(1, sala, 10, 12));
+
+        assertDoesNotThrow(() ->
+                contexto.bloqueoBL().insert(bloqueoSala(0, sala, 12, 14)));
+    }
+
+    @Test
+    void bloqueoActualizadoNoSeDetectaASiMismo() {
+        Contexto contexto = new Contexto();
+        Sala sala = sala(1, contexto.sede, "Principal", 20);
+        contexto.salaDAO.guardar(sala);
+        Bloqueo registrado = bloqueoSala(1, sala, 10, 12);
+        contexto.bloqueoDAO.guardar(registrado);
+
+        assertDoesNotThrow(() -> contexto.bloqueoBL().update(registrado));
+    }
+
+    @Test
+    void bloqueoExigeExactamenteUnObjetivo() {
+        Contexto contexto = new Contexto();
+        Bloqueo bloqueo = new Bloqueo();
+        bloqueo.setMotivo("Mantenimiento");
+        bloqueo.setFechaInicio(LocalDateTime.of(2026, 10, 1, 10, 0));
+        bloqueo.setFechaFin(LocalDateTime.of(2026, 10, 1, 12, 0));
+
+        BLException error = assertThrows(BLException.class,
+                () -> contexto.bloqueoBL().insert(bloqueo));
+
+        assertTrue(error.getMessage().contains("exclusivamente"));
+    }
+
+    @Test
+    void bloqueoNoSeEliminaFisicamenteSinSoporteDeEstado() {
+        Contexto contexto = new Contexto();
+        Sala sala = sala(1, contexto.sede, "Principal", 20);
+        contexto.salaDAO.guardar(sala);
+        contexto.bloqueoDAO.guardar(bloqueoSala(1, sala, 10, 12));
+
+        BLException error = assertThrows(BLException.class,
+                () -> contexto.bloqueoBL().delete(1));
+
+        assertTrue(error.getMessage().contains("baja lógica"));
+        assertEquals(0, contexto.bloqueoDAO.eliminaciones);
+    }
+
+    @Test
+    void bajaLogicaEsIdempotenteParaEntidadesYaInactivas() {
+        Contexto contexto = new Contexto();
+        Recurso recurso = new Recurso(1, "Proyector", "Video");
+        recurso.desactivar();
+        contexto.recursoDAO.guardar(recurso);
+
+        assertDoesNotThrow(() -> new RecursoBLImpl(contexto.recursoDAO).delete(1));
+        assertEquals(0, contexto.recursoDAO.eliminaciones);
+    }
+
+    @Test
+    void fallaSqlConservaLaCausa() {
+        SedeDAOConFalla dao = new SedeDAOConFalla();
+        SedeBLImpl bl = new SedeBLImpl(dao);
+
+        BLException error = assertThrows(BLException.class, bl::findAll);
+
+        assertNotNull(error.getCause());
+        assertTrue(error.getCause() instanceof SQLException);
+    }
+
+    private static Sede sede(int id) {
+        return new Sede(id, "EntreFunciones", "Av. Principal 123", "Lima", "555-0101");
+    }
+
+    private static Sala sala(int id, Sede sede, String nombre, int aforo) {
+        return new Sala(id, sede, nombre, aforo, "Numerada");
+    }
+
+    private static Butaca butaca(int id, Sala sala, String fila, int columna) {
+        return new Butaca(id, sala, fila, columna, "General");
+    }
+
+    private static Bloqueo bloqueoSala(int id, Sala sala, int horaInicio, int horaFin) {
+        Bloqueo bloqueo = new Bloqueo();
+        bloqueo.setId(id);
+        bloqueo.setMotivo("Mantenimiento");
+        bloqueo.setFechaInicio(LocalDateTime.of(2026, 10, 1, horaInicio, 0));
+        bloqueo.setFechaFin(LocalDateTime.of(2026, 10, 1, horaFin, 0));
+        bloqueo.setSala(sala);
+        return bloqueo;
+    }
+
+    private static final class Contexto {
+        private final Sede sede = sede(1);
+        private final SedeDAOFalso sedeDAO = new SedeDAOFalso();
+        private final SalaDAOFalso salaDAO = new SalaDAOFalso();
+        private final ButacaDAOFalso butacaDAO = new ButacaDAOFalso();
+        private final RecursoDAOFalso recursoDAO = new RecursoDAOFalso();
+        private final BloqueoDAOFalso bloqueoDAO = new BloqueoDAOFalso();
+
+        private Contexto() {
+            sedeDAO.guardar(sede);
+        }
+
+        private SalaBLImpl salaBL() {
+            return new SalaBLImpl(salaDAO, sedeDAO, butacaDAO);
+        }
+
+        private ButacaBLImpl butacaBL() {
+            return new ButacaBLImpl(butacaDAO, salaDAO);
+        }
+
+        private BloqueoBLImpl bloqueoBL() {
+            return new BloqueoBLImpl(bloqueoDAO, salaDAO, recursoDAO);
+        }
+    }
+
+    private static class SedeDAOFalso implements SedeDAO {
+        protected final Map<Integer, Sede> sedes = new LinkedHashMap<>();
+        protected int secuencia = 1;
+        protected int eliminaciones;
+
+        void guardar(Sede sede) {
+            sedes.put(sede.getId(), sede);
+            secuencia = Math.max(secuencia, sede.getId() + 1);
+        }
+
+        @Override public List<Sede> findAll() throws SQLException { return new ArrayList<>(sedes.values()); }
+        @Override public Sede findById(Integer id) throws SQLException { return sedes.get(id); }
+        @Override public void insert(Sede sede) throws SQLException { sede.setId(secuencia++); guardar(sede); }
+        @Override public void update(Sede sede) throws SQLException { guardar(sede); }
+        @Override public void delete(Integer id) throws SQLException { sedes.get(id).desactivar(); eliminaciones++; }
+    }
+
+    private static final class SedeDAOConFalla extends SedeDAOFalso {
+        @Override public List<Sede> findAll() throws SQLException { throw new SQLException("sin conexión"); }
+    }
+
+    private static final class SalaDAOFalso implements SalaDAO {
+        private final Map<Integer, Sala> salas = new LinkedHashMap<>();
+        private int secuencia = 1;
+
+        void guardar(Sala sala) {
+            salas.put(sala.getId(), sala);
+            secuencia = Math.max(secuencia, sala.getId() + 1);
+        }
+
+        @Override public List<Sala> findAll() { return new ArrayList<>(salas.values()); }
+        @Override public List<Sala> findBySedeId(int sedeId) {
+            return salas.values().stream().filter(s -> s.getSede().getId() == sedeId).toList();
+        }
+        @Override public Sala findById(Integer id) { return salas.get(id); }
+        @Override public void insert(Sala sala) { sala.setId(secuencia++); guardar(sala); }
+        @Override public void update(Sala sala) { guardar(sala); }
+        @Override public void delete(Integer id) { salas.get(id).desactivar(); }
+    }
+
+    private static final class ButacaDAOFalso implements ButacaDAO {
+        private final Map<Integer, Butaca> butacas = new LinkedHashMap<>();
+        private int secuencia = 1;
+        private int inserciones;
+        private int actualizaciones;
+
+        void guardar(Butaca butaca) {
+            butacas.put(butaca.getId(), butaca);
+            secuencia = Math.max(secuencia, butaca.getId() + 1);
+        }
+
+        @Override public List<Butaca> findAll() { return new ArrayList<>(butacas.values()); }
+        @Override public List<Butaca> findBySalaId(int salaId) {
+            return butacas.values().stream().filter(b -> b.getSala().getId() == salaId).toList();
+        }
+        @Override public List<Butaca> findByReservaId(int reservaId) { return List.of(); }
+        @Override public Butaca findById(Integer id) { return butacas.get(id); }
+        @Override public void insert(Butaca butaca) { inserciones++; butaca.setId(secuencia++); guardar(butaca); }
+        @Override public void update(Butaca butaca) { actualizaciones++; guardar(butaca); }
+        @Override public void delete(Integer id) { butacas.get(id).desactivar(); }
+    }
+
+    private static final class RecursoDAOFalso implements RecursoDAO {
+        private final Map<Integer, Recurso> recursos = new LinkedHashMap<>();
+        private int secuencia = 1;
+        private int eliminaciones;
+
+        void guardar(Recurso recurso) {
+            recursos.put(recurso.getId(), recurso);
+            secuencia = Math.max(secuencia, recurso.getId() + 1);
+        }
+
+        @Override public List<Recurso> findAll() { return new ArrayList<>(recursos.values()); }
+        @Override public Recurso findById(Integer id) { return recursos.get(id); }
+        @Override public void insert(Recurso recurso) { recurso.setId(secuencia++); guardar(recurso); }
+        @Override public void update(Recurso recurso) { guardar(recurso); }
+        @Override public void delete(Integer id) { recursos.get(id).desactivar(); eliminaciones++; }
+    }
+
+    private static final class BloqueoDAOFalso implements BloqueoDAO {
+        private final Map<Integer, Bloqueo> bloqueos = new LinkedHashMap<>();
+        private int secuencia = 1;
+        private int eliminaciones;
+
+        void guardar(Bloqueo bloqueo) {
+            bloqueos.put(bloqueo.getId(), bloqueo);
+            secuencia = Math.max(secuencia, bloqueo.getId() + 1);
+        }
+
+        @Override public List<Bloqueo> findAll() { return new ArrayList<>(bloqueos.values()); }
+        @Override public List<Bloqueo> findBySalaId(int salaId) {
+            return bloqueos.values().stream()
+                    .filter(b -> b.getSala() != null && b.getSala().getId() == salaId).toList();
+        }
+        @Override public List<Bloqueo> findByRecursoId(int recursoId) {
+            return bloqueos.values().stream()
+                    .filter(b -> b.getRecurso() != null && b.getRecurso().getId() == recursoId).toList();
+        }
+        @Override public boolean existsOverlapBySalaId(int salaId, LocalDateTime inicio,
+                                                       LocalDateTime fin, Integer idExcluir) {
+            return findBySalaId(salaId).stream().anyMatch(b -> seCruza(b, inicio, fin, idExcluir));
+        }
+        @Override public boolean existsOverlapByRecursoId(int recursoId, LocalDateTime inicio,
+                                                          LocalDateTime fin, Integer idExcluir) {
+            return findByRecursoId(recursoId).stream().anyMatch(b -> seCruza(b, inicio, fin, idExcluir));
+        }
+        @Override public Bloqueo findById(Integer id) { return bloqueos.get(id); }
+        @Override public void insert(Bloqueo bloqueo) { bloqueo.setId(secuencia++); guardar(bloqueo); }
+        @Override public void update(Bloqueo bloqueo) { guardar(bloqueo); }
+        @Override public void delete(Integer id) { bloqueos.remove(id); eliminaciones++; }
+
+        private boolean seCruza(Bloqueo existente, LocalDateTime inicio,
+                                LocalDateTime fin, Integer idExcluir) {
+            return (idExcluir == null || existente.getId() != idExcluir)
+                    && inicio.isBefore(existente.getFechaFin())
+                    && fin.isAfter(existente.getFechaInicio());
+        }
+    }
+}

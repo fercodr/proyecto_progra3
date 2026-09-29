@@ -14,6 +14,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -98,6 +99,20 @@ public class BloqueoDAOImpl implements BloqueoDAO {
                 return mapearLista(rs);
             }
         }
+    }
+
+    @Override
+    public boolean existsOverlapBySalaId(int salaId, LocalDateTime fechaInicio,
+                                         LocalDateTime fechaFin, Integer idExcluir)
+            throws SQLException {
+        return existsOverlap("sala_id", salaId, fechaInicio, fechaFin, idExcluir);
+    }
+
+    @Override
+    public boolean existsOverlapByRecursoId(int recursoId, LocalDateTime fechaInicio,
+                                            LocalDateTime fechaFin, Integer idExcluir)
+            throws SQLException {
+        return existsOverlap("recurso_id", recursoId, fechaInicio, fechaFin, idExcluir);
     }
 
     @Override
@@ -190,6 +205,36 @@ public class BloqueoDAOImpl implements BloqueoDAO {
         } else {
             cmd.setNull(4, Types.INTEGER);
             cmd.setInt(5, bloqueo.getRecurso().getId());
+        }
+    }
+
+    private boolean existsOverlap(String columnaObjetivo, int objetivoId,
+                                  LocalDateTime fechaInicio, LocalDateTime fechaFin,
+                                  Integer idExcluir) throws SQLException {
+        String sql = """
+                SELECT 1
+                FROM bloqueo
+                WHERE %s = ?
+                  AND fecha_inicio < ?
+                  AND fecha_fin > ?
+                  AND (? IS NULL OR id <> ?)
+                LIMIT 1
+                """.formatted(columnaObjetivo);
+        try (Connection conn = DBManager.getInstance().getConnection();
+             PreparedStatement cmd = conn.prepareStatement(sql)) {
+            cmd.setInt(1, objetivoId);
+            cmd.setTimestamp(2, Timestamp.valueOf(fechaFin));
+            cmd.setTimestamp(3, Timestamp.valueOf(fechaInicio));
+            if (idExcluir == null) {
+                cmd.setNull(4, Types.INTEGER);
+                cmd.setNull(5, Types.INTEGER);
+            } else {
+                cmd.setInt(4, idExcluir);
+                cmd.setInt(5, idExcluir);
+            }
+            try (ResultSet rs = cmd.executeQuery()) {
+                return rs.next();
+            }
         }
     }
 

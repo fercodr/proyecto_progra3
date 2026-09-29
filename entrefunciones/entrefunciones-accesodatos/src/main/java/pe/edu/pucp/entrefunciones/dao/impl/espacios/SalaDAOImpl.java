@@ -38,6 +38,31 @@ public class SalaDAOImpl implements SalaDAO {
     }
 
     @Override
+    public List<Sala> findBySedeId(int sedeId) throws SQLException {
+        String sql = """
+                SELECT sa.id, sa.nombre, sa.aforo, sa.tipo_sala, sa.activo,
+                       sa.sede_id AS sede_id, se.razon_social AS sede_razon_social,
+                       se.direccion AS sede_direccion, se.ciudad AS sede_ciudad,
+                       se.telefono_contacto AS sede_telefono_contacto,
+                       se.activo AS sede_activo
+                FROM sala sa
+                INNER JOIN sede se ON se.id = sa.sede_id
+                WHERE sa.sede_id = ?
+                """;
+        try (Connection conn = DBManager.getInstance().getConnection();
+             PreparedStatement cmd = conn.prepareStatement(sql)) {
+            cmd.setInt(1, sedeId);
+            try (ResultSet rs = cmd.executeQuery()) {
+                List<Sala> salas = new ArrayList<>();
+                while (rs.next()) {
+                    salas.add(mapear(rs));
+                }
+                return salas;
+            }
+        }
+    }
+
+    @Override
     public Sala findById(Integer id) throws SQLException {
         validarId(id);
         String sql = """

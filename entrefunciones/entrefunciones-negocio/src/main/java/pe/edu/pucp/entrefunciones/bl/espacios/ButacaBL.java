@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface ButacaBL extends BL<Butaca, Integer> {
     List<Butaca> listarPorSala(int idSala) throws BLException;
+    List<Butaca> listarPorReserva(int idReserva) throws BLException;
 }
