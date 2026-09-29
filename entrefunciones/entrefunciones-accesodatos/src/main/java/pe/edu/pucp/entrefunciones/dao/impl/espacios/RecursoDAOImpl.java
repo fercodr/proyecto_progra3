@@ -1,6 +1,7 @@
 package pe.edu.pucp.entrefunciones.dao.impl.espacios;
 
 import pe.edu.pucp.entrefunciones.dao.espacios.RecursoDAO;
+import pe.edu.pucp.entrefunciones.dao.transacciones.TransactionManager;
 import pe.edu.pucp.entrefunciones.db.DBManager;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Recurso;
 
@@ -59,6 +60,7 @@ public class RecursoDAOImpl implements RecursoDAO {
 
     @Override
     public void insert(Recurso modelo) throws SQLException {
+<<<<<<< Updated upstream
         if(modelo==null)  throw new IllegalArgumentException("El recurso no puede ser nulo");
 
         String sql = """
@@ -80,7 +82,19 @@ public class RecursoDAOImpl implements RecursoDAO {
         }catch (SQLException e){
             throw new SQLException("",e);
         }
+=======
+        String sql = """
+                SELECT id,nombre,tipo FROM recurso
+                WHERE id=?
+                """;
+>>>>>>> Stashed changes
 
+        try(Connection conn = TransactionManager.getConnection();
+            PreparedStatement cmd = conn.prepareStatement(sql);
+            ResultSet rs = cmd.executeQuery()
+        ){
+
+        }
     }
 
     @Override
