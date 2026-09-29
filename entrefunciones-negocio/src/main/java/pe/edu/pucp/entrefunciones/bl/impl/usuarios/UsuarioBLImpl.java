@@ -1,9 +1,9 @@
-package pe.edu.pucp.negocio.entrefunciones.bl.impl.usuarios;
+package pe.edu.pucp.entrefunciones.bl.impl.usuarios;
 
 import pe.edu.pucp.entrefunciones.dao.impl.usuarios.UsuarioDAOImpl;
 import pe.edu.pucp.entrefunciones.modelo.usuarios.Usuario;
-import pe.edu.pucp.negocio.entrefunciones.bl.BLException;
-import pe.edu.pucp.negocio.entrefunciones.bl.usuarios.UsuarioBL;
+import pe.edu.pucp.entrefunciones.bl.BLException;
+import pe.edu.pucp.entrefunciones.bl.usuarios.UsuarioBL;
 
 import java.sql.SQLException;
 import java.util.List;

@@ -1,4 +1,4 @@
-package pe.edu.pucp.entrefunciones.bl;
+package pe.edu.pucp.entrefunciones.bl.catalogo;
 
 import pe.edu.pucp.entrefunciones.modelo.catalogo.ObraTeatro;
 

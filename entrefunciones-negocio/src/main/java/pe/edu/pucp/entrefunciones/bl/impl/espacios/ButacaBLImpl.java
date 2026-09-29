@@ -1,6 +1,6 @@
-package pe.edu.pucp.negocio.entrefunciones.bl.impl.espacios;
-import pe.edu.pucp.negocio.entrefunciones.bl.espacios.ButacaBL;
-import pe.edu.pucp.negocio.entrefunciones.bl.BLException;
+package pe.edu.pucp.entrefunciones.bl.impl.espacios;
+import pe.edu.pucp.entrefunciones.bl.espacios.ButacaBL;
+import pe.edu.pucp.entrefunciones.bl.BLException;
 import pe.edu.pucp.entrefunciones.dao.espacios.ButacaDAO;
 import pe.edu.pucp.entrefunciones.dao.impl.espacios.ButacaDAOImpl;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Butaca;
