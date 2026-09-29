@@ -93,10 +93,10 @@ public class Main {
         System.out.println("Butaca A1 pertenece a la sala: " + a1.getSala().getNombre());
 
         Recurso proyector = new Recurso(1, "Proyector 4K Sala 1", "Proyeccion");
-        Bloqueo bloqueo = new Bloqueo(1, "Calibracion de proyector",
-                LocalDateTime.of(2026, 9, 18, 9, 0), LocalDateTime.of(2026, 9, 18, 11, 0),
-                null, proyector);
-        System.out.println("Bloqueo activo el 18/09 10:00? " + bloqueo.estaVigente(LocalDateTime.of(2026, 9, 18, 10, 0)));
+//        Bloqueo bloqueo = new Bloqueo(1, "Calibracion de proyector",
+//                LocalDateTime.of(2026, 9, 18, 9, 0), LocalDateTime.of(2026, 9, 18, 11, 0),
+//                null, proyector);
+        //System.out.println("Bloqueo activo el 18/09 10:00? " + bloqueo.estaVigente(LocalDateTime.of(2026, 9, 18, 10, 0)));
 
         // ---------- 3. Eventos (catalogo) y Funciones (programacion) ----------
         // Evento es abstracta: Pelicula, ObraTeatro y ActividadCultural HEREDAN de

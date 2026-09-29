@@ -1,13 +1,7 @@
 package pe.edu.pucp.entrefunciones.modelo.espacios;
 import java.time.LocalDateTime;
 
-/**
- * RF-M2-02: periodo durante el cual una sala o un recurso no puede utilizarse
- * (mantenimiento, reparacion, etc.). Se asocia a una Sala o a un Recurso (o a
- * ambos), nunca elimina el objeto bloqueado: es la misma logica de eliminado
- * logico aplicada a una ventana de tiempo en vez de a todo el ciclo de vida
- * de la entidad.
- */
+
 public class Bloqueo {
     private int id;
     private String motivo;
@@ -16,25 +10,20 @@ public class Bloqueo {
     private Sala sala;
     private Recurso recurso;
 
-    public Bloqueo (int id, String motivo, LocalDateTime fechaInicio, LocalDateTime fechaFin, Sala sala, Recurso recurso){
-        if((sala == null) == (recurso == null)){
-            throw new IllegalArgumentException("un bloqueo debe tener exactamente una sala o un recurso, nunca ambos ni ninguno");
-        }
-        if(fechaInicio != null && fechaFin != null && !fechaFin.isAfter(fechaInicio)){
-            throw new IllegalArgumentException("fechaFin debe ser posterior a fechaInicio");
-        }
-        setId(id);
-        setMotivo(motivo);
-        setFechaInicio(fechaInicio);
-        setFechaFin(fechaFin);
-        this.sala=sala;
-        this.recurso=recurso;
+    public Bloqueo (){
+
     }
 
     /** Constructor de copia. */
     public Bloqueo (final Bloqueo bloqueo){
         if(bloqueo == null){
             throw new IllegalArgumentException("bloqueo no puede ser nulo");
+        }
+        if((sala == null) == (recurso == null)){
+            throw new IllegalArgumentException("un bloqueo debe tener exactamente una sala o un recurso, nunca ambos ni ninguno");
+        }
+        if(fechaInicio != null && fechaFin != null && !fechaFin.isAfter(fechaInicio)){
+            throw new IllegalArgumentException("fechaFin debe ser posterior a fechaInicio");
         }
         setId(bloqueo.getId());
         setMotivo(bloqueo.getMotivo());
