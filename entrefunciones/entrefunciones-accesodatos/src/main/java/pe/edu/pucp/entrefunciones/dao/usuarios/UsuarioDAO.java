@@ -1,6 +1,6 @@
-package pe.edu.pucp.accesodatos.dao.usuarios;
+package pe.edu.pucp.entrefunciones.dao.usuarios;
 
-import pe.edu.pucp.accesodatos.dao.DAO;
+import pe.edu.pucp.entrefunciones.dao.DAO;
 import pe.edu.pucp.entrefunciones.modelo.usuarios.Usuario;
 
 import java.sql.SQLException;
