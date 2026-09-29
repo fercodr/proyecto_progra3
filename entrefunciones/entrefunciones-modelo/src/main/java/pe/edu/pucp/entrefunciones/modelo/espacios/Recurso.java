@@ -29,6 +29,9 @@ public class Recurso implements IEliminable {
         }
     }
 
+    public Recurso() {
+    }
+
     @Override
     public void activar(){
         this.activo=true;

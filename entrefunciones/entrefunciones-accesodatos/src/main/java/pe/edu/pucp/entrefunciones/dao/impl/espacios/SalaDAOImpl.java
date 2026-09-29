@@ -18,7 +18,8 @@ public class SalaDAOImpl implements SalaDAO {
     @Override
     public List<Sala> findAll() throws SQLException {
         String sql = """
-                SELECT * FROM sala
+                SELECT id,sede_id,nombre,aforo,tipo_sala
+                FROM sala
                 """;
         try(Connection conn = DBManager.getInstance().getConnection();
             PreparedStatement cmd = conn.prepareStatement(sql);
@@ -35,8 +36,26 @@ public class SalaDAOImpl implements SalaDAO {
     }
 
     @Override
-    public Sala findById(Integer integer) throws SQLException {
-        return null;
+    public Sala findById(Integer id) throws SQLException {
+        if(id==null){
+            throw new RuntimeException("el id no puede ser nulo");
+        }
+        String sql = """
+                SELECT id,sede_id,nombre,aforo,tipo_sala
+                FROM sala WHERE id=?
+                """;
+
+        try (Connection conn = DBManager.getInstance().getConnection();
+            PreparedStatement cmd = conn.prepareStatement(sql)){
+            cmd.setInt(1,id);
+            try (ResultSet rs = cmd.executeQuery()){
+                return !rs.next()?null:mapear(rs,new Sala());
+            }catch (SQLException  ex){
+                throw new SQLException("",ex);
+            }
+        }catch (SQLException e){
+            throw new SQLException("",e);
+        }
     }
 
     @Override

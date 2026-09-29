@@ -4,10 +4,7 @@ import pe.edu.pucp.entrefunciones.dao.espacios.SedeDAO;
 import pe.edu.pucp.entrefunciones.db.DBManager;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Sede;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,12 +35,41 @@ public class SedeDAOImpl implements SedeDAO {
     }
 
     @Override
-    public Sede findById(Integer integer) throws SQLException {
-        return null;
+    public Sede findById(Integer id) throws SQLException {
+        if(id==null){
+            throw new RuntimeException("el id no puede ser nulo");
+        }
+        String sql = """
+                SELECT id,razon_social,direccion,ciudad,telefono_contacto
+                FROM sede WHERE  id=?
+                """;
+        try(Connection conn = DBManager.getInstance().getConnection();
+            PreparedStatement cmd = conn.prepareStatement(sql)){
+
+            cmd.setInt(1,id);
+            try( ResultSet rs = cmd.executeQuery()){
+                return !rs.next()?null:mapear(rs,new Sede());
+            }catch (SQLException ex){
+                throw new SQLException("",ex);
+            }
+        }catch(SQLException e){
+            throw new SQLException("",e);
+        }
+
     }
 
     @Override
     public void insert(Sede modelo) throws SQLException {
+        String sql = """
+                INSERT INTO sede(id,razon_social,direccion,ciudad,telefono_contacto)
+                    VALUES (?,?,?,?,?,?)
+                """;
+        try(Connection conn = DBManager.getInstance().getConnection();
+            PreparedStatement cmd = conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)){
+
+        }catch(SQLException ex){
+            throw new SQLException("",ex);
+        }
 
     }
 
