@@ -65,7 +65,7 @@ public class SalaDAOImpl implements SalaDAO {
                 INSERT INTO sala(sede_id,nombre,aforo,tipo_sala,activo)
                 VALUES (?,?,?,?,?,?)
                 """;
-        
+
     }
 
     @Override
