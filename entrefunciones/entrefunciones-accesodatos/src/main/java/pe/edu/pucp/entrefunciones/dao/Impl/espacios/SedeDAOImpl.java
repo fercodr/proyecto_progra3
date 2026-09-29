@@ -1,6 +1,6 @@
-package pe.edu.pucp.entrefunciones.dao.Impl;
+package pe.edu.pucp.entrefunciones.dao.Impl.espacios;
 
-import pe.edu.pucp.entrefunciones.dao.SedeDAO;
+import pe.edu.pucp.entrefunciones.dao.espacios.SedeDAO;
 import pe.edu.pucp.entrefunciones.db.DBManager;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Sede;
 

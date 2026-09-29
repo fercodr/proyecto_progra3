@@ -12,6 +12,10 @@ public class Sala implements IEliminable {
     private ArrayList<Butaca> butacas = new ArrayList<>();
     private ArrayList<Funcion> funciones = new ArrayList<>();
 
+    public Sala(){
+
+    }
+
     public Sala (int id, Sede sede, String nombre, int aforo, String tipoSala){
         setId(id);
         setSede(sede);

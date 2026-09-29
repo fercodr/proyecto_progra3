@@ -1,11 +1,8 @@
-package pe.edu.pucp.entrefunciones.dao.Impl;
+package pe.edu.pucp.entrefunciones.dao.Impl.espacios;
 
-import pe.edu.pucp.entrefunciones.dao.SalaDAO;
-import pe.edu.pucp.entrefunciones.dao.SedeDAO;
+import pe.edu.pucp.entrefunciones.dao.espacios.SalaDAO;
 import pe.edu.pucp.entrefunciones.db.DBManager;
-import pe.edu.pucp.entrefunciones.modelo.espacios.Butaca;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Sala;
-import pe.edu.pucp.entrefunciones.modelo.espacios.Sede;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -55,13 +52,12 @@ public class SalaDAOImpl implements SalaDAO {
 
     private Sala mapear(ResultSet rs,Sala sala)throws SQLException{
         sala.setId(rs.getInt("id"));
-        int sedeId = rs.getInt("id_sede");
+        int sedeId = rs.getInt("sede_id");
         if (rs.wasNull()) {
             throw new SQLException("La sala no tiene sede_id");
         }
-        sala.setSede();
+        sala.setSede(new SedeDAOImpl().findById(sedeId));
         sala.setTipoSala(rs.getString("tipo_sala"));
-
         sala.setButacas(rs.wasNull()?null:new ButacaDaoImpl().findByIdSala(rs.getInt("id"));
         sala.setFunciones(rs.wasNull()?null:new FuncionDAOImpl().findByIdSala(rs.getInt("id"));
         sala.setAforo(rs.getInt("aforo"));

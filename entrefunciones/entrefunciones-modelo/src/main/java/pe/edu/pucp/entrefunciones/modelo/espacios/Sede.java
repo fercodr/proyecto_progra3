@@ -10,6 +10,9 @@ public class Sede implements IEliminable {
     private boolean activo;
     private ArrayList<Sala> salas = new ArrayList<>();
 
+    public Sede(){
+    }
+
     public Sede (int id, String razonSocial, String direccion, String ciudad, String telefonoContacto){
         setId(id);
         setRazonSocial(razonSocial);

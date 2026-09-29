@@ -2,7 +2,7 @@ package pe.edu.pucp.negocio.entrefunciones.bl.impl;
 
 import pe.edu.pucp.negocio.entrefunciones.bl.BLException;
 import pe.edu.pucp.entrefunciones.bl.PeliculaBL;
-import pe.edu.pucp.entrefunciones.dao.PeliculaDAO;
+import pe.edu.pucp.entrefunciones.dao.catalogo.PeliculaDAO;
 import pe.edu.pucp.entrefunciones.dao.impl.PeliculaDAOImpl;
 import pe.edu.pucp.entrefunciones.modelo.catalogo.Pelicula;
 

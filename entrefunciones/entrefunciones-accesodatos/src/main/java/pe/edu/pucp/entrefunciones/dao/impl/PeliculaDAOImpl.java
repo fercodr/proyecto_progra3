@@ -1,6 +1,6 @@
 package pe.edu.pucp.entrefunciones.dao.impl;
 
-import pe.edu.pucp.entrefunciones.dao.PeliculaDAO;
+import pe.edu.pucp.entrefunciones.dao.catalogo.PeliculaDAO;
 import pe.edu.pucp.entrefunciones.db.DBManager;
 import pe.edu.pucp.entrefunciones.modelo.catalogo.CategoriaGenero;
 import pe.edu.pucp.entrefunciones.modelo.catalogo.ClasificacionEdad;
