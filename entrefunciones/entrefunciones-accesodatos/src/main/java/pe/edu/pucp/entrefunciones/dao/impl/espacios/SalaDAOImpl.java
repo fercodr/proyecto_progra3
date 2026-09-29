@@ -1,7 +1,9 @@
-package pe.edu.pucp.entrefunciones.dao.Impl.espacios;
+package pe.edu.pucp.entrefunciones.dao.impl.espacios;
 
 import pe.edu.pucp.entrefunciones.dao.espacios.SalaDAO;
+import pe.edu.pucp.entrefunciones.dao.impl.espacios.SedeDAOImpl;
 import pe.edu.pucp.entrefunciones.db.DBManager;
+import pe.edu.pucp.entrefunciones.modelo.espacios.Butaca;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Sala;
 
 import java.sql.Connection;
@@ -58,7 +60,8 @@ public class SalaDAOImpl implements SalaDAO {
         }
         sala.setSede(new SedeDAOImpl().findById(sedeId));
         sala.setTipoSala(rs.getString("tipo_sala"));
-        sala.setButacas(rs.wasNull()?null:new ButacaDaoImpl().findByIdSala(rs.getInt("id"));
+        List <Butaca> butacas = new ButacaDAOImpl().findBySalaId(rs.getInt("id"));
+        sala.setButacas(rs.wasNull()?null:butacas);
         sala.setFunciones(rs.wasNull()?null:new FuncionDAOImpl().findByIdSala(rs.getInt("id"));
         sala.setAforo(rs.getInt("aforo"));
         sala.setNombre(rs.getString("nombre"));
