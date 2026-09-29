@@ -1,11 +1,13 @@
-package pe.edu.pucp.entrefunciones.dao.usuarios;
+package pe.edu.pucp.accesodatos.dao.usuarios;
 
+import pe.edu.pucp.accesodatos.dao.DAO;
 import pe.edu.pucp.entrefunciones.modelo.usuarios.Usuario;
 
 import java.sql.SQLException;
 
+public interface UsuarioDAO<T extends Usuario> extends DAO<T, Integer> {
 
-public interface UsuarioDAO extends DAO<Usuario, Integer> {
-    Usuario findByCorreo(String correo) throws SQLException;
-    Usuario findByDni(String dni) throws SQLException;
+    T findByCorreo(String correo) throws SQLException;
+
+    T findByDni(String dni) throws SQLException;
 }
