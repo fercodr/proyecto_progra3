@@ -142,11 +142,11 @@ public class Sala implements IEliminable {
         return List.copyOf(funciones);
     }
 
-    public void setFunciones(ArrayList<Funcion> funciones){
+    public void setFunciones(List<Funcion> funciones){
         if(funciones == null){
             throw new IllegalArgumentException("funciones no puede ser nulo");
         }
-        this.funciones=funciones;
+        this.funciones=List.copyOf(funciones);
     }
 
 }
