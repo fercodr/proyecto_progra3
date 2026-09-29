@@ -71,66 +71,55 @@ public class ButacaBLImpl implements ButacaBL {
     @Override
     public void insert(Butaca butaca) throws BLException {
         validarDatos(butaca);
-        Sala sala = validarExisteSala(butaca.getSala().getId());
-        if (!sala.estaActivo()) {
-            throw new BLException("No se puede registrar una butaca en una sala inactiva");
-        }
-
-        Butaca mismaPosicion = buscarMismaPosicion(butaca, null);
-        if (mismaPosicion != null) {
-            if (mismaPosicion.estaActivo()) {
-                throw new BLException("Ya existe una butaca en esa fila y columna de la sala");
+        TransaccionBL.ejecutar("No se pudo registrar la butaca", () -> {
+            Sala sala = validarExisteSala(butaca.getSala().getId());
+            if (!sala.estaActivo()) {
+                throw new BLException("No se puede registrar una butaca en una sala inactiva");
             }
-            butaca.setId(mismaPosicion.getId());
-            validarAforo(butaca, mismaPosicion.getId(), sala);
-            try {
+
+            Butaca mismaPosicion = buscarMismaPosicion(butaca, null);
+            if (mismaPosicion != null) {
+                if (mismaPosicion.estaActivo()) {
+                    throw new BLException("Ya existe una butaca en esa fila y columna de la sala");
+                }
+                butaca.setId(mismaPosicion.getId());
+                validarAforo(butaca, mismaPosicion.getId(), sala);
                 butacaDAO.update(butaca);
                 return;
-            } catch (SQLException e) {
-                throw new BLException("No se pudo reactivar la butaca existente", e);
             }
-        }
 
-        validarAforo(butaca, null, sala);
-        try {
+            validarAforo(butaca, null, sala);
             butacaDAO.insert(butaca);
-        } catch (SQLException e) {
-            throw new BLException("No se pudo registrar la butaca", e);
-        }
+        });
     }
 
     @Override
     public void update(Butaca butaca) throws BLException {
         validarDatos(butaca);
         validarId(butaca.getId(), "butaca");
-        validarExisteButaca(butaca.getId());
-        Sala sala = validarExisteSala(butaca.getSala().getId());
-        if (butaca.estaActivo() && !sala.estaActivo()) {
-            throw new BLException("No se puede activar o trasladar una butaca a una sala inactiva");
-        }
-        if (buscarMismaPosicion(butaca, butaca.getId()) != null) {
-            throw new BLException("Ya existe otra butaca en esa fila y columna de la sala");
-        }
-        validarAforo(butaca, butaca.getId(), sala);
-        try {
+        TransaccionBL.ejecutar("No se pudo actualizar la butaca", () -> {
+            validarExisteButaca(butaca.getId());
+            Sala sala = validarExisteSala(butaca.getSala().getId());
+            if (butaca.estaActivo() && !sala.estaActivo()) {
+                throw new BLException("No se puede activar o trasladar una butaca a una sala inactiva");
+            }
+            if (buscarMismaPosicion(butaca, butaca.getId()) != null) {
+                throw new BLException("Ya existe otra butaca en esa fila y columna de la sala");
+            }
+            validarAforo(butaca, butaca.getId(), sala);
             butacaDAO.update(butaca);
-        } catch (SQLException e) {
-            throw new BLException("No se pudo actualizar la butaca", e);
-        }
+        });
     }
 
     @Override
     public void delete(Integer id) throws BLException {
         validarId(id, "butaca");
-        Butaca existente = validarExisteButaca(id);
-        if (!existente.estaActivo()) {
-            return;
-        }
-        try {
-            butacaDAO.delete(id);
-        } catch (SQLException e) {
-            throw new BLException("No se pudo desactivar la butaca", e);
-        }
+        TransaccionBL.ejecutar("No se pudo desactivar la butaca", () -> {
+            Butaca existente = validarExisteButaca(id);
+            if (existente.estaActivo()) {
+                butacaDAO.delete(id);
+            }
+        });
     }
 
     private Butaca validarExisteButaca(Integer id) throws BLException {

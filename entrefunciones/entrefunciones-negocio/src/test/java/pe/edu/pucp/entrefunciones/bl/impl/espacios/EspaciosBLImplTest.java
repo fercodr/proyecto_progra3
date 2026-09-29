@@ -1,5 +1,7 @@
 package pe.edu.pucp.entrefunciones.bl.impl.espacios;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import pe.edu.pucp.entrefunciones.bl.BLException;
 import pe.edu.pucp.entrefunciones.dao.espacios.BloqueoDAO;
@@ -7,12 +9,15 @@ import pe.edu.pucp.entrefunciones.dao.espacios.ButacaDAO;
 import pe.edu.pucp.entrefunciones.dao.espacios.RecursoDAO;
 import pe.edu.pucp.entrefunciones.dao.espacios.SalaDAO;
 import pe.edu.pucp.entrefunciones.dao.espacios.SedeDAO;
+import pe.edu.pucp.entrefunciones.dao.transacciones.TransactionsManager;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Bloqueo;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Butaca;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Recurso;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Sala;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Sede;
 
+import java.lang.reflect.Proxy;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -27,6 +32,18 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class EspaciosBLImplTest {
+
+    @BeforeEach
+    void iniciarTransaccionDePrueba() {
+        TransactionsManager.iniciar(conexionFalsa());
+    }
+
+    @AfterEach
+    void cerrarTransaccionDePrueba() {
+        if (TransactionsManager.activa()) {
+            TransactionsManager.rollback();
+        }
+    }
 
     @Test
     void salaRechazaNombreDuplicadoEnLaMismaSede() {
@@ -228,6 +245,33 @@ class EspaciosBLImplTest {
         return bloqueo;
     }
 
+    private static Connection conexionFalsa() {
+        return (Connection) Proxy.newProxyInstance(
+                EspaciosBLImplTest.class.getClassLoader(),
+                new Class<?>[]{Connection.class},
+                (proxy, metodo, argumentos) -> switch (metodo.getName()) {
+                    case "getAutoCommit" -> false;
+                    case "isClosed" -> false;
+                    case "isWrapperFor" -> false;
+                    case "unwrap" -> null;
+                    case "toString" -> "ConexionTransaccionalFalsa";
+                    default -> valorPredeterminado(metodo.getReturnType());
+                });
+    }
+
+    private static Object valorPredeterminado(Class<?> tipo) {
+        if (!tipo.isPrimitive() || tipo == void.class) {
+            return null;
+        }
+        if (tipo == boolean.class) {
+            return false;
+        }
+        if (tipo == char.class) {
+            return '\0';
+        }
+        return 0;
+    }
+
     private static final class Contexto {
         private final Sede sede = sede(1);
         private final SedeDAOFalso sedeDAO = new SedeDAOFalso();
@@ -265,6 +309,7 @@ class EspaciosBLImplTest {
 
         @Override public List<Sede> findAll() throws SQLException { return new ArrayList<>(sedes.values()); }
         @Override public Sede findById(Integer id) throws SQLException { return sedes.get(id); }
+        @Override public Sede findByIdCompleto(Integer id) throws SQLException { return sedes.get(id); }
         @Override public void insert(Sede sede) throws SQLException { sede.setId(secuencia++); guardar(sede); }
         @Override public void update(Sede sede) throws SQLException { guardar(sede); }
         @Override public void delete(Integer id) throws SQLException { sedes.get(id).desactivar(); eliminaciones++; }

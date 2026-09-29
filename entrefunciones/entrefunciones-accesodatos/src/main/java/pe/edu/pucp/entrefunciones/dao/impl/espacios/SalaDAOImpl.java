@@ -1,15 +1,17 @@
 package pe.edu.pucp.entrefunciones.dao.impl.espacios;
 
 import pe.edu.pucp.entrefunciones.dao.espacios.SalaDAO;
-import pe.edu.pucp.entrefunciones.db.DBManager;
+import pe.edu.pucp.entrefunciones.dao.transacciones.ConnectionScope;
+import pe.edu.pucp.entrefunciones.dao.transacciones.TransactionsManager;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Sala;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Sede;
 
+import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,17 +19,9 @@ public class SalaDAOImpl implements SalaDAO {
 
     @Override
     public List<Sala> findAll() throws SQLException {
-        String sql = """
-                SELECT sa.id, sa.nombre, sa.aforo, sa.tipo_sala, sa.activo,
-                       sa.sede_id AS sede_id, se.razon_social AS sede_razon_social,
-                       se.direccion AS sede_direccion, se.ciudad AS sede_ciudad,
-                       se.telefono_contacto AS sede_telefono_contacto,
-                       se.activo AS sede_activo
-                FROM sala sa
-                INNER JOIN sede se ON se.id = sa.sede_id
-                """;
-        try (Connection conn = DBManager.getInstance().getConnection();
-             PreparedStatement cmd = conn.prepareStatement(sql);
+        String sql = "{call listar_salas()}";
+        try (ConnectionScope scope = ConnectionScope.openForRead();
+             CallableStatement cmd = scope.connection().prepareCall(sql);
              ResultSet rs = cmd.executeQuery()) {
             List<Sala> salas = new ArrayList<>();
             while (rs.next()) {
@@ -39,18 +33,10 @@ public class SalaDAOImpl implements SalaDAO {
 
     @Override
     public List<Sala> findBySedeId(int sedeId) throws SQLException {
-        String sql = """
-                SELECT sa.id, sa.nombre, sa.aforo, sa.tipo_sala, sa.activo,
-                       sa.sede_id AS sede_id, se.razon_social AS sede_razon_social,
-                       se.direccion AS sede_direccion, se.ciudad AS sede_ciudad,
-                       se.telefono_contacto AS sede_telefono_contacto,
-                       se.activo AS sede_activo
-                FROM sala sa
-                INNER JOIN sede se ON se.id = sa.sede_id
-                WHERE sa.sede_id = ?
-                """;
-        try (Connection conn = DBManager.getInstance().getConnection();
-             PreparedStatement cmd = conn.prepareStatement(sql)) {
+        validarId(sedeId);
+        String sql = "{call listar_salas_por_sede(?)}";
+        try (ConnectionScope scope = ConnectionScope.openForRead();
+             CallableStatement cmd = scope.connection().prepareCall(sql)) {
             cmd.setInt(1, sedeId);
             try (ResultSet rs = cmd.executeQuery()) {
                 List<Sala> salas = new ArrayList<>();
@@ -65,18 +51,9 @@ public class SalaDAOImpl implements SalaDAO {
     @Override
     public Sala findById(Integer id) throws SQLException {
         validarId(id);
-        String sql = """
-                SELECT sa.id, sa.nombre, sa.aforo, sa.tipo_sala, sa.activo,
-                       sa.sede_id AS sede_id, se.razon_social AS sede_razon_social,
-                       se.direccion AS sede_direccion, se.ciudad AS sede_ciudad,
-                       se.telefono_contacto AS sede_telefono_contacto,
-                       se.activo AS sede_activo
-                FROM sala sa
-                INNER JOIN sede se ON se.id = sa.sede_id
-                WHERE sa.id = ?
-                """;
-        try (Connection conn = DBManager.getInstance().getConnection();
-             PreparedStatement cmd = conn.prepareStatement(sql)) {
+        String sql = "{call buscar_sala_por_id(?)}";
+        try (ConnectionScope scope = ConnectionScope.openForRead();
+             CallableStatement cmd = scope.connection().prepareCall(sql)) {
             cmd.setInt(1, id);
             try (ResultSet rs = cmd.executeQuery()) {
                 return rs.next() ? mapear(rs) : null;
@@ -87,33 +64,34 @@ public class SalaDAOImpl implements SalaDAO {
     @Override
     public void insert(Sala sala) throws SQLException {
         validarSala(sala);
-        String sql = """
-                INSERT INTO sala (sede_id, nombre, aforo, tipo_sala, activo)
-                VALUES (?, ?, ?, ?, ?)
-                """;
-        try (Connection conn = DBManager.getInstance().getConnection();
-             PreparedStatement cmd = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        String sql = "{call insertar_sala(?, ?, ?, ?, ?, ?)}";
+        Connection conn = TransactionsManager.getConnection();
+        try (CallableStatement cmd = conn.prepareCall(sql)) {
             asignarParametros(cmd, sala);
-            if (cmd.executeUpdate() == 0) {
-                throw new SQLException("No se pudo insertar la sala");
+            cmd.registerOutParameter(6, Types.INTEGER);
+            cmd.executeUpdate();
+            sala.setId(cmd.getInt(6));
+            if (sala.getId() <= 0) {
+                throw new SQLException("No se obtuvo el id de la sala insertada");
             }
-            asignarIdGenerado(cmd, sala);
         }
     }
 
     @Override
     public void update(Sala sala) throws SQLException {
         validarSala(sala);
-        String sql = """
-                UPDATE sala
-                SET sede_id = ?, nombre = ?, aforo = ?, tipo_sala = ?, activo = ?
-                WHERE id = ?
-                """;
-        try (Connection conn = DBManager.getInstance().getConnection();
-             PreparedStatement cmd = conn.prepareStatement(sql)) {
-            asignarParametros(cmd, sala);
-            cmd.setInt(6, sala.getId());
-            if (cmd.executeUpdate() == 0) {
+        validarId(sala.getId());
+        String sql = "{call modificar_sala(?, ?, ?, ?, ?, ?)}";
+        Connection conn = TransactionsManager.getConnection();
+        try (CallableStatement cmd = conn.prepareCall(sql)) {
+            cmd.setInt(1, sala.getId());
+            cmd.setInt(2, sala.getSede().getId());
+            cmd.setString(3, sala.getNombre());
+            cmd.setInt(4, sala.getAforo());
+            cmd.setString(5, sala.getTipoSala());
+            cmd.setBoolean(6, sala.estaActivo());
+            cmd.executeUpdate();
+            if (!existe(conn, sala.getId())) {
                 throw new SQLException("No se pudo actualizar la sala con id " + sala.getId());
             }
         }
@@ -122,21 +100,28 @@ public class SalaDAOImpl implements SalaDAO {
     @Override
     public void delete(Integer id) throws SQLException {
         validarId(id);
-        String sql = """
-                UPDATE sala
-                SET activo = FALSE
-                WHERE id = ?
-                """;
-        try (Connection conn = DBManager.getInstance().getConnection();
-             PreparedStatement cmd = conn.prepareStatement(sql)) {
+        String sql = "{call eliminar_sala(?)}";
+        Connection conn = TransactionsManager.getConnection();
+        try (CallableStatement cmd = conn.prepareCall(sql)) {
             cmd.setInt(1, id);
-            if (cmd.executeUpdate() == 0) {
+            cmd.executeUpdate();
+            if (!existe(conn, id)) {
                 throw new SQLException("No se pudo eliminar la sala con id " + id);
             }
         }
     }
 
-    private void asignarParametros(PreparedStatement cmd, Sala sala) throws SQLException {
+    private boolean existe(Connection conn, int id) throws SQLException {
+        try (PreparedStatement cmd = conn.prepareStatement(
+                "SELECT 1 FROM sala WHERE id = ?")) {
+            cmd.setInt(1, id);
+            try (ResultSet rs = cmd.executeQuery()) {
+                return rs.next();
+            }
+        }
+    }
+
+    private void asignarParametros(CallableStatement cmd, Sala sala) throws SQLException {
         cmd.setInt(1, sala.getSede().getId());
         cmd.setString(2, sala.getNombre());
         cmd.setInt(3, sala.getAforo());
@@ -171,15 +156,6 @@ public class SalaDAOImpl implements SalaDAO {
         return sala;
     }
 
-    private void asignarIdGenerado(PreparedStatement cmd, Sala sala) throws SQLException {
-        try (ResultSet keys = cmd.getGeneratedKeys()) {
-            if (!keys.next()) {
-                throw new SQLException("No se obtuvo el id de la sala insertada");
-            }
-            sala.setId(keys.getInt(1));
-        }
-    }
-
     private void validarSala(Sala sala) {
         if (sala == null) {
             throw new IllegalArgumentException("La sala no puede ser nula");
@@ -190,8 +166,8 @@ public class SalaDAOImpl implements SalaDAO {
     }
 
     private void validarId(Integer id) {
-        if (id == null) {
-            throw new IllegalArgumentException("El id no puede ser nulo");
+        if (id == null || id <= 0) {
+            throw new IllegalArgumentException("El id debe ser positivo");
         }
     }
 }

@@ -77,35 +77,33 @@ public class BloqueoBLImpl implements BloqueoBL {
     @Override
     public void insert(Bloqueo bloqueo) throws BLException {
         validarDatos(bloqueo);
-        validarObjetivo(bloqueo);
-        validarSolapamiento(bloqueo, null);
-        try {
+        TransaccionBL.ejecutar("No se pudo registrar el bloqueo", () -> {
+            validarObjetivo(bloqueo);
+            validarSolapamiento(bloqueo, null);
             bloqueoDAO.insert(bloqueo);
-        } catch (SQLException e) {
-            throw new BLException("No se pudo registrar el bloqueo", e);
-        }
+        });
     }
 
     @Override
     public void update(Bloqueo bloqueo) throws BLException {
         validarDatos(bloqueo);
         validarId(bloqueo.getId(), "bloqueo");
-        validarExisteBloqueo(bloqueo.getId());
-        validarObjetivo(bloqueo);
-        validarSolapamiento(bloqueo, bloqueo.getId());
-        try {
+        TransaccionBL.ejecutar("No se pudo actualizar el bloqueo", () -> {
+            validarExisteBloqueo(bloqueo.getId());
+            validarObjetivo(bloqueo);
+            validarSolapamiento(bloqueo, bloqueo.getId());
             bloqueoDAO.update(bloqueo);
-        } catch (SQLException e) {
-            throw new BLException("No se pudo actualizar el bloqueo", e);
-        }
+        });
     }
 
     @Override
     public void delete(Integer id) throws BLException {
         validarId(id, "bloqueo");
-        validarExisteBloqueo(id);
-        throw new BLException(
-                "No se puede cancelar el bloqueo porque el esquema actual no admite baja lógica");
+        TransaccionBL.ejecutar("No se pudo cancelar el bloqueo", () -> {
+            validarExisteBloqueo(id);
+            throw new BLException(
+                    "No se puede cancelar el bloqueo porque el esquema actual no admite baja lógica");
+        });
     }
 
     private Bloqueo validarExisteBloqueo(Integer id) throws BLException {

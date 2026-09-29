@@ -118,7 +118,7 @@ public class Sede implements IEliminable {
         return salas;
     }
 
-    public void setSalas(ArrayList<Sala> salas){
+    public void setSalas(List<Sala> salas){
         if(salas == null){
             throw new IllegalArgumentException("salas no puede ser nulo");
         }

@@ -83,14 +83,14 @@ public class Sala implements IEliminable {
     }
 
     public Sede getSede(){
-        return new Sede(sede);
+        return sede;
     }
 
     public void setSede(Sede sede){
         if(sede == null){
             throw new IllegalArgumentException("sede no puede ser nulo");
         }
-        this.sede=new Sede(sede);
+        this.sede=sede;
     }
 
     public String getNombre(){

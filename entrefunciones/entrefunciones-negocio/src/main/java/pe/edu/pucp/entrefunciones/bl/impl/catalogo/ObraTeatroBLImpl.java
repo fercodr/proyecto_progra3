@@ -62,7 +62,8 @@ public class ObraTeatroBLImpl implements ObraTeatroBL {
     }
 
     private void validarNombre(ObraTeatro obraTeatro) throws BLException {
-        if (obraTeatro.getNombre() == null || obraTeatro.getNombre().trim().isEmpty()) {
+        if (obraTeatro == null || obraTeatro.getTitulo() == null
+                || obraTeatro.getTitulo().trim().isEmpty()) {
             throw new BLException("El nombre de la obra de teatro no puede estar vacio");
         }
     }

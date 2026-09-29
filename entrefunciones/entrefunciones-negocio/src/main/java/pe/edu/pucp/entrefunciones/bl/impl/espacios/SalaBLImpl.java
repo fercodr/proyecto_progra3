@@ -66,55 +66,48 @@ public class SalaBLImpl implements SalaBL {
     @Override
     public void insert(Sala sala) throws BLException {
         validarDatos(sala);
-        Sede sedeRelacionada = obtenerSede(sala);
-        Sede sede = validarExisteSede(sedeRelacionada.getId());
-        if (!sede.estaActivo()) {
-            throw new BLException("No se puede registrar una sala en una sede inactiva");
-        }
-        validarNombreDisponible(sala, null);
-        try {
+        TransaccionBL.ejecutar("No se pudo registrar la sala", () -> {
+            Sede sedeRelacionada = obtenerSede(sala);
+            Sede sede = validarExisteSede(sedeRelacionada.getId());
+            if (!sede.estaActivo()) {
+                throw new BLException("No se puede registrar una sala en una sede inactiva");
+            }
+            validarNombreDisponible(sala, null);
             salaDAO.insert(sala);
-        } catch (SQLException e) {
-            throw new BLException("No se pudo registrar la sala", e);
-        }
+        });
     }
 
     @Override
     public void update(Sala sala) throws BLException {
         validarDatos(sala);
         validarId(sala.getId(), "sala");
-        Sala existente = validarExisteSala(sala.getId());
-        Sede sedeRelacionada = obtenerSede(sala);
-        int sedeOriginalId = existente.getSede().getId();
-        int sedeNuevaId = sedeRelacionada.getId();
-        if (sedeOriginalId != sedeNuevaId) {
-            throw new BLException("No se puede trasladar una sala a otra sede");
-        }
-        Sede sede = validarExisteSede(sedeNuevaId);
-        if (sala.estaActivo() && !sede.estaActivo()) {
-            throw new BLException("No se puede activar una sala de una sede inactiva");
-        }
-        validarNombreDisponible(sala, sala.getId());
-        validarAforo(sala);
-        try {
+        TransaccionBL.ejecutar("No se pudo actualizar la sala", () -> {
+            Sala existente = validarExisteSala(sala.getId());
+            Sede sedeRelacionada = obtenerSede(sala);
+            int sedeOriginalId = existente.getSede().getId();
+            int sedeNuevaId = sedeRelacionada.getId();
+            if (sedeOriginalId != sedeNuevaId) {
+                throw new BLException("No se puede trasladar una sala a otra sede");
+            }
+            Sede sede = validarExisteSede(sedeNuevaId);
+            if (sala.estaActivo() && !sede.estaActivo()) {
+                throw new BLException("No se puede activar una sala de una sede inactiva");
+            }
+            validarNombreDisponible(sala, sala.getId());
+            validarAforo(sala);
             salaDAO.update(sala);
-        } catch (SQLException e) {
-            throw new BLException("No se pudo actualizar la sala", e);
-        }
+        });
     }
 
     @Override
     public void delete(Integer id) throws BLException {
         validarId(id, "sala");
-        Sala existente = validarExisteSala(id);
-        if (!existente.estaActivo()) {
-            return;
-        }
-        try {
-            salaDAO.delete(id);
-        } catch (SQLException e) {
-            throw new BLException("No se pudo desactivar la sala", e);
-        }
+        TransaccionBL.ejecutar("No se pudo desactivar la sala", () -> {
+            Sala existente = validarExisteSala(id);
+            if (existente.estaActivo()) {
+                salaDAO.delete(id);
+            }
+        });
     }
 
     private Sala validarExisteSala(Integer id) throws BLException {

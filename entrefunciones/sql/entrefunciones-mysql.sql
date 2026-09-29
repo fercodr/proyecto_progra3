@@ -371,12 +371,9 @@ CREATE TABLE auditoria (
 -- =====================================================================
 -- Procedimientos almacenados para los DAO (patron visto en clase: cada
 -- DAO llama procedimientos via CallableStatement en vez de armar SQL
--- directo). De momento solo se agregan los de `sede` y `cliente`, como
--- referencia para el resto del equipo (ver SedeDAO/ClienteDAO en
--- entrefunciones-accesodatos y la seccion "Patron de DAOs" del
--- README.md): cada quien agrega aqui mismo los procedimientos de sus
--- entidades asignadas, siguiendo el mismo patron de nombres
--- (listar_x, buscar_x_por_id, insertar_x, modificar_x, eliminar_x).
+-- directo). Cada integrante agrega los procedimientos de sus entidades
+-- siguiendo el mismo patron de nombres (listar_x, buscar_x_por_id,
+-- insertar_x, modificar_x, eliminar_x).
 -- =====================================================================
 
 DELIMITER $$
@@ -439,6 +436,135 @@ CREATE PROCEDURE eliminar_sede(IN p_id INT)
 BEGIN
     -- Eliminado logico: nunca se borra la fila, solo se desactiva.
     UPDATE sede SET activo = FALSE WHERE id = p_id;
+END$$
+
+-- --- sala ------------------------------------------------------------
+
+CREATE PROCEDURE listar_salas()
+BEGIN
+    SELECT sa.id, sa.nombre, sa.aforo, sa.tipo_sala, sa.activo,
+           sa.sede_id,
+           se.razon_social AS sede_razon_social,
+           se.direccion AS sede_direccion,
+           se.ciudad AS sede_ciudad,
+           se.telefono_contacto AS sede_telefono_contacto,
+           se.activo AS sede_activo
+    FROM sala sa
+    INNER JOIN sede se ON se.id = sa.sede_id
+    ORDER BY sa.id;
+END$$
+
+CREATE PROCEDURE buscar_sala_por_id(IN p_id INT)
+BEGIN
+    SELECT sa.id, sa.nombre, sa.aforo, sa.tipo_sala, sa.activo,
+           sa.sede_id,
+           se.razon_social AS sede_razon_social,
+           se.direccion AS sede_direccion,
+           se.ciudad AS sede_ciudad,
+           se.telefono_contacto AS sede_telefono_contacto,
+           se.activo AS sede_activo
+    FROM sala sa
+    INNER JOIN sede se ON se.id = sa.sede_id
+    WHERE sa.id = p_id;
+END$$
+
+CREATE PROCEDURE listar_salas_por_sede(IN p_sede_id INT)
+BEGIN
+    SELECT sa.id, sa.nombre, sa.aforo, sa.tipo_sala, sa.activo,
+           sa.sede_id,
+           se.razon_social AS sede_razon_social,
+           se.direccion AS sede_direccion,
+           se.ciudad AS sede_ciudad,
+           se.telefono_contacto AS sede_telefono_contacto,
+           se.activo AS sede_activo
+    FROM sala sa
+    INNER JOIN sede se ON se.id = sa.sede_id
+    WHERE sa.sede_id = p_sede_id
+    ORDER BY sa.id;
+END$$
+
+CREATE PROCEDURE insertar_sala(
+    IN p_sede_id INT,
+    IN p_nombre VARCHAR(100),
+    IN p_aforo INT,
+    IN p_tipo_sala VARCHAR(50),
+    IN p_activo BOOLEAN,
+    OUT p_id INT
+)
+BEGIN
+    INSERT INTO sala (sede_id, nombre, aforo, tipo_sala, activo)
+    VALUES (p_sede_id, p_nombre, p_aforo, p_tipo_sala, p_activo);
+    SET p_id = LAST_INSERT_ID();
+END$$
+
+CREATE PROCEDURE modificar_sala(
+    IN p_id INT,
+    IN p_sede_id INT,
+    IN p_nombre VARCHAR(100),
+    IN p_aforo INT,
+    IN p_tipo_sala VARCHAR(50),
+    IN p_activo BOOLEAN
+)
+BEGIN
+    UPDATE sala
+    SET sede_id = p_sede_id,
+        nombre = p_nombre,
+        aforo = p_aforo,
+        tipo_sala = p_tipo_sala,
+        activo = p_activo
+    WHERE id = p_id;
+END$$
+
+CREATE PROCEDURE eliminar_sala(IN p_id INT)
+BEGIN
+    UPDATE sala SET activo = FALSE WHERE id = p_id;
+END$$
+
+-- --- recurso ---------------------------------------------------------
+
+CREATE PROCEDURE listar_recursos()
+BEGIN
+    SELECT id, nombre, tipo, activo
+    FROM recurso
+    ORDER BY id;
+END$$
+
+CREATE PROCEDURE buscar_recurso_por_id(IN p_id INT)
+BEGIN
+    SELECT id, nombre, tipo, activo
+    FROM recurso
+    WHERE id = p_id;
+END$$
+
+CREATE PROCEDURE insertar_recurso(
+    IN p_nombre VARCHAR(100),
+    IN p_tipo VARCHAR(50),
+    IN p_activo BOOLEAN,
+    OUT p_id INT
+)
+BEGIN
+    INSERT INTO recurso (nombre, tipo, activo)
+    VALUES (p_nombre, p_tipo, p_activo);
+    SET p_id = LAST_INSERT_ID();
+END$$
+
+CREATE PROCEDURE modificar_recurso(
+    IN p_id INT,
+    IN p_nombre VARCHAR(100),
+    IN p_tipo VARCHAR(50),
+    IN p_activo BOOLEAN
+)
+BEGIN
+    UPDATE recurso
+    SET nombre = p_nombre,
+        tipo = p_tipo,
+        activo = p_activo
+    WHERE id = p_id;
+END$$
+
+CREATE PROCEDURE eliminar_recurso(IN p_id INT)
+BEGIN
+    UPDATE recurso SET activo = FALSE WHERE id = p_id;
 END$$
 
 -- --- cliente (tabla por subtipo: usuario + cliente) -------------------

@@ -1,7 +1,8 @@
 package pe.edu.pucp.entrefunciones.dao.impl.espacios;
 
 import pe.edu.pucp.entrefunciones.dao.espacios.ButacaDAO;
-import pe.edu.pucp.entrefunciones.db.DBManager;
+import pe.edu.pucp.entrefunciones.dao.transacciones.ConnectionScope;
+import pe.edu.pucp.entrefunciones.dao.transacciones.TransactionsManager;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Butaca;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Sala;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Sede;
@@ -32,8 +33,8 @@ public class ButacaDAOImpl implements ButacaDAO {
                 INNER JOIN sala sa ON sa.id = b.sala_id
                 INNER JOIN sede se ON se.id = sa.sede_id
                 """;
-        try (Connection conn = DBManager.getInstance().getConnection();
-             PreparedStatement cmd = conn.prepareStatement(sql);
+        try (ConnectionScope scope = ConnectionScope.openForRead();
+             PreparedStatement cmd = scope.connection().prepareStatement(sql);
              ResultSet rs = cmd.executeQuery()) {
             return mapearLista(rs);
         }
@@ -56,8 +57,8 @@ public class ButacaDAOImpl implements ButacaDAO {
                 INNER JOIN sede se ON se.id = sa.sede_id
                 WHERE b.sala_id = ?
                 """;
-        try (Connection conn = DBManager.getInstance().getConnection();
-             PreparedStatement cmd = conn.prepareStatement(sql)) {
+        try (ConnectionScope scope = ConnectionScope.openForRead();
+             PreparedStatement cmd = scope.connection().prepareStatement(sql)) {
             cmd.setInt(1, salaId);
             try (ResultSet rs = cmd.executeQuery()) {
                 return mapearLista(rs);
@@ -83,8 +84,8 @@ public class ButacaDAOImpl implements ButacaDAO {
                 INNER JOIN reserva_butaca rb ON rb.butaca_id = b.id
                 WHERE rb.reserva_id = ?
                 """;
-        try (Connection conn = DBManager.getInstance().getConnection();
-             PreparedStatement cmd = conn.prepareStatement(sql)) {
+        try (ConnectionScope scope = ConnectionScope.openForRead();
+             PreparedStatement cmd = scope.connection().prepareStatement(sql)) {
             cmd.setInt(1, reservaId);
             try (ResultSet rs = cmd.executeQuery()) {
                 return mapearLista(rs);
@@ -110,8 +111,8 @@ public class ButacaDAOImpl implements ButacaDAO {
                 INNER JOIN sede se ON se.id = sa.sede_id
                 WHERE b.id = ?
                 """;
-        try (Connection conn = DBManager.getInstance().getConnection();
-             PreparedStatement cmd = conn.prepareStatement(sql)) {
+        try (ConnectionScope scope = ConnectionScope.openForRead();
+             PreparedStatement cmd = scope.connection().prepareStatement(sql)) {
             cmd.setInt(1, id);
             try (ResultSet rs = cmd.executeQuery()) {
                 return rs.next() ? mapear(rs) : null;
@@ -126,8 +127,8 @@ public class ButacaDAOImpl implements ButacaDAO {
                 INSERT INTO butaca (sala_id, fila, columna, tipo_butaca, activo)
                 VALUES (?, ?, ?, ?, ?)
                 """;
-        try (Connection conn = DBManager.getInstance().getConnection();
-             PreparedStatement cmd = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        Connection conn = TransactionsManager.getConnection();
+        try (PreparedStatement cmd = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             asignarParametros(cmd, butaca);
             if (cmd.executeUpdate() == 0) {
                 throw new SQLException("No se pudo insertar la butaca");
@@ -144,11 +145,11 @@ public class ButacaDAOImpl implements ButacaDAO {
                 SET sala_id = ?, fila = ?, columna = ?, tipo_butaca = ?, activo = ?
                 WHERE id = ?
                 """;
-        try (Connection conn = DBManager.getInstance().getConnection();
-             PreparedStatement cmd = conn.prepareStatement(sql)) {
+        Connection conn = TransactionsManager.getConnection();
+        try (PreparedStatement cmd = conn.prepareStatement(sql)) {
             asignarParametros(cmd, butaca);
             cmd.setInt(6, butaca.getId());
-            if (cmd.executeUpdate() == 0) {
+            if (cmd.executeUpdate() == 0 && !existe(conn, butaca.getId())) {
                 throw new SQLException("No se pudo actualizar la butaca con id " + butaca.getId());
             }
         }
@@ -162,11 +163,21 @@ public class ButacaDAOImpl implements ButacaDAO {
                 SET activo = FALSE
                 WHERE id = ?
                 """;
-        try (Connection conn = DBManager.getInstance().getConnection();
-             PreparedStatement cmd = conn.prepareStatement(sql)) {
+        Connection conn = TransactionsManager.getConnection();
+        try (PreparedStatement cmd = conn.prepareStatement(sql)) {
             cmd.setInt(1, id);
-            if (cmd.executeUpdate() == 0) {
+            if (cmd.executeUpdate() == 0 && !existe(conn, id)) {
                 throw new SQLException("No se pudo eliminar la butaca con id " + id);
+            }
+        }
+    }
+
+    private boolean existe(Connection conn, int id) throws SQLException {
+        try (PreparedStatement cmd = conn.prepareStatement(
+                "SELECT 1 FROM butaca WHERE id = ?")) {
+            cmd.setInt(1, id);
+            try (ResultSet rs = cmd.executeQuery()) {
+                return rs.next();
             }
         }
     }
@@ -247,8 +258,8 @@ public class ButacaDAOImpl implements ButacaDAO {
     }
 
     private void validarId(Integer id) {
-        if (id == null) {
-            throw new IllegalArgumentException("El id no puede ser nulo");
+        if (id == null || id <= 0) {
+            throw new IllegalArgumentException("El id debe ser positivo");
         }
     }
 }

@@ -4,4 +4,5 @@ import pe.edu.pucp.entrefunciones.dao.DAO;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Sede;
 
 public interface SedeDAO extends DAO<Sede,Integer> {
+    Sede findByIdCompleto(Integer id) throws java.sql.SQLException;
 }

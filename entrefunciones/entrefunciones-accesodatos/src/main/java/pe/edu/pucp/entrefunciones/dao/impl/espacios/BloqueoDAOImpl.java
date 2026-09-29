@@ -1,7 +1,8 @@
 package pe.edu.pucp.entrefunciones.dao.impl.espacios;
 
 import pe.edu.pucp.entrefunciones.dao.espacios.BloqueoDAO;
-import pe.edu.pucp.entrefunciones.db.DBManager;
+import pe.edu.pucp.entrefunciones.dao.transacciones.ConnectionScope;
+import pe.edu.pucp.entrefunciones.dao.transacciones.TransactionsManager;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Bloqueo;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Recurso;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Sala;
@@ -38,8 +39,8 @@ public class BloqueoDAOImpl implements BloqueoDAO {
                 LEFT JOIN sala sa ON sa.id = bl.sala_id
                 LEFT JOIN sede se ON se.id = sa.sede_id
                 """;
-        try (Connection conn = DBManager.getInstance().getConnection();
-             PreparedStatement cmd = conn.prepareStatement(sql);
+        try (ConnectionScope scope = ConnectionScope.openForRead();
+             PreparedStatement cmd = scope.connection().prepareStatement(sql);
              ResultSet rs = cmd.executeQuery()) {
             return mapearLista(rs);
         }
@@ -64,8 +65,8 @@ public class BloqueoDAOImpl implements BloqueoDAO {
                 LEFT JOIN sede se ON se.id = sa.sede_id
                 WHERE bl.sala_id = ?
                 """;
-        try (Connection conn = DBManager.getInstance().getConnection();
-             PreparedStatement cmd = conn.prepareStatement(sql)) {
+        try (ConnectionScope scope = ConnectionScope.openForRead();
+             PreparedStatement cmd = scope.connection().prepareStatement(sql)) {
             cmd.setInt(1, salaId);
             try (ResultSet rs = cmd.executeQuery()) {
                 return mapearLista(rs);
@@ -92,8 +93,8 @@ public class BloqueoDAOImpl implements BloqueoDAO {
                 LEFT JOIN sede se ON se.id = sa.sede_id
                 WHERE bl.recurso_id = ?
                 """;
-        try (Connection conn = DBManager.getInstance().getConnection();
-             PreparedStatement cmd = conn.prepareStatement(sql)) {
+        try (ConnectionScope scope = ConnectionScope.openForRead();
+             PreparedStatement cmd = scope.connection().prepareStatement(sql)) {
             cmd.setInt(1, recursoId);
             try (ResultSet rs = cmd.executeQuery()) {
                 return mapearLista(rs);
@@ -135,8 +136,8 @@ public class BloqueoDAOImpl implements BloqueoDAO {
                 LEFT JOIN sede se ON se.id = sa.sede_id
                 WHERE bl.id = ?
                 """;
-        try (Connection conn = DBManager.getInstance().getConnection();
-             PreparedStatement cmd = conn.prepareStatement(sql)) {
+        try (ConnectionScope scope = ConnectionScope.openForRead();
+             PreparedStatement cmd = scope.connection().prepareStatement(sql)) {
             cmd.setInt(1, id);
             try (ResultSet rs = cmd.executeQuery()) {
                 return rs.next() ? mapear(rs) : null;
@@ -151,8 +152,8 @@ public class BloqueoDAOImpl implements BloqueoDAO {
                 INSERT INTO bloqueo (motivo, fecha_inicio, fecha_fin, sala_id, recurso_id)
                 VALUES (?, ?, ?, ?, ?)
                 """;
-        try (Connection conn = DBManager.getInstance().getConnection();
-             PreparedStatement cmd = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        Connection conn = TransactionsManager.getConnection();
+        try (PreparedStatement cmd = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             asignarParametros(cmd, bloqueo);
             if (cmd.executeUpdate() == 0) {
                 throw new SQLException("No se pudo insertar el bloqueo");
@@ -169,11 +170,11 @@ public class BloqueoDAOImpl implements BloqueoDAO {
                 SET motivo = ?, fecha_inicio = ?, fecha_fin = ?, sala_id = ?, recurso_id = ?
                 WHERE id = ?
                 """;
-        try (Connection conn = DBManager.getInstance().getConnection();
-             PreparedStatement cmd = conn.prepareStatement(sql)) {
+        Connection conn = TransactionsManager.getConnection();
+        try (PreparedStatement cmd = conn.prepareStatement(sql)) {
             asignarParametros(cmd, bloqueo);
             cmd.setInt(6, bloqueo.getId());
-            if (cmd.executeUpdate() == 0) {
+            if (cmd.executeUpdate() == 0 && !existe(conn, bloqueo.getId())) {
                 throw new SQLException("No se pudo actualizar el bloqueo con id " + bloqueo.getId());
             }
         }
@@ -186,8 +187,8 @@ public class BloqueoDAOImpl implements BloqueoDAO {
                 DELETE FROM bloqueo
                 WHERE id = ?
                 """;
-        try (Connection conn = DBManager.getInstance().getConnection();
-             PreparedStatement cmd = conn.prepareStatement(sql)) {
+        Connection conn = TransactionsManager.getConnection();
+        try (PreparedStatement cmd = conn.prepareStatement(sql)) {
             cmd.setInt(1, id);
             if (cmd.executeUpdate() == 0) {
                 throw new SQLException("No se pudo eliminar el bloqueo con id " + id);
@@ -220,8 +221,8 @@ public class BloqueoDAOImpl implements BloqueoDAO {
                   AND (? IS NULL OR id <> ?)
                 LIMIT 1
                 """.formatted(columnaObjetivo);
-        try (Connection conn = DBManager.getInstance().getConnection();
-             PreparedStatement cmd = conn.prepareStatement(sql)) {
+        try (ConnectionScope scope = ConnectionScope.openForRead();
+             PreparedStatement cmd = scope.connection().prepareStatement(sql)) {
             cmd.setInt(1, objetivoId);
             cmd.setTimestamp(2, Timestamp.valueOf(fechaFin));
             cmd.setTimestamp(3, Timestamp.valueOf(fechaInicio));
@@ -232,6 +233,16 @@ public class BloqueoDAOImpl implements BloqueoDAO {
                 cmd.setInt(4, idExcluir);
                 cmd.setInt(5, idExcluir);
             }
+            try (ResultSet rs = cmd.executeQuery()) {
+                return rs.next();
+            }
+        }
+    }
+
+    private boolean existe(Connection conn, int id) throws SQLException {
+        try (PreparedStatement cmd = conn.prepareStatement(
+                "SELECT 1 FROM bloqueo WHERE id = ?")) {
+            cmd.setInt(1, id);
             try (ResultSet rs = cmd.executeQuery()) {
                 return rs.next();
             }
@@ -334,8 +345,8 @@ public class BloqueoDAOImpl implements BloqueoDAO {
     }
 
     private void validarId(Integer id) {
-        if (id == null) {
-            throw new IllegalArgumentException("El id no puede ser nulo");
+        if (id == null || id <= 0) {
+            throw new IllegalArgumentException("El id debe ser positivo");
         }
     }
 }

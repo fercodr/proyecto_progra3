@@ -1,9 +1,9 @@
 package pe.edu.pucp.entrefunciones.bl.impl.catalogo;
 
 import pe.edu.pucp.entrefunciones.bl.BLException;
-import pe.edu.pucp.entrefunciones.bl.PeliculaBL;
-import pe.edu.pucp.entrefunciones.dao.PeliculaDAO;
-import pe.edu.pucp.entrefunciones.dao.impl.PeliculaDAOImpl;
+import pe.edu.pucp.entrefunciones.bl.catalogo.PeliculaBL;
+import pe.edu.pucp.entrefunciones.dao.catalogo.PeliculaDAO;
+import pe.edu.pucp.entrefunciones.dao.impl.catalogo.PeliculaDAOImpl;
 import pe.edu.pucp.entrefunciones.modelo.catalogo.Pelicula;
 
 import java.sql.SQLException;
@@ -65,7 +65,8 @@ public class PeliculaBLImpl implements PeliculaBL {
     }
 
     private void validarNombre(Pelicula pelicula) throws BLException {
-        if (pelicula == null || pelicula.getNombre() == null || pelicula.getNombre().trim().isEmpty()) {
+        if (pelicula == null || pelicula.getNombrePelicula() == null
+                || pelicula.getNombrePelicula().trim().isEmpty()) {
             throw new BLException("El nombre de la pelicula no puede estar vacio");
         }
     }

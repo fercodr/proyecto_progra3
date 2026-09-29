@@ -45,37 +45,29 @@ public class RecursoBLImpl implements RecursoBL {
     @Override
     public void insert(Recurso recurso) throws BLException {
         validarDatos(recurso);
-        try {
-            recursoDAO.insert(recurso);
-        } catch (SQLException e) {
-            throw new BLException("No se pudo registrar el recurso", e);
-        }
+        TransaccionBL.ejecutar("No se pudo registrar el recurso",
+                () -> recursoDAO.insert(recurso));
     }
 
     @Override
     public void update(Recurso recurso) throws BLException {
         validarDatos(recurso);
         validarId(recurso.getId());
-        validarExiste(recurso.getId());
-        try {
+        TransaccionBL.ejecutar("No se pudo actualizar el recurso", () -> {
+            validarExiste(recurso.getId());
             recursoDAO.update(recurso);
-        } catch (SQLException e) {
-            throw new BLException("No se pudo actualizar el recurso", e);
-        }
+        });
     }
 
     @Override
     public void delete(Integer id) throws BLException {
         validarId(id);
-        Recurso existente = validarExiste(id);
-        if (!existente.estaActivo()) {
-            return;
-        }
-        try {
-            recursoDAO.delete(id);
-        } catch (SQLException e) {
-            throw new BLException("No se pudo desactivar el recurso", e);
-        }
+        TransaccionBL.ejecutar("No se pudo desactivar el recurso", () -> {
+            Recurso existente = validarExiste(id);
+            if (existente.estaActivo()) {
+                recursoDAO.delete(id);
+            }
+        });
     }
 
     private Recurso validarExiste(Integer id) throws BLException {
