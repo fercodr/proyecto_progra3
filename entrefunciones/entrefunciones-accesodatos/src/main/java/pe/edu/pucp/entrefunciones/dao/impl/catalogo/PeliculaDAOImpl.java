@@ -46,9 +46,6 @@ public class PeliculaDAOImpl implements PeliculaDAO {
         if (evento == null) {
             return null;
         }
-        if (evento == null) {
-            return null;
-        }
         if (!(evento instanceof Pelicula pelicula)) {
             throw new SQLException("El evento " + id + " no es una película");
         }
