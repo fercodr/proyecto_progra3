@@ -1,7 +1,12 @@
 package pe.edu.pucp.entrefunciones.modelo.ventas;
 import java.time.LocalDateTime;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Butaca;
-/** Se emite una Entrada por butaca reservada una vez que el Pago de la Reserva queda VALIDADO (RF-M5-03). */
+/**
+ * Se emite una Entrada una vez que el Pago de la Reserva queda VALIDADO
+ * (RF-M5-03): una por butaca reservada en asiento numerado (Pelicula,
+ * ObraTeatro), o una por cupo en aforo general (ActividadCultural, sin
+ * butaca asignada) — de ahi los dos constructores, igual que en Reserva.
+ */
 public class Entrada {
     private int id;
     private LocalDateTime fechaEmision;
@@ -11,12 +16,24 @@ public class Entrada {
     private Butaca butaca;
     private Reserva reserva;
 
+    /** Entrada por asiento numerado: ligada a una butaca concreta. */
     public Entrada (int id, LocalDateTime fechaEmision, String codigoQR, double precioFinal, Butaca butaca, Reserva reserva){
         setId(id);
         setFechaEmision(fechaEmision);
         setCodigoQR(codigoQR);
         setPrecioFinal(precioFinal);
         setButaca(butaca);
+        setReserva(reserva);
+        this.estado=EstadoEntrada.VIGENTE;
+    }
+
+    /** Entrada por aforo general (ActividadCultural): sin butaca asignada. */
+    public Entrada (int id, LocalDateTime fechaEmision, String codigoQR, double precioFinal, Reserva reserva){
+        setId(id);
+        setFechaEmision(fechaEmision);
+        setCodigoQR(codigoQR);
+        setPrecioFinal(precioFinal);
+        this.butaca=null;
         setReserva(reserva);
         this.estado=EstadoEntrada.VIGENTE;
     }
@@ -30,9 +47,14 @@ public class Entrada {
         setFechaEmision(entrada.getFechaEmision());
         setCodigoQR(entrada.getCodigoQR());
         setPrecioFinal(entrada.getPrecioFinal());
-        setButaca(entrada.getButaca());
+        this.butaca=entrada.getButaca();
         setReserva(entrada.getReserva());
         setEstado(entrada.getEstado());
+    }
+
+    /** true si esta entrada es de aforo general (ActividadCultural, sin butaca asignada). */
+    public boolean esAforoGeneral(){
+        return butaca == null;
     }
 
     /** RF-M6-01: valida el ingreso del asistente; una entrada usada o cancelada no puede volver a validarse. */

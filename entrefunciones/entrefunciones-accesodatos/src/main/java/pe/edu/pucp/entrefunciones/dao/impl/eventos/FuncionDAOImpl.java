@@ -1,7 +1,7 @@
 package pe.edu.pucp.entrefunciones.dao.impl.eventos;
 import pe.edu.pucp.entrefunciones.dao.impl.espacios.SalaDAOImpl;
+import pe.edu.pucp.entrefunciones.dao.transacciones.ConnectionScope;
 import pe.edu.pucp.entrefunciones.dao.transacciones.TransactionsManager;
-import pe.edu.pucp.entrefunciones.db.DBManager;
 import pe.edu.pucp.entrefunciones.modelo.catalogo.Evento;
 import pe.edu.pucp.entrefunciones.modelo.catalogo.Funcion;
 import pe.edu.pucp.entrefunciones.modelo.funciones.EstadoFuncion;
@@ -17,6 +17,12 @@ import java.util.ArrayList;
 import java.util.List;
 public class FuncionDAOImpl implements FuncionDAO {
 
+    /**
+     * insertFunciones/updateFunciones/deleteFunciones solo se llaman desde
+     * EventoDAOImpl, ya dentro de la transaccion que esa clase inicia (ver
+     * EventoDAOImpl.enTransaccion) — por eso toman la conexion directo de
+     * TransactionsManager, sin abrir ni cerrar nada por su cuenta.
+     */
     @Override
     public void insertFunciones(int idEvento, List<Funcion> funciones) throws SQLException {
         Connection connection = TransactionsManager.getConnection();
@@ -53,8 +59,8 @@ public class FuncionDAOImpl implements FuncionDAO {
     @Override
     public List<Funcion> findByEvento(Evento evento) throws SQLException {
         String sql = "{call listar_funciones_por_evento(?)}";
-        try (Connection connection = DBManager.getInstance().getConnection();
-             CallableStatement cmd = connection.prepareCall(sql)) {
+        try (ConnectionScope scope = ConnectionScope.openForRead();
+                CallableStatement cmd = scope.connection().prepareCall(sql)) {
 
             cmd.setInt("p_evento_id", evento.getId());
             try (ResultSet rs = cmd.executeQuery()) {
@@ -69,9 +75,9 @@ public class FuncionDAOImpl implements FuncionDAO {
     @Override
     public List<Funcion> findAll() throws SQLException {
         String sql = "{call listar_funciones()}";
-        try (Connection connection = DBManager.getInstance().getConnection();
-             CallableStatement cmd = connection.prepareCall(sql);
-             ResultSet rs = cmd.executeQuery()) {
+        try (ConnectionScope scope = ConnectionScope.openForRead();
+                CallableStatement cmd = scope.connection().prepareCall(sql);
+                ResultSet rs = cmd.executeQuery()) {
 
             List<Funcion> funciones = new ArrayList<>();
             while (rs.next()) {
@@ -84,8 +90,8 @@ public class FuncionDAOImpl implements FuncionDAO {
     @Override
     public List<Funcion> findBySalaId(int idSala) throws SQLException {
         String sql = "{call listar_funciones_por_sala(?)}";
-        try (Connection connection = DBManager.getInstance().getConnection();
-             CallableStatement cmd = connection.prepareCall(sql)) {
+        try (ConnectionScope scope = ConnectionScope.openForRead();
+                CallableStatement cmd = scope.connection().prepareCall(sql)) {
 
             cmd.setInt("p_sala_id", idSala);
             try (ResultSet rs = cmd.executeQuery()) {
@@ -105,8 +111,8 @@ public class FuncionDAOImpl implements FuncionDAO {
         }
 
         String sql = "{call buscar_funcion_por_id(?)}";
-        try (Connection connection = DBManager.getInstance().getConnection();
-             CallableStatement cmd = connection.prepareCall(sql)) {
+        try (ConnectionScope scope = ConnectionScope.openForRead();
+                CallableStatement cmd = scope.connection().prepareCall(sql)) {
 
             cmd.setInt("p_id", id);
             try (ResultSet rs = cmd.executeQuery()) {
@@ -115,15 +121,22 @@ public class FuncionDAOImpl implements FuncionDAO {
         }
     }
 
+    /**
+     * Insercion/actualizacion/cancelado de una Funcion suelta (no como
+     * parte del alta/edicion de un Evento completo). Igual que
+     * Bloqueo/Sede/Pago/Reserva: exige una transaccion activa, iniciada
+     * por la capa de negocio (ver FuncionBLImpl, que envuelve estos tres
+     * metodos en TransaccionBL.ejecutar). Antes cada uno abria su propia
+     * conexion independiente via DBManager.
+     */
     @Override
     public void insert(Funcion funcion) throws SQLException {
         if (funcion == null) {
             throw new IllegalArgumentException("La función no puede ser nula");
         }
 
-        try (Connection connection = DBManager.getInstance().getConnection()) {
-            insertar(connection, funcion.getEvento().getId(), funcion);
-        }
+        Connection connection = TransactionsManager.getConnection();
+        insertar(connection, funcion.getEvento().getId(), funcion);
     }
 
     @Override
@@ -132,9 +145,8 @@ public class FuncionDAOImpl implements FuncionDAO {
             throw new IllegalArgumentException("La función no puede ser nula");
         }
 
-        try (Connection connection = DBManager.getInstance().getConnection()) {
-            modificar(connection, funcion);
-        }
+        Connection connection = TransactionsManager.getConnection();
+        modificar(connection, funcion);
     }
 
     @Override
@@ -143,10 +155,9 @@ public class FuncionDAOImpl implements FuncionDAO {
             throw new IllegalArgumentException("El id no puede ser nulo");
         }
 
+        Connection connection = TransactionsManager.getConnection();
         String sql = "{call cancelar_funcion(?)}";
-        try (Connection connection = DBManager.getInstance().getConnection();
-             CallableStatement cmd = connection.prepareCall(sql)) {
-
+        try (CallableStatement cmd = connection.prepareCall(sql)) {
             cmd.setInt("p_id", id);
             if (cmd.executeUpdate() == 0) {
                 throw new SQLException("No se pudo cancelar la función");

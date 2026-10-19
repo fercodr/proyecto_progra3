@@ -2,6 +2,7 @@ package pe.edu.pucp.entrefunciones.bl.impl.espacios;
 
 import pe.edu.pucp.entrefunciones.bl.BLException;
 import pe.edu.pucp.entrefunciones.bl.espacios.BloqueoBL;
+import pe.edu.pucp.entrefunciones.bl.impl.TransaccionBL;
 import pe.edu.pucp.entrefunciones.dao.espacios.BloqueoDAO;
 import pe.edu.pucp.entrefunciones.dao.espacios.RecursoDAO;
 import pe.edu.pucp.entrefunciones.dao.espacios.SalaDAO;

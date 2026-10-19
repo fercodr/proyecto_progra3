@@ -2,10 +2,20 @@ package pe.edu.pucp.entrefunciones.bl.impl.ventas;
 import java.sql.SQLException;
 import java.util.List;
 import pe.edu.pucp.entrefunciones.bl.BLException;
+import pe.edu.pucp.entrefunciones.bl.impl.TransaccionBL;
 import pe.edu.pucp.entrefunciones.bl.ventas.EntradaBL;
 import pe.edu.pucp.entrefunciones.dao.ventas.EntradaDAO;
 import pe.edu.pucp.entrefunciones.modelo.ventas.Entrada;
 
+/**
+ * Todos los metodos que escriben (insert/update/delete/validarIngreso/
+ * cancelar) estan envueltos en {@link TransaccionBL#ejecutar}, igual que el
+ * resto del proyecto (Sede/Bloqueo/Butaca/Pago/Reserva). Aunque cada uno
+ * hoy hace una sola escritura, envolverlos deja a EntradaDAOImpl usando
+ * siempre TransactionsManager.getConnection() (nunca una conexion propia)
+ * y permite que, si en el futuro se agrega una regla que combine Entrada
+ * con otra entidad, siga siendo atomica sin tener que tocar este patron.
+ */
 public class EntradaBLImpl implements EntradaBL {
 
     private final EntradaDAO entradaDAO;
@@ -37,29 +47,35 @@ public class EntradaBLImpl implements EntradaBL {
 
     @Override
     public void insert(Entrada entrada) throws BLException {
-        try {
-            entradaDAO.insert(entrada);
-        } catch (SQLException ex) {
-            throw new BLException("Error de base de datos al registrar la entrada", ex);
-        }
+        TransaccionBL.ejecutar("Error de base de datos al registrar la entrada", () -> {
+            try {
+                entradaDAO.insert(entrada);
+            } catch (SQLException ex) {
+                throw new BLException("Error de base de datos al registrar la entrada", ex);
+            }
+        });
     }
 
     @Override
     public void update(Entrada entrada) throws BLException {
-        try {
-            entradaDAO.update(entrada);
-        } catch (SQLException ex) {
-            throw new BLException("Error de base de datos al actualizar la entrada", ex);
-        }
+        TransaccionBL.ejecutar("Error de base de datos al actualizar la entrada", () -> {
+            try {
+                entradaDAO.update(entrada);
+            } catch (SQLException ex) {
+                throw new BLException("Error de base de datos al actualizar la entrada", ex);
+            }
+        });
     }
 
     @Override
     public void delete(Integer id) throws BLException {
-        try {
-            entradaDAO.delete(id);
-        } catch (SQLException ex) {
-            throw new BLException("Error de base de datos al cancelar la entrada " + id, ex);
-        }
+        TransaccionBL.ejecutar("Error de base de datos al cancelar la entrada " + id, () -> {
+            try {
+                entradaDAO.delete(id);
+            } catch (SQLException ex) {
+                throw new BLException("Error de base de datos al cancelar la entrada " + id, ex);
+            }
+        });
     }
 
     @Override
@@ -82,35 +98,39 @@ public class EntradaBLImpl implements EntradaBL {
 
     @Override
     public void validarIngreso(String codigoQR) throws BLException {
-        try {
-            Entrada entrada = entradaDAO.findByCodigoQR(codigoQR);
-            if (entrada == null) {
-                throw new BLException("No existe ninguna entrada con el codigo QR " + codigoQR);
+        TransaccionBL.ejecutar("Error de base de datos al validar el ingreso de " + codigoQR, () -> {
+            try {
+                Entrada entrada = entradaDAO.findByCodigoQR(codigoQR);
+                if (entrada == null) {
+                    throw new BLException("No existe ninguna entrada con el codigo QR " + codigoQR);
+                }
+                if (!entrada.validarIngreso()) {
+                    throw new BLException(
+                            "La entrada " + codigoQR + " no se pudo validar: ya fue utilizada o esta cancelada");
+                }
+                entradaDAO.update(entrada);
+            } catch (SQLException ex) {
+                throw new BLException("Error de base de datos al validar el ingreso de " + codigoQR, ex);
             }
-            if (!entrada.validarIngreso()) {
-                throw new BLException(
-                        "La entrada " + codigoQR + " no se pudo validar: ya fue utilizada o esta cancelada");
-            }
-            entradaDAO.update(entrada);
-        } catch (SQLException ex) {
-            throw new BLException("Error de base de datos al validar el ingreso de " + codigoQR, ex);
-        }
+        });
     }
 
     @Override
     public void cancelar(int entradaId) throws BLException {
-        try {
-            Entrada entrada = entradaDAO.findById(entradaId);
-            if (entrada == null) {
-                throw new BLException("No existe la entrada " + entradaId);
+        TransaccionBL.ejecutar("Error de base de datos al cancelar la entrada " + entradaId, () -> {
+            try {
+                Entrada entrada = entradaDAO.findById(entradaId);
+                if (entrada == null) {
+                    throw new BLException("No existe la entrada " + entradaId);
+                }
+                if (!entrada.cancelar()) {
+                    throw new BLException(
+                            "La entrada " + entradaId + " no se pudo cancelar: ya estaba utilizada o cancelada");
+                }
+                entradaDAO.update(entrada);
+            } catch (SQLException ex) {
+                throw new BLException("Error de base de datos al cancelar la entrada " + entradaId, ex);
             }
-            if (!entrada.cancelar()) {
-                throw new BLException(
-                        "La entrada " + entradaId + " no se pudo cancelar: ya estaba utilizada o cancelada");
-            }
-            entradaDAO.update(entrada);
-        } catch (SQLException ex) {
-            throw new BLException("Error de base de datos al cancelar la entrada " + entradaId, ex);
-        }
+        });
     }
 }

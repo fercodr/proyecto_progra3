@@ -183,17 +183,8 @@ public class BloqueoDAOImpl implements BloqueoDAO {
     @Override
     public void delete(Integer id) throws SQLException {
         validarId(id);
-        String sql = """
-                DELETE FROM bloqueo
-                WHERE id = ?
-                """;
-        Connection conn = TransactionsManager.getConnection();
-        try (PreparedStatement cmd = conn.prepareStatement(sql)) {
-            cmd.setInt(1, id);
-            if (cmd.executeUpdate() == 0) {
-                throw new SQLException("No se pudo eliminar el bloqueo con id " + id);
-            }
-        }
+        throw new SQLException(
+                "El esquema actual no admite baja lógica de bloqueos y se prohíbe el borrado físico");
     }
 
     private void asignarParametros(PreparedStatement cmd, Bloqueo bloqueo) throws SQLException {

@@ -10,17 +10,19 @@ import java.util.List;
 import pe.edu.pucp.entrefunciones.dao.espacios.ButacaDAO;
 import pe.edu.pucp.entrefunciones.dao.ventas.EntradaDAO;
 import pe.edu.pucp.entrefunciones.dao.ventas.ReservaDAO;
-import pe.edu.pucp.entrefunciones.db.DBManager;
+import pe.edu.pucp.entrefunciones.dao.transacciones.ConnectionScope;
+import pe.edu.pucp.entrefunciones.dao.transacciones.TransactionsManager;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Butaca;
 import pe.edu.pucp.entrefunciones.modelo.ventas.Entrada;
 import pe.edu.pucp.entrefunciones.modelo.ventas.EstadoEntrada;
 import pe.edu.pucp.entrefunciones.modelo.ventas.Reserva;
 
 /**
- * Implementacion de Entrada, mismo patron que PagoDAOImpl. Toda entrada
- * exige una Butaca (Entrada.setButaca no acepta null en el modelo
- * actual): mapear() siempre reconstruye la Butaca via ButacaDAO a partir
- * de butaca_id, igual que Pago reconstruye su Reserva. delete(id) es
+ * Implementacion de Entrada, mismo patron que PagoDAOImpl: lecturas con
+ * ConnectionScope.openForRead(), escrituras con
+ * TransactionsManager.getConnection() (exigen una transaccion activa).
+ * mapear() siempre reconstruye la Butaca via ButacaDAO a partir de
+ * butaca_id, igual que Pago reconstruye su Reserva. delete(id) es
  * eliminado logico via estado, igual que Pago: el procedimiento
  * eliminar_entrada solo cancela si la entrada seguia VIGENTE.
  *
@@ -47,9 +49,8 @@ public class EntradaDAOImpl implements EntradaDAO {
     @Override
     public List<Entrada> findAll() throws SQLException {
         String sql = "{call listar_entradas()}";
-        try (
-                Connection conn = DBManager.getInstance().getConnection();
-                CallableStatement cmd = conn.prepareCall(sql);
+        try (ConnectionScope scope = ConnectionScope.openForRead();
+                CallableStatement cmd = scope.connection().prepareCall(sql);
                 ResultSet rs = cmd.executeQuery()) {
 
             List<Entrada> entradas = new ArrayList<>();
@@ -67,9 +68,8 @@ public class EntradaDAOImpl implements EntradaDAO {
         }
 
         String sql = "{call buscar_entrada_por_id(?)}";
-        try (
-                Connection conn = DBManager.getInstance().getConnection();
-                CallableStatement cmd = conn.prepareCall(sql)) {
+        try (ConnectionScope scope = ConnectionScope.openForRead();
+                CallableStatement cmd = scope.connection().prepareCall(sql)) {
 
             cmd.setInt("p_id", id);
 
@@ -82,9 +82,8 @@ public class EntradaDAOImpl implements EntradaDAO {
     @Override
     public List<Entrada> findByReserva(int reservaId) throws SQLException {
         String sql = "{call buscar_entrada_por_reserva(?)}";
-        try (
-                Connection conn = DBManager.getInstance().getConnection();
-                CallableStatement cmd = conn.prepareCall(sql)) {
+        try (ConnectionScope scope = ConnectionScope.openForRead();
+                CallableStatement cmd = scope.connection().prepareCall(sql)) {
 
             cmd.setInt("p_reserva_id", reservaId);
 
@@ -105,9 +104,8 @@ public class EntradaDAOImpl implements EntradaDAO {
         }
 
         String sql = "{call buscar_entrada_por_qr(?)}";
-        try (
-                Connection conn = DBManager.getInstance().getConnection();
-                CallableStatement cmd = conn.prepareCall(sql)) {
+        try (ConnectionScope scope = ConnectionScope.openForRead();
+                CallableStatement cmd = scope.connection().prepareCall(sql)) {
 
             cmd.setString("p_codigo_qr", codigoQR);
 
@@ -123,13 +121,16 @@ public class EntradaDAOImpl implements EntradaDAO {
             throw new IllegalArgumentException("La entrada no puede ser nula");
         }
 
+        Connection conn = TransactionsManager.getConnection();
         String sql = "{call insertar_entrada(?, ?, ?, ?, ?, ?, ?)}";
-        try (
-                Connection conn = DBManager.getInstance().getConnection();
-                CallableStatement cmd = conn.prepareCall(sql)) {
+        try (CallableStatement cmd = conn.prepareCall(sql)) {
 
             cmd.setInt("p_reserva_id", entrada.getReserva().getId());
-            cmd.setInt("p_butaca_id", entrada.getButaca().getId());
+            if (entrada.esAforoGeneral()) {
+                cmd.setNull("p_butaca_id", Types.INTEGER);
+            } else {
+                cmd.setInt("p_butaca_id", entrada.getButaca().getId());
+            }
             cmd.setTimestamp("p_fecha_emision", Timestamp.valueOf(entrada.getFechaEmision()));
             cmd.setString("p_codigo_qr", entrada.getCodigoQR());
             cmd.setDouble("p_precio_final", entrada.getPrecioFinal());
@@ -150,10 +151,9 @@ public class EntradaDAOImpl implements EntradaDAO {
             throw new IllegalArgumentException("La entrada no puede ser nula");
         }
 
+        Connection conn = TransactionsManager.getConnection();
         String sql = "{call modificar_entrada(?, ?, ?)}";
-        try (
-                Connection conn = DBManager.getInstance().getConnection();
-                CallableStatement cmd = conn.prepareCall(sql)) {
+        try (CallableStatement cmd = conn.prepareCall(sql)) {
 
             cmd.setInt("p_id", entrada.getId());
             cmd.setString("p_estado", entrada.getEstado().name());
@@ -171,11 +171,9 @@ public class EntradaDAOImpl implements EntradaDAO {
             throw new IllegalArgumentException("El id no puede ser nulo");
         }
 
+        Connection conn = TransactionsManager.getConnection();
         String sql = "{call eliminar_entrada(?)}";
-        try (
-                Connection conn = DBManager.getInstance().getConnection();
-                CallableStatement cmd = conn.prepareCall(sql)) {
-
+        try (CallableStatement cmd = conn.prepareCall(sql)) {
             cmd.setInt("p_id", id);
 
             if (cmd.executeUpdate() == 0) {
@@ -199,20 +197,31 @@ public class EntradaDAOImpl implements EntradaDAO {
         }
 
         int butacaId = rs.getInt("butaca_id");
-        Butaca butaca = butacaDAO.findById(butacaId);
-        if (butaca == null) {
-            throw new SQLException(
-                    "Inconsistencia de datos: la entrada " + rs.getInt("id")
-                            + " referencia la butaca " + butacaId + ", que no existe");
-        }
+        boolean esAforoGeneral = rs.wasNull();
 
-        Entrada entrada = new Entrada(
-                rs.getInt("id"),
-                rs.getTimestamp("fecha_emision").toLocalDateTime(),
-                rs.getString("codigo_qr"),
-                rs.getDouble("precio_final"),
-                butaca,
-                reserva);
+        Entrada entrada;
+        if (esAforoGeneral) {
+            entrada = new Entrada(
+                    rs.getInt("id"),
+                    rs.getTimestamp("fecha_emision").toLocalDateTime(),
+                    rs.getString("codigo_qr"),
+                    rs.getDouble("precio_final"),
+                    reserva);
+        } else {
+            Butaca butaca = butacaDAO.findById(butacaId);
+            if (butaca == null) {
+                throw new SQLException(
+                        "Inconsistencia de datos: la entrada " + rs.getInt("id")
+                                + " referencia la butaca " + butacaId + ", que no existe");
+            }
+            entrada = new Entrada(
+                    rs.getInt("id"),
+                    rs.getTimestamp("fecha_emision").toLocalDateTime(),
+                    rs.getString("codigo_qr"),
+                    rs.getDouble("precio_final"),
+                    butaca,
+                    reserva);
+        }
 
         entrada.setEstado(EstadoEntrada.valueOf(rs.getString("estado")));
         return entrada;

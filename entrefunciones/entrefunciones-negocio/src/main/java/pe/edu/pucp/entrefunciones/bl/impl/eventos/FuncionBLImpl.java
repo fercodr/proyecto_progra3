@@ -2,6 +2,7 @@ package pe.edu.pucp.entrefunciones.bl.impl.eventos;
 
 import pe.edu.pucp.entrefunciones.bl.BLException;
 import pe.edu.pucp.entrefunciones.bl.eventos.FuncionBL;
+import pe.edu.pucp.entrefunciones.bl.impl.TransaccionBL;
 import pe.edu.pucp.entrefunciones.dao.impl.eventos.EventoDAO;
 import pe.edu.pucp.entrefunciones.dao.impl.eventos.EventoDAOImpl;
 import pe.edu.pucp.entrefunciones.dao.impl.eventos.FuncionDAO;
@@ -43,13 +44,13 @@ public class FuncionBLImpl implements FuncionBL {
         validar(funcion);
         validarEvento(funcion);
 
-        try {
-            funcionDAO.insert(funcion);
-
-        } catch (SQLException e) {
-            throw new BLException(
-                    "No se pudo registrar la función", e);
-        }
+        TransaccionBL.ejecutar("No se pudo registrar la función", () -> {
+            try {
+                funcionDAO.insert(funcion);
+            } catch (SQLException e) {
+                throw new BLException("No se pudo registrar la función", e);
+            }
+        });
     }
 
     @Override
@@ -58,26 +59,26 @@ public class FuncionBLImpl implements FuncionBL {
         validar(funcion);
         validarEvento(funcion);
 
-        try {
-            funcionDAO.update(funcion);
-
-        } catch (SQLException e) {
-            throw new BLException(
-                    "No se pudo actualizar la función", e);
-        }
+        TransaccionBL.ejecutar("No se pudo actualizar la función", () -> {
+            try {
+                funcionDAO.update(funcion);
+            } catch (SQLException e) {
+                throw new BLException("No se pudo actualizar la función", e);
+            }
+        });
     }
 
     @Override
     public void delete(Integer id) throws BLException {
         validarExiste(id);
 
-        try {
-            funcionDAO.delete(id);
-
-        } catch (SQLException e) {
-            throw new BLException(
-                    "No se pudo cancelar la función", e);
-        }
+        TransaccionBL.ejecutar("No se pudo cancelar la función", () -> {
+            try {
+                funcionDAO.delete(id);
+            } catch (SQLException e) {
+                throw new BLException("No se pudo cancelar la función", e);
+            }
+        });
     }
 
     private void validar(Funcion funcion) throws BLException {

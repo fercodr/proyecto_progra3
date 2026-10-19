@@ -2,6 +2,7 @@ package pe.edu.pucp.entrefunciones.bl.impl.espacios;
 
 import pe.edu.pucp.entrefunciones.bl.BLException;
 import pe.edu.pucp.entrefunciones.bl.espacios.RecursoBL;
+import pe.edu.pucp.entrefunciones.bl.impl.TransaccionBL;
 import pe.edu.pucp.entrefunciones.dao.espacios.RecursoDAO;
 import pe.edu.pucp.entrefunciones.dao.impl.espacios.RecursoDAOImpl;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Recurso;
