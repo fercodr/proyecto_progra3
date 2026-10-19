@@ -2,17 +2,37 @@ package pe.edu.pucp.entrefunciones.bl.impl.ventas;
 
 import pe.edu.pucp.entrefunciones.bl.ventas.ReservaBL;
 import pe.edu.pucp.entrefunciones.bl.BLException;
+import pe.edu.pucp.entrefunciones.bl.impl.TransaccionBL;
 import pe.edu.pucp.entrefunciones.dao.ventas.ReservaDAO;
 import pe.edu.pucp.entrefunciones.dao.impl.ventas.ReservaDAOImpl;
-import pe.edu.pucp.entrefunciones.db.DBManager;
 import pe.edu.pucp.entrefunciones.modelo.ventas.Reserva;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 
+/**
+ * Antes, crearReserva() manejaba su propia transaccion "a mano" (abria una
+ * Connection con DBManager, hacia setAutoCommit(false)/commit()/rollback()
+ * por su cuenta), en paralelo y sin ninguna relacion con TransactionsManager
+ * — el mismo patron ad-hoc que tenia Sede/Bloqueo antes de migrar a
+ * TransaccionBL. Se reemplaza aqui por el mismo patron que ya usa el resto
+ * del proyecto: la BL es quien inicia/confirma/revierte (via
+ * TransaccionBL.ejecutar) y el DAO participa con
+ * TransactionsManager.getConnection().
+ */
 public class ReservaBLImpl implements ReservaBL {
-    private ReservaDAO reservaDAO = new ReservaDAOImpl();
+    private final ReservaDAO reservaDAO;
+
+    public ReservaBLImpl() {
+        this(new ReservaDAOImpl());
+    }
+
+    public ReservaBLImpl(ReservaDAO reservaDAO) {
+        if (reservaDAO == null) {
+            throw new IllegalArgumentException("El reservaDAO no puede ser nulo");
+        }
+        this.reservaDAO = reservaDAO;
+    }
 
     @Override
     public List<Reserva> findAll() throws BLException {
@@ -52,58 +72,36 @@ public class ReservaBLImpl implements ReservaBL {
 
     @Override
     public void insert(Reserva reserva) throws BLException {
-        crearReserva(reserva);   // delega al método con transacción
+        crearReserva(reserva); // delega al método con transacción
     }
 
     @Override
     public void crearReserva(Reserva reserva) throws BLException {
-        if (reserva.getButacas() == null || reserva.getButacas().isEmpty()) {
-            throw new BLException("Debe seleccionar al menos una butaca para reservar");
+        if (reserva == null) {
+            throw new BLException("La reserva no puede ser nula");
         }
+        // El propio constructor de Reserva ya exige butacas no vacias en
+        // asiento numerado o cantidad > 0 en aforo general, asi que si el
+        // objeto llego hasta aqui ya es valido en cualquiera de los dos casos.
 
-        Connection conn = null;
-        try {
-            conn = DBManager.getInstance().getConnection();
-            conn.setAutoCommit(false);
-
-            reservaDAO.insertConButacas(reserva, conn);
-
-            conn.commit();
-        } catch (SQLException e) {
-            if (conn != null) {
-                try {
-                    conn.rollback();
-                } catch (SQLException rollbackEx) {
-                    throw new BLException("Error al revertir la reserva", rollbackEx);
-                }
-            }
-            throw new BLException("Error al crear la reserva: " + e.getMessage(), e);
-        } finally {
-            if (conn != null) {
-                try {
-                    conn.setAutoCommit(true);
-                    conn.close();
-                } catch (SQLException ignored) {
-                }
-            }
-        }
+        TransaccionBL.ejecutar("Error al crear la reserva", () -> {
+            reservaDAO.insertConButacas(reserva);
+        });
     }
 
     @Override
     public void update(Reserva reserva) throws BLException {
-        try {
-            reservaDAO.update(reserva);
-        } catch (SQLException e) {
-            throw new BLException("Error al actualizar reserva", e);
+        if (reserva == null) {
+            throw new BLException("La reserva no puede ser nula");
         }
+        TransaccionBL.ejecutar("Error al actualizar reserva", () -> reservaDAO.update(reserva));
     }
 
     @Override
     public void delete(Integer id) throws BLException {
-        try {
-            reservaDAO.delete(id);
-        } catch (SQLException e) {
-            throw new BLException("Error al eliminar reserva", e);
+        if (id == null) {
+            throw new BLException("El id de la reserva no puede ser nulo");
         }
+        TransaccionBL.ejecutar("Error al eliminar reserva", () -> reservaDAO.delete(id));
     }
 }

@@ -102,13 +102,19 @@ public class ClienteDAOImpl
 
             cmd.registerOutParameter("p_id", Types.INTEGER);
 
-            if (cmd.executeUpdate() == 0) {
+
+            //cambio
+            cmd.execute();
+
+            int idGenerado = cmd.getInt("p_id");
+
+            if (idGenerado <= 0) {
                 throw new SQLException(
-                        "No se pudo insertar el cliente"
+                        "No se pudo obtener el ID del cliente insertado"
                 );
             }
 
-            cliente.setId(cmd.getInt("p_id"));
+            cliente.setId(idGenerado);
         }
     }
 
@@ -142,11 +148,8 @@ public class ClienteDAOImpl
             cmd.setString("p_telefono", cliente.getTelefono());
             cmd.setInt("p_id", cliente.getId());
 
-            if (cmd.executeUpdate() == 0) {
-                throw new SQLException(
-                        "No se pudo actualizar el cliente"
-                );
-            }
+            //cambio
+            cmd.execute();
         }
     }
 }

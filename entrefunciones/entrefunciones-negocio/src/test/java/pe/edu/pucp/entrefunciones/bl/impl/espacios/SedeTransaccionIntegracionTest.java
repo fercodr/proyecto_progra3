@@ -19,6 +19,9 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.UUID;
+import java.util.ArrayList;
+import java.util.List;
+import pe.edu.pucp.entrefunciones.dao.transacciones.ConnectionScope;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -54,8 +57,12 @@ class SedeTransaccionIntegracionTest {
     @Test
     void reviertePadreYPrimerHijoSiFallaElSegundoHijo() throws SQLException {
         Sede sede = sedeConDosSalas();
+        //test nuevo
         SedeBLImpl bl = new SedeBLImpl(
-                new SedeDAOImpl(), new SalaDAOConFallaEnSegundoInsert(), new ButacaDAOImpl());
+                new SedeDAOH2(),
+                new SalaDAOConFallaEnSegundoInsert(),
+                new ButacaDAOImpl()
+        );
 
         assertThrows(BLException.class, () -> bl.insert(sede));
 
@@ -73,7 +80,12 @@ class SedeTransaccionIntegracionTest {
         Butaca butaca = new Butaca(0, sala, "A", 1, "General");
         sala.agregarButaca(butaca);
         sede.agregarSala(sala);
-        SedeBLImpl bl = new SedeBLImpl();
+        //test nuevo
+        SedeBLImpl bl = new SedeBLImpl(
+                new SedeDAOH2(),
+                new SalaDAOH2(),
+                new ButacaDAOImpl()
+        );
 
         bl.insert(sede);
         Sede cargada = bl.findByIdCompleto(sede.getId());
@@ -89,7 +101,12 @@ class SedeTransaccionIntegracionTest {
     @Test
     void updateConListaVaciaConservaHijosYSincronizacionDesactivaOmitidos()
             throws Exception {
-        SedeBLImpl bl = new SedeBLImpl();
+        //test nuevo
+        SedeBLImpl bl = new SedeBLImpl(
+                new SedeDAOH2(),
+                new SalaDAOH2(),
+                new ButacaDAOImpl()
+        );
         Sede sede = sedeConDosSalas();
         bl.insert(sede);
 
@@ -174,18 +191,394 @@ class SedeTransaccionIntegracionTest {
         }
     }
 
-    private static final class SalaDAOConFallaEnSegundoInsert extends SalaDAOImpl {
+    private static final class SalaDAOConFallaEnSegundoInsert extends SalaDAOH2 {
         private int inserciones;
 
         @Override
         public void insert(Sala sala) throws SQLException {
             inserciones++;
+
             if (inserciones == 2) {
-                throw new SQLException("Fallo deliberado al escribir el segundo hijo");
+                throw new SQLException(
+                        "Fallo deliberado al escribir el segundo hijo");
             }
+
             super.insert(sala);
         }
     }
+
+    //NUEVO NUNEVO NUEVO 1
+    private static class SalaDAOH2 extends SalaDAOImpl {
+
+        @Override
+        public void insert(Sala sala) throws SQLException {
+            String sql = """
+                INSERT INTO sala
+                (sede_id, nombre, aforo, tipo_sala, activo)
+                VALUES (?, ?, ?, ?, ?)
+                """;
+
+            Connection connection = TransactionsManager.getConnection();
+
+            try (var cmd = connection.prepareStatement(
+                    sql, Statement.RETURN_GENERATED_KEYS)) {
+
+                cmd.setInt(1, sala.getSede().getId());
+                cmd.setString(2, sala.getNombre());
+                cmd.setInt(3, sala.getAforo());
+                cmd.setString(4, sala.getTipoSala());
+                cmd.setBoolean(5, sala.estaActivo());
+
+                cmd.executeUpdate();
+
+                try (var rs = cmd.getGeneratedKeys()) {
+                    if (rs.next()) {
+                        sala.setId(rs.getInt(1));
+                    }
+                }
+            }
+        }
+
+        @Override
+        public void update(Sala sala) throws SQLException {
+            String sql = """
+                UPDATE sala
+                SET sede_id = ?,
+                    nombre = ?,
+                    aforo = ?,
+                    tipo_sala = ?,
+                    activo = ?
+                WHERE id = ?
+                """;
+
+            Connection connection = TransactionsManager.getConnection();
+
+            try (var cmd = connection.prepareStatement(sql)) {
+                cmd.setInt(1, sala.getSede().getId());
+                cmd.setString(2, sala.getNombre());
+                cmd.setInt(3, sala.getAforo());
+                cmd.setString(4, sala.getTipoSala());
+                cmd.setBoolean(5, sala.estaActivo());
+                cmd.setInt(6, sala.getId());
+
+                cmd.executeUpdate();
+            }
+        }
+
+        @Override
+        public void delete(Integer id) throws SQLException {
+            String sql = """
+                UPDATE sala
+                SET activo = FALSE
+                WHERE id = ?
+                """;
+
+            Connection connection = TransactionsManager.getConnection();
+
+            try (var cmd = connection.prepareStatement(sql)) {
+                cmd.setInt(1, id);
+                cmd.executeUpdate();
+            }
+        }
+
+        @Override
+        public List<Sala> findBySedeId(int sedeId) throws SQLException {
+            String sql = """
+            SELECT id, sede_id, nombre, aforo, tipo_sala, activo
+            FROM sala
+            WHERE sede_id = ?
+            ORDER BY id
+            """;
+
+            try (ConnectionScope scope = ConnectionScope.openForRead();
+                 var cmd = scope.connection().prepareStatement(sql)) {
+
+                cmd.setInt(1, sedeId);
+
+                try (var rs = cmd.executeQuery()) {
+                    List<Sala> salas = new ArrayList<>();
+
+                    while (rs.next()) {
+                        Sede sede = new Sede();
+                        sede.setId(sedeId);
+
+                        // Estos valores solo sirven para construir la referencia
+                        // asociada a la sala durante este test.
+                        sede.setRazonSocial("Sede");
+                        sede.setDireccion("Direccion");
+                        sede.setCiudad("Ciudad");
+
+                        Sala sala = new Sala(
+                                rs.getInt("id"),
+                                sede,
+                                rs.getString("nombre"),
+                                rs.getInt("aforo"),
+                                rs.getString("tipo_sala")
+                        );
+
+                        if (rs.getBoolean("activo")) {
+                            sala.activar();
+                        } else {
+                            sala.desactivar();
+                        }
+
+                        salas.add(sala);
+                    }
+
+                    return salas;
+                }
+            }
+        }
+    }
+
+    //NUEVO NUEVO NUEVO 2
+    private static final class SedeDAOH2 extends SedeDAOImpl {
+
+        @Override
+        public void insert(Sede sede) throws SQLException {
+            String sql = """
+                INSERT INTO sede
+                (razon_social, direccion, ciudad, telefono_contacto, activo)
+                VALUES (?, ?, ?, ?, ?)
+                """;
+
+            Connection connection = TransactionsManager.getConnection();
+
+            try (var cmd = connection.prepareStatement(
+                    sql, Statement.RETURN_GENERATED_KEYS)) {
+
+                cmd.setString(1, sede.getRazonSocial());
+                cmd.setString(2, sede.getDireccion());
+                cmd.setString(3, sede.getCiudad());
+                cmd.setString(4, sede.getTelefonoContacto());
+                cmd.setBoolean(5, sede.estaActivo());
+
+                cmd.executeUpdate();
+
+                try (var rs = cmd.getGeneratedKeys()) {
+                    if (rs.next()) {
+                        sede.setId(rs.getInt(1));
+                    }
+                }
+            }
+        }
+
+        @Override
+        public void update(Sede sede) throws SQLException {
+            String sql = """
+                UPDATE sede
+                SET razon_social = ?,
+                    direccion = ?,
+                    ciudad = ?,
+                    telefono_contacto = ?,
+                    activo = ?
+                WHERE id = ?
+                """;
+
+            Connection connection = TransactionsManager.getConnection();
+
+            try (var cmd = connection.prepareStatement(sql)) {
+                cmd.setString(1, sede.getRazonSocial());
+                cmd.setString(2, sede.getDireccion());
+                cmd.setString(3, sede.getCiudad());
+                cmd.setString(4, sede.getTelefonoContacto());
+                cmd.setBoolean(5, sede.estaActivo());
+                cmd.setInt(6, sede.getId());
+
+                cmd.executeUpdate();
+            }
+        }
+
+        @Override
+        public void delete(Integer id) throws SQLException {
+            String sql = """
+                UPDATE sede
+                SET activo = FALSE
+                WHERE id = ?
+                """;
+
+            Connection connection = TransactionsManager.getConnection();
+
+            try (var cmd = connection.prepareStatement(sql)) {
+                cmd.setInt(1, id);
+                cmd.executeUpdate();
+            }
+        }
+
+        //NUEVO AGREGADO
+        @Override
+        public Sede findById(Integer id) throws SQLException {
+            String sql = """
+            SELECT id,
+                   razon_social,
+                   direccion,
+                   ciudad,
+                   telefono_contacto,
+                   activo
+            FROM sede
+            WHERE id = ?
+            """;
+
+            try (ConnectionScope scope = ConnectionScope.openForRead();
+                 var cmd = scope.connection().prepareStatement(sql)) {
+
+                cmd.setInt(1, id);
+
+                try (var rs = cmd.executeQuery()) {
+                    if (!rs.next()) {
+                        return null;
+                    }
+
+                    Sede sede = new Sede(
+                            rs.getInt("id"),
+                            rs.getString("razon_social"),
+                            rs.getString("direccion"),
+                            rs.getString("ciudad"),
+                            rs.getString("telefono_contacto")
+                    );
+
+                    if (rs.getBoolean("activo")) {
+                        sede.activar();
+                    } else {
+                        sede.desactivar();
+                    }
+
+                    return sede;
+                }
+            }
+        }
+
+        @Override
+        public Sede findByIdCompleto(Integer id) throws SQLException {
+
+            String sqlSede = """
+            SELECT id,
+                   razon_social,
+                   direccion,
+                   ciudad,
+                   telefono_contacto,
+                   activo
+            FROM sede
+            WHERE id = ?
+            """;
+
+            try (ConnectionScope scope = ConnectionScope.openForRead()) {
+
+                var connection = scope.connection();
+
+                Sede sede;
+
+                try (var cmd = connection.prepareStatement(sqlSede)) {
+                    cmd.setInt(1, id);
+
+                    try (var rs = cmd.executeQuery()) {
+                        if (!rs.next()) {
+                            return null;
+                        }
+
+                        sede = new Sede(
+                                rs.getInt("id"),
+                                rs.getString("razon_social"),
+                                rs.getString("direccion"),
+                                rs.getString("ciudad"),
+                                rs.getString("telefono_contacto")
+                        );
+
+                        if (rs.getBoolean("activo")) {
+                            sede.activar();
+                        } else {
+                            sede.desactivar();
+                        }
+                    }
+                }
+
+                String sqlSalas = """
+                SELECT id, nombre, aforo, tipo_sala, activo
+                FROM sala
+                WHERE sede_id = ?
+                ORDER BY id
+                """;
+
+                try (var cmd = connection.prepareStatement(sqlSalas)) {
+                    cmd.setInt(1, sede.getId());
+
+                    try (var rs = cmd.executeQuery()) {
+                        while (rs.next()) {
+
+                            Sala sala = new Sala(
+                                    rs.getInt("id"),
+                                    sede,
+                                    rs.getString("nombre"),
+                                    rs.getInt("aforo"),
+                                    rs.getString("tipo_sala")
+                            );
+
+                            if (rs.getBoolean("activo")) {
+                                sala.activar();
+                            } else {
+                                sala.desactivar();
+                            }
+
+                            sede.agregarSala(sala);
+                        }
+                    }
+                }
+
+                String sqlButacas = """
+                SELECT b.id,
+                       b.sala_id,
+                       b.fila,
+                       b.columna,
+                       b.tipo_butaca,
+                       b.activo
+                FROM butaca b
+                INNER JOIN sala s ON s.id = b.sala_id
+                WHERE s.sede_id = ?
+                ORDER BY b.sala_id, b.id
+                """;
+
+                try (var cmd = connection.prepareStatement(sqlButacas)) {
+                    cmd.setInt(1, sede.getId());
+
+                    try (var rs = cmd.executeQuery()) {
+                        while (rs.next()) {
+
+                            int salaId = rs.getInt("sala_id");
+
+                            Sala sala = sede.getSalas().stream()
+                                    .filter(s -> s.getId() == salaId)
+                                    .findFirst()
+                                    .orElse(null);
+
+                            if (sala == null) {
+                                continue;
+                            }
+
+                            Butaca butaca = new Butaca(
+                                    rs.getInt("id"),
+                                    sala,
+                                    rs.getString("fila"),
+                                    rs.getInt("columna"),
+                                    rs.getString("tipo_butaca")
+                            );
+
+                            if (rs.getBoolean("activo")) {
+                                butaca.activar();
+                            } else {
+                                butaca.desactivar();
+                            }
+
+                            sala.agregarButaca(butaca);
+                        }
+                    }
+                }
+
+                return sede;
+            }
+        }
+
+    }
+
 
     private static final class DBManagerH2 extends DBManager {
         private final String url;

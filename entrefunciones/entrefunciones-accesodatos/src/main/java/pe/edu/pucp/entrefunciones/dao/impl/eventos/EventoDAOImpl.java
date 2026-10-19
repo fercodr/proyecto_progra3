@@ -1,6 +1,6 @@
 package pe.edu.pucp.entrefunciones.dao.impl.eventos;
+import pe.edu.pucp.entrefunciones.dao.transacciones.ConnectionScope;
 import pe.edu.pucp.entrefunciones.dao.transacciones.TransactionsManager;
-import pe.edu.pucp.entrefunciones.db.DBManager;
 import pe.edu.pucp.entrefunciones.modelo.catalogo.ActividadCultural;
 import pe.edu.pucp.entrefunciones.modelo.catalogo.CategoriaGenero;
 import pe.edu.pucp.entrefunciones.modelo.catalogo.ClasificacionEdad;
@@ -29,8 +29,8 @@ public class EventoDAOImpl implements EventoDAO {
     @Override
     public List<Evento> findAll() throws SQLException {
         String sql = "{call listar_eventos()}";
-        try (Connection connection = DBManager.getInstance().getConnection();
-             CallableStatement cmd = connection.prepareCall(sql);
+        try (ConnectionScope scope = ConnectionScope.openForRead();
+             CallableStatement cmd = scope.connection().prepareCall(sql);
              ResultSet rs = cmd.executeQuery()) {
 
             List<Evento> eventos = new ArrayList<>();
@@ -48,8 +48,8 @@ public class EventoDAOImpl implements EventoDAO {
         }
 
         String sql = "{call buscar_evento_por_id(?)}";
-        try (Connection connection = DBManager.getInstance().getConnection();
-             CallableStatement cmd = connection.prepareCall(sql)) {
+        try (ConnectionScope scope = ConnectionScope.openForRead();
+             CallableStatement cmd = scope.connection().prepareCall(sql)) {
 
             cmd.setInt("p_id", id);
             try (ResultSet rs = cmd.executeQuery()) {
@@ -60,8 +60,8 @@ public class EventoDAOImpl implements EventoDAO {
 
     Evento findByIdSinFunciones(int id) throws SQLException {
         String sql = "{call buscar_evento_por_id(?)}";
-        try (Connection connection = DBManager.getInstance().getConnection();
-             CallableStatement cmd = connection.prepareCall(sql)) {
+        try (ConnectionScope scope = ConnectionScope.openForRead();
+             CallableStatement cmd = scope.connection().prepareCall(sql)) {
 
             cmd.setInt("p_id", id);
             try (ResultSet rs = cmd.executeQuery()) {
@@ -289,4 +289,3 @@ public class EventoDAOImpl implements EventoDAO {
         return evento;
     }
 }
-

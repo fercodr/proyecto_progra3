@@ -9,21 +9,29 @@ import java.util.ArrayList;
 import java.util.List;
 import pe.edu.pucp.entrefunciones.dao.ventas.PagoDAO;
 import pe.edu.pucp.entrefunciones.dao.ventas.ReservaDAO;
-import pe.edu.pucp.entrefunciones.db.DBManager;
+import pe.edu.pucp.entrefunciones.dao.transacciones.ConnectionScope;
+import pe.edu.pucp.entrefunciones.dao.transacciones.TransactionsManager;
 import pe.edu.pucp.entrefunciones.modelo.ventas.EstadoPago;
 import pe.edu.pucp.entrefunciones.modelo.ventas.Pago;
 import pe.edu.pucp.entrefunciones.modelo.ventas.Reserva;
 
 /**
- * Implementacion de Pago siguiendo el mismo patron que SedeDAOImpl
- * (CallableStatement con parametros nombrados hacia los procedimientos de
- * sql/entrefunciones-mysql.sql, seccion "pago"). A diferencia de Sede,
- * Pago no tiene IEliminable: su eliminado logico se expresa con estado
- * (ver seccion 8.3 del informe), asi que delete(id) no desactiva un
- * booleano sino que intenta pasar el pago a RECHAZADO — el procedimiento
- * eliminar_pago solo actualiza la fila si todavia esta PENDIENTE (ver
- * comentario alli); si no, executeUpdate() devuelve 0 y este metodo lanza
- * SQLException, para que la capa de negocio decida que hacer.
+ * Implementacion de Pago siguiendo el mismo patron que SedeDAOImpl /
+ * BloqueoDAOImpl: lecturas con ConnectionScope.openForRead() (reutilizan la
+ * conexion de la transaccion activa si la hay), escrituras con
+ * TransactionsManager.getConnection() directamente (exigen una transaccion
+ * activa iniciada por la capa de negocio). Antes cada metodo abria su
+ * propia conexion independiente via DBManager, lo que hacia imposible que
+ * PagoBLImpl.validar() (pago.update + reserva.update + N entradas) fuera
+ * atomico — ese es precisamente el hueco que esta clase ya no tiene.
+ *
+ * <p>A diferencia de Sede, Pago no tiene IEliminable: su eliminado logico
+ * se expresa con estado (ver seccion 8.3 del informe), asi que delete(id)
+ * no desactiva un booleano sino que intenta pasar el pago a RECHAZADO — el
+ * procedimiento eliminar_pago solo actualiza la fila si todavia esta
+ * PENDIENTE (ver comentario alli); si no, executeUpdate() devuelve 0 y
+ * este metodo lanza SQLException, para que la capa de negocio decida que
+ * hacer.
  *
  * <p>Recibe un ReservaDAO por constructor (en vez de instanciar
  * ReservaDAOImpl directamente) porque esa clase le toca a la parte 2 del
@@ -44,9 +52,8 @@ public class PagoDAOImpl implements PagoDAO {
     @Override
     public List<Pago> findAll() throws SQLException {
         String sql = "{call listar_pagos()}";
-        try (
-                Connection conn = DBManager.getInstance().getConnection();
-                CallableStatement cmd = conn.prepareCall(sql);
+        try (ConnectionScope scope = ConnectionScope.openForRead();
+                CallableStatement cmd = scope.connection().prepareCall(sql);
                 ResultSet rs = cmd.executeQuery()) {
 
             List<Pago> pagos = new ArrayList<>();
@@ -64,9 +71,8 @@ public class PagoDAOImpl implements PagoDAO {
         }
 
         String sql = "{call buscar_pago_por_id(?)}";
-        try (
-                Connection conn = DBManager.getInstance().getConnection();
-                CallableStatement cmd = conn.prepareCall(sql)) {
+        try (ConnectionScope scope = ConnectionScope.openForRead();
+                CallableStatement cmd = scope.connection().prepareCall(sql)) {
 
             cmd.setInt("p_id", id);
 
@@ -79,9 +85,8 @@ public class PagoDAOImpl implements PagoDAO {
     @Override
     public Pago findByReserva(int reservaId) throws SQLException {
         String sql = "{call buscar_pago_por_reserva(?)}";
-        try (
-                Connection conn = DBManager.getInstance().getConnection();
-                CallableStatement cmd = conn.prepareCall(sql)) {
+        try (ConnectionScope scope = ConnectionScope.openForRead();
+                CallableStatement cmd = scope.connection().prepareCall(sql)) {
 
             cmd.setInt("p_reserva_id", reservaId);
 
@@ -98,9 +103,8 @@ public class PagoDAOImpl implements PagoDAO {
         }
 
         String sql = "{call buscar_pago_por_codigo(?)}";
-        try (
-                Connection conn = DBManager.getInstance().getConnection();
-                CallableStatement cmd = conn.prepareCall(sql)) {
+        try (ConnectionScope scope = ConnectionScope.openForRead();
+                CallableStatement cmd = scope.connection().prepareCall(sql)) {
 
             cmd.setString("p_codigo_pago", codigoPago);
 
@@ -116,10 +120,9 @@ public class PagoDAOImpl implements PagoDAO {
             throw new IllegalArgumentException("El pago no puede ser nulo");
         }
 
+        Connection conn = TransactionsManager.getConnection();
         String sql = "{call insertar_pago(?, ?, ?, ?, ?, ?)}";
-        try (
-                Connection conn = DBManager.getInstance().getConnection();
-                CallableStatement cmd = conn.prepareCall(sql)) {
+        try (CallableStatement cmd = conn.prepareCall(sql)) {
 
             cmd.setInt("p_reserva_id", pago.getReserva().getId());
             cmd.setString("p_codigo_pago", pago.getCodigoPago());
@@ -146,10 +149,9 @@ public class PagoDAOImpl implements PagoDAO {
             throw new IllegalArgumentException("El pago no puede ser nulo");
         }
 
+        Connection conn = TransactionsManager.getConnection();
         String sql = "{call modificar_pago(?, ?, ?, ?, ?)}";
-        try (
-                Connection conn = DBManager.getInstance().getConnection();
-                CallableStatement cmd = conn.prepareCall(sql)) {
+        try (CallableStatement cmd = conn.prepareCall(sql)) {
 
             cmd.setInt("p_id", pago.getId());
             cmd.setString("p_codigo_pago", pago.getCodigoPago());
@@ -173,11 +175,9 @@ public class PagoDAOImpl implements PagoDAO {
             throw new IllegalArgumentException("El id no puede ser nulo");
         }
 
+        Connection conn = TransactionsManager.getConnection();
         String sql = "{call eliminar_pago(?)}";
-        try (
-                Connection conn = DBManager.getInstance().getConnection();
-                CallableStatement cmd = conn.prepareCall(sql)) {
-
+        try (CallableStatement cmd = conn.prepareCall(sql)) {
             cmd.setInt("p_id", id);
 
             if (cmd.executeUpdate() == 0) {
