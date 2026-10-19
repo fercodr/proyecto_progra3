@@ -5,6 +5,33 @@
 # Maven
 **/target/
 
-# Local configuration
+# Local and private configuration
 .env
+.env.*
+!.env.example
 *.local
+**/db.properties
+**/settings.xml
+*.key
+*.pem
+*.pfx
+
+# Temporary and generated files
+.codex-*/
+**/.codex-*/
+*.tmp
+*.temp
+*.bak
+*.log
+*~
+/EntreFunciones_*.zip
+
+# Final delivery documents are intentionally versioned.
+!docs/
+!docs/entregas/
+!docs/entregas/**
+
+# Private LAB06 originals stay local until the team authorizes publication.
+docs/entregas/LAB06/Informe_Tarea_Academica.docx
+docs/entregas/LAB06/Reporte_de_Avances.docx
+docs/entregas/LAB06/Rubrica_18_de_20.pdf
