@@ -1,5 +1,0 @@
-Coloca AGENTS.md en la raíz de tu repositorio EntreFunciones, junto al POM agregador. Si ya existe, integra las reglas sin borrar instrucciones del equipo. Copia referencias/profesor/softprog conservando su estructura. No agregues SoftProg a los módulos Maven de EntreFunciones: es código de consulta. Inicia una nueva sesión de Codex y pídele que lea AGENTS.md y la referencia antes de implementar. El ZIP incluye únicamente los 75 archivos de la carpeta de la sesión 09, no todo el repositorio del profesor.
-Origen: https://github.com/erichuizapucp/programacion-3
-Commit: 289ff0c44b79f7c39f98a735fc78f6dffb994604
-Fecha: 2026-09-29
-El proyecto EntreFunciones no ha sido modificado.
