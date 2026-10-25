@@ -30,21 +30,12 @@ import pe.edu.pucp.entrefunciones.modelo.ventas.Entrada;
 import pe.edu.pucp.entrefunciones.modelo.ventas.EstadoEntrada;
 import pe.edu.pucp.entrefunciones.modelo.auditoria.Auditoria;
 import pe.edu.pucp.entrefunciones.modelo.auditoria.EstadoAuditoria;
-/**
- * Modulo de ejecucion: simula de principio a fin el modelo de negocio de
- * EntreFunciones usando unicamente las clases del modulo de dominio (no hay
- * base de datos ni interfaz grafica involucradas). El propio main() cumple el
- * rol de "codigo de prueba": ademas de narrar el flujo de negocio, la seccion
- * final ejecuta comparaciones explicitas (metodo verificar()) sobre el estado
- * de los objetos y reporta cuantas se cumplieron, sin depender de ningun
- * framework externo (no usa JUnit).
- */
+
 public class Main {
 
     private static int totalVerificaciones = 0;
     private static int verificacionesOk = 0;
 
-    /** Imprime el resultado de una verificacion puntual y lleva el conteo total. */
     private static void verificar(String descripcion, boolean condicion) {
         totalVerificaciones++;
         if (condicion) {
@@ -103,12 +94,7 @@ public class Main {
         System.out.println("Bloqueo activo el 18/09 10:00? " + bloqueoVigente);
 
         // ---------- 3. Eventos (catalogo) y Funciones (programacion) ----------
-        // Evento es abstracta: Pelicula, ObraTeatro y ActividadCultural HEREDAN de
-        // ella (id, precio, lista de funciones, activo/inactivo). Cada Evento se
-        // crea UNA sola vez y guarda su lista de Funciones; cada Funcion apunta al
-        // Evento que se presenta (sala, fecha, horario, idioma y estado son de la
-        // Funcion). Asi, si Interestelar se programa a las 15h y a las 18h, los
-        // datos de catalogo (titulo, genero, director) NO se repiten.
+
         Pelicula interestelar = new Pelicula(1, 25.00,
                 "Interestelar", 169, CategoriaGenero.DRAMA, ClasificacionEdad.PG13, "Christopher Nolan");
         ObraTeatro laMuralla = new ObraTeatro(2, 35.00,
@@ -370,10 +356,7 @@ public class Main {
         }
 
         // ---------- 9. Conexion a la base de datos (AWS RDS) ----------
-        // Usa db.DBManager (patron Singleton) con los datos de db.properties.
-        // Mientras la instancia de AWS RDS no este creada / db.properties no
-        // tenga los datos reales, esta seccion va a mostrar un mensaje de
-        // error controlado en vez de interrumpir el resto de la simulacion.
+
         System.out.println("\n--- Conexion a la base de datos ---");
         try (Connection con = DBManager.getInstance().getConnection()) {
             System.out.println("Conexion a la base de datos establecida correctamente. Valida: "

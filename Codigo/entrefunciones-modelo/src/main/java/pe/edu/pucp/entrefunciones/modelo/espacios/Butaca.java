@@ -1,16 +1,6 @@
 package pe.edu.pucp.entrefunciones.modelo.espacios;
 import pe.edu.pucp.entrefunciones.modelo.IEliminable;
-/**
- * Butaca: entidad puramente estructural (forma parte del mapa de asientos de
- * una Sala). Ya no guarda un "disponible" propio: una misma butaca pertenece a
- * una sala y se usa en muchas funciones distintas, por lo que si esta ocupada
- * o no es una pregunta que solo tiene sentido para (funcion, butaca), no para
- * la butaca sola. Esa disponibilidad se determina revisando si existe una
- * Reserva o Entrada vigente para ese par (ver ventas.Reserva y seccion 8 del
- * informe). "activo" aqui es distinto: indica si la butaca sigue en servicio
- * (por ejemplo, tras una incidencia registrada en Auditoria) o fue dada de
- * baja definitivamente del mapa de asientos.
- */
+
 public class Butaca implements IEliminable {
     private int id;
     private Sala sala;

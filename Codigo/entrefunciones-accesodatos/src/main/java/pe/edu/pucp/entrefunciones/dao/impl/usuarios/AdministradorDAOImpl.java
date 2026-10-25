@@ -11,8 +11,7 @@ import java.sql.Types;
 import pe.edu.pucp.entrefunciones.db.DBManager;
 import pe.edu.pucp.entrefunciones.dao.usuarios.AdministradorDAO;
 
-public class AdministradorDAOImpl extends UsuarioDAOImpl<Administrador>
-        implements AdministradorDAO {
+public class AdministradorDAOImpl extends UsuarioDAOImpl<Administrador> implements AdministradorDAO {
 
     @Override
     protected Administrador construir(ResultSet rs) throws SQLException {

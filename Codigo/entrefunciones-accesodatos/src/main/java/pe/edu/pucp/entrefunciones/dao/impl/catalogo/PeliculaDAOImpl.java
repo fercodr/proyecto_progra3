@@ -9,7 +9,6 @@ import pe.edu.pucp.entrefunciones.modelo.catalogo.Pelicula;
 import java.sql.SQLException;
 import java.util.List;
 
-/** Adaptador tipado sobre el DAO polimorfico de eventos vigente. */
 public class PeliculaDAOImpl implements PeliculaDAO {
     private final EventoDAO eventoDAO;
 

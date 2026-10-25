@@ -29,7 +29,7 @@ public class SedeBLImpl implements SedeBL {
         this(new SedeDAOImpl(), new SalaDAOImpl(), new ButacaDAOImpl());
     }
 
-    /** Conserva el constructor usado por clientes que solo consultan o prueban Sede. */
+
     public SedeBLImpl(SedeDAO sedeDAO) {
         this(sedeDAO, new SalaDAOImpl(), new ButacaDAOImpl());
     }

@@ -16,18 +16,7 @@ import pe.edu.pucp.entrefunciones.modelo.ventas.Entrada;
 import pe.edu.pucp.entrefunciones.modelo.ventas.EstadoEntrada;
 import pe.edu.pucp.entrefunciones.modelo.ventas.Reserva;
 
-/**
- * Implementacion de Entrada, mismo patron que PagoDAOImpl. Toda entrada
- * exige una Butaca (Entrada.setButaca no acepta null en el modelo
- * actual): mapear() siempre reconstruye la Butaca via ButacaDAO a partir
- * de butaca_id, igual que Pago reconstruye su Reserva. delete(id) es
- * eliminado logico via estado, igual que Pago: el procedimiento
- * eliminar_entrada solo cancela si la entrada seguia VIGENTE.
- *
- * <p>Recibe ReservaDAO y ButacaDAO por constructor por la misma razon que
- * PagoDAOImpl recibe ReservaDAO: esas dos clases le tocan a la parte 2
- * del equipo.</p>
- */
+
 public class EntradaDAOImpl implements EntradaDAO {
 
     private final ReservaDAO reservaDAO;

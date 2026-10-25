@@ -1,6 +1,5 @@
 package pe.edu.pucp.entrefunciones.modelo.espacios;
 import pe.edu.pucp.entrefunciones.modelo.IEliminable;
-/** RF-M2-02: recurso que la sede pone a disposicion de una funcion (proyector, equipo de sonido, personal tecnico, etc.). */
 public class Recurso implements IEliminable {
     private int id;
     private String nombre;

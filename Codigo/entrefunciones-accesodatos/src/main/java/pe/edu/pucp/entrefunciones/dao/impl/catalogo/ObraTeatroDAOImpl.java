@@ -9,7 +9,6 @@ import pe.edu.pucp.entrefunciones.modelo.catalogo.ObraTeatro;
 import java.sql.SQLException;
 import java.util.List;
 
-/** Adaptador tipado sobre el DAO polimórfico de eventos vigente. */
 public class ObraTeatroDAOImpl implements ObraTeatroDAO {
     private final EventoDAO eventoDAO;
 

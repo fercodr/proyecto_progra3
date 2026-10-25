@@ -13,15 +13,7 @@ import pe.edu.pucp.entrefunciones.modelo.ventas.Entrada;
 import pe.edu.pucp.entrefunciones.modelo.ventas.Pago;
 import pe.edu.pucp.entrefunciones.modelo.ventas.Reserva;
 
-/**
- * Orquesta PagoDAO con ReservaDAO y EntradaDAO para el flujo de RF-M5-02 +
- * RF-M5-03 (ver el javadoc de PagoBL). Cada metodo publico atrapa
- * SQLException y la envuelve en BLException, y aplica primero la regla de
- * negocio correspondiente sobre el objeto de dominio (que ya la conoce:
- * Pago.procesarPago/validar/rechazar) antes de persistir — la capa de
- * negocio no reimplementa esas reglas, solo decide que hacer cuando el
- * objeto de dominio dice que la operacion no procede.
- */
+
 public class PagoBLImpl implements PagoBL {
 
     private final PagoDAO pagoDAO;
@@ -192,22 +184,7 @@ public class PagoBLImpl implements PagoBL {
         }
     }
 
-    /**
-     * RF-M5-03: una entrada por butaca reservada. El precio de cada
-     * entrada es el precio del Evento (Funcion.getEvento().getPrecio()),
-     * y el codigo QR se deriva del codigo de pago para que quede
-     * trazable de que pago vino cada entrada emitida.
-     *
-     * <p>Nota: el dominio actual (Reserva/Entrada) todavia no tiene
-     * soporte de "aforo general" (reservas sin butaca puntual para
-     * ActividadCultural) a nivel de modelo ni de base de datos, aunque
-     * Evento.requiereAsientoNumerado() ya distingue el caso — por eso
-     * este metodo, por ahora, siempre emite una entrada por butaca de
-     * reserva.getButacas(), igual que para asiento numerado. Cuando el
-     * equipo agregue ese soporte en Reserva/Entrada y en el schema SQL,
-     * este metodo debe volver a ramificar segun
-     * reserva.getFuncion().requiereAsientoNumerado().</p>
-     */
+
     private List<Entrada> emitirEntradas(Reserva reserva) {
         List<Entrada> entradas = new ArrayList<>();
         double precio = reserva.getFuncion().getEvento().getPrecio();

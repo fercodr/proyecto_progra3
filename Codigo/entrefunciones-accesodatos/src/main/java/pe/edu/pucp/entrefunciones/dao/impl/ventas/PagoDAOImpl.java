@@ -14,22 +14,7 @@ import pe.edu.pucp.entrefunciones.modelo.ventas.EstadoPago;
 import pe.edu.pucp.entrefunciones.modelo.ventas.Pago;
 import pe.edu.pucp.entrefunciones.modelo.ventas.Reserva;
 
-/**
- * Implementacion de Pago siguiendo el mismo patron que SedeDAOImpl
- * (CallableStatement con parametros nombrados hacia los procedimientos de
- * sql/entrefunciones-mysql.sql, seccion "pago"). A diferencia de Sede,
- * Pago no tiene IEliminable: su eliminado logico se expresa con estado
- * (ver seccion 8.3 del informe), asi que delete(id) no desactiva un
- * booleano sino que intenta pasar el pago a RECHAZADO — el procedimiento
- * eliminar_pago solo actualiza la fila si todavia esta PENDIENTE (ver
- * comentario alli); si no, executeUpdate() devuelve 0 y este metodo lanza
- * SQLException, para que la capa de negocio decida que hacer.
- *
- * <p>Recibe un ReservaDAO por constructor (en vez de instanciar
- * ReservaDAOImpl directamente) porque esa clase le toca a la parte 2 del
- * equipo y puede no existir todavia al momento de compilar esta parte;
- * cualquier implementacion de ReservaDAO que cumpla el contrato sirve.</p>
- */
+
 public class PagoDAOImpl implements PagoDAO {
 
     private final ReservaDAO reservaDAO;
