@@ -1,17 +1,7 @@
 package pe.edu.pucp.entrefunciones.modelo.auditoria;
 import java.time.LocalDateTime;
 import pe.edu.pucp.entrefunciones.modelo.catalogo.Funcion;
-/**
- * Cubre dos usos con la misma estructura: RF-M6-04 (registro de una incidencia
- * ocurrida durante una funcion, con descripcion, fecha, responsable y estado
- * de atencion) y el registro de trazabilidad que exige RNF-SEG-01 (usuario,
- * fecha, hora y accion realizada en una operacion critica). "responsable" es
- * quien reporta la incidencia o quien ejecuto la accion registrada. `funcion`
- * es opcional: se completa cuando la auditoria es una incidencia de RF-M6-04
- * (para saber durante que funcion ocurrio) y queda en null para un registro
- * de trazabilidad general de RNF-SEG-01 que no gira en torno a una funcion
- * puntual (p.ej. un inicio de sesion).
- */
+
 public class Auditoria {
     private int id;
     private Funcion funcion;
