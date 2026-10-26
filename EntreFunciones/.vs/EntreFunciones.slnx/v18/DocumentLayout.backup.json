@@ -3,12 +3,28 @@
   "WorkspaceRootPath": "C:\\2026-2\\proyectoWeb\\EntreFunciones\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{6FDFF7DF-4F94-9F5A-A865-1B5FFF5A41A7}|EntreFunciones\\EntreFunciones.csproj|c:\\2026-2\\proyectoweb\\entrefunciones\\entrefunciones\\components\\pages\\catalogoprogramacion\\catalogo.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{6FDFF7DF-4F94-9F5A-A865-1B5FFF5A41A7}|EntreFunciones\\EntreFunciones.csproj|solutionrelative:entrefunciones\\components\\pages\\catalogoprogramacion\\catalogo.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{6FDFF7DF-4F94-9F5A-A865-1B5FFF5A41A7}|EntreFunciones\\EntreFunciones.csproj|c:\\2026-2\\proyectoweb\\entrefunciones\\entrefunciones\\components\\pages\\home.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
       "RelativeMoniker": "D:0:0:{6FDFF7DF-4F94-9F5A-A865-1B5FFF5A41A7}|EntreFunciones\\EntreFunciones.csproj|solutionrelative:entrefunciones\\components\\pages\\home.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6FDFF7DF-4F94-9F5A-A865-1B5FFF5A41A7}|EntreFunciones\\EntreFunciones.csproj|c:\\2026-2\\proyectoweb\\entrefunciones\\entrefunciones\\components\\layout\\mainlayout.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{6FDFF7DF-4F94-9F5A-A865-1B5FFF5A41A7}|EntreFunciones\\EntreFunciones.csproj|solutionrelative:entrefunciones\\components\\layout\\mainlayout.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6FDFF7DF-4F94-9F5A-A865-1B5FFF5A41A7}|EntreFunciones\\EntreFunciones.csproj|c:\\2026-2\\proyectoweb\\entrefunciones\\entrefunciones\\components\\redirecttologin.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{6FDFF7DF-4F94-9F5A-A865-1B5FFF5A41A7}|EntreFunciones\\EntreFunciones.csproj|solutionrelative:entrefunciones\\components\\redirecttologin.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6FDFF7DF-4F94-9F5A-A865-1B5FFF5A41A7}|EntreFunciones\\EntreFunciones.csproj|c:\\2026-2\\proyectoweb\\entrefunciones\\entrefunciones\\components\\pages\\seguridad\\registropage.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{6FDFF7DF-4F94-9F5A-A865-1B5FFF5A41A7}|EntreFunciones\\EntreFunciones.csproj|solutionrelative:entrefunciones\\components\\pages\\seguridad\\registropage.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6FDFF7DF-4F94-9F5A-A865-1B5FFF5A41A7}|EntreFunciones\\EntreFunciones.csproj|c:\\2026-2\\proyectoweb\\entrefunciones\\entrefunciones\\components\\pages\\seguridad\\loginpage.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{6FDFF7DF-4F94-9F5A-A865-1B5FFF5A41A7}|EntreFunciones\\EntreFunciones.csproj|solutionrelative:entrefunciones\\components\\pages\\seguridad\\loginpage.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6FDFF7DF-4F94-9F5A-A865-1B5FFF5A41A7}|EntreFunciones\\EntreFunciones.csproj|c:\\2026-2\\proyectoweb\\entrefunciones\\entrefunciones\\components\\pages\\catalogoprogramacion\\catalogo.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{6FDFF7DF-4F94-9F5A-A865-1B5FFF5A41A7}|EntreFunciones\\EntreFunciones.csproj|solutionrelative:entrefunciones\\components\\pages\\catalogoprogramacion\\catalogo.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{6FDFF7DF-4F94-9F5A-A865-1B5FFF5A41A7}|EntreFunciones\\EntreFunciones.csproj|c:\\2026-2\\proyectoweb\\entrefunciones\\entrefunciones\\components\\pages\\error.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
@@ -17,10 +33,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{6FDFF7DF-4F94-9F5A-A865-1B5FFF5A41A7}|EntreFunciones\\EntreFunciones.csproj|c:\\2026-2\\proyectoweb\\entrefunciones\\entrefunciones\\components\\routes.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
       "RelativeMoniker": "D:0:0:{6FDFF7DF-4F94-9F5A-A865-1B5FFF5A41A7}|EntreFunciones\\EntreFunciones.csproj|solutionrelative:entrefunciones\\components\\routes.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{6FDFF7DF-4F94-9F5A-A865-1B5FFF5A41A7}|EntreFunciones\\EntreFunciones.csproj|c:\\2026-2\\proyectoweb\\entrefunciones\\entrefunciones\\components\\layout\\mainlayout.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{6FDFF7DF-4F94-9F5A-A865-1B5FFF5A41A7}|EntreFunciones\\EntreFunciones.csproj|solutionrelative:entrefunciones\\components\\layout\\mainlayout.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{6FDFF7DF-4F94-9F5A-A865-1B5FFF5A41A7}|EntreFunciones\\EntreFunciones.csproj|c:\\2026-2\\proyectoweb\\entrefunciones\\entrefunciones\\components\\shared\\tarjetafuncion.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
@@ -70,23 +82,50 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 6,
+          "SelectedChildIndex": 5,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 9,
-              "Title": "ProgramarFunciones.razor",
-              "DocumentMoniker": "C:\\2026-2\\proyectoWeb\\EntreFunciones\\EntreFunciones\\Components\\Pages\\CatalogoProgramacion\\ProgramarFunciones.razor",
-              "RelativeDocumentMoniker": "EntreFunciones\\Components\\Pages\\CatalogoProgramacion\\ProgramarFunciones.razor",
-              "ToolTip": "C:\\2026-2\\proyectoWeb\\EntreFunciones\\EntreFunciones\\Components\\Pages\\CatalogoProgramacion\\ProgramarFunciones.razor",
-              "RelativeToolTip": "EntreFunciones\\Components\\Pages\\CatalogoProgramacion\\ProgramarFunciones.razor",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "DocumentIndex": 2,
+              "Title": "RedirectToLogin.razor",
+              "DocumentMoniker": "C:\\2026-2\\proyectoWeb\\EntreFunciones\\EntreFunciones\\Components\\RedirectToLogin.razor",
+              "RelativeDocumentMoniker": "EntreFunciones\\Components\\RedirectToLogin.razor",
+              "ToolTip": "C:\\2026-2\\proyectoWeb\\EntreFunciones\\EntreFunciones\\Components\\RedirectToLogin.razor",
+              "RelativeToolTip": "EntreFunciones\\Components\\RedirectToLogin.razor",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-10-26T15:52:07.83Z"
+              "WhenOpened": "2026-10-26T21:31:40.993Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
+              "DocumentIndex": 4,
+              "Title": "LoginPage.razor",
+              "DocumentMoniker": "C:\\2026-2\\proyectoWeb\\EntreFunciones\\EntreFunciones\\Components\\Pages\\Seguridad\\LoginPage.razor",
+              "RelativeDocumentMoniker": "EntreFunciones\\Components\\Pages\\Seguridad\\LoginPage.razor",
+              "ToolTip": "C:\\2026-2\\proyectoWeb\\EntreFunciones\\EntreFunciones\\Components\\Pages\\Seguridad\\LoginPage.razor",
+              "RelativeToolTip": "EntreFunciones\\Components\\Pages\\Seguridad\\LoginPage.razor",
+              "ViewState": "AgIAADUAAAAAAAAAAAAwwEUAAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-10-26T21:29:59.412Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "RegistroPage.razor",
+              "DocumentMoniker": "C:\\2026-2\\proyectoWeb\\EntreFunciones\\EntreFunciones\\Components\\Pages\\Seguridad\\RegistroPage.razor",
+              "RelativeDocumentMoniker": "EntreFunciones\\Components\\Pages\\Seguridad\\RegistroPage.razor",
+              "ToolTip": "C:\\2026-2\\proyectoWeb\\EntreFunciones\\EntreFunciones\\Components\\Pages\\Seguridad\\RegistroPage.razor",
+              "RelativeToolTip": "EntreFunciones\\Components\\Pages\\Seguridad\\RegistroPage.razor",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAMAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-10-26T21:29:34.408Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
               "Title": "NotFound.razor",
               "DocumentMoniker": "C:\\2026-2\\proyectoWeb\\EntreFunciones\\EntreFunciones\\Components\\Pages\\NotFound.razor",
               "RelativeDocumentMoniker": "EntreFunciones\\Components\\Pages\\NotFound.razor",
@@ -98,7 +137,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
+              "DocumentIndex": 10,
               "Title": "Funciones.razor",
               "DocumentMoniker": "C:\\2026-2\\proyectoWeb\\EntreFunciones\\EntreFunciones\\Components\\Pages\\CatalogoProgramacion\\Funciones.razor",
               "RelativeDocumentMoniker": "EntreFunciones\\Components\\Pages\\CatalogoProgramacion\\Funciones.razor",
@@ -110,20 +149,45 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 0,
               "Title": "Home.razor",
               "DocumentMoniker": "C:\\2026-2\\proyectoWeb\\EntreFunciones\\EntreFunciones\\Components\\Pages\\Home.razor",
               "RelativeDocumentMoniker": "EntreFunciones\\Components\\Pages\\Home.razor",
               "ToolTip": "C:\\2026-2\\proyectoWeb\\EntreFunciones\\EntreFunciones\\Components\\Pages\\Home.razor",
               "RelativeToolTip": "EntreFunciones\\Components\\Pages\\Home.razor",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABMAAAAQAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
               "WhenOpened": "2026-10-26T15:49:00.632Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 1,
+              "Title": "MainLayout.razor",
+              "DocumentMoniker": "C:\\2026-2\\proyectoWeb\\EntreFunciones\\EntreFunciones\\Components\\Layout\\MainLayout.razor",
+              "RelativeDocumentMoniker": "EntreFunciones\\Components\\Layout\\MainLayout.razor",
+              "ToolTip": "C:\\2026-2\\proyectoWeb\\EntreFunciones\\EntreFunciones\\Components\\Layout\\MainLayout.razor",
+              "RelativeToolTip": "EntreFunciones\\Components\\Layout\\MainLayout.razor",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAABFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-10-26T16:11:55.121Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "ProgramarFunciones.razor",
+              "DocumentMoniker": "C:\\2026-2\\proyectoWeb\\EntreFunciones\\EntreFunciones\\Components\\Pages\\CatalogoProgramacion\\ProgramarFunciones.razor",
+              "RelativeDocumentMoniker": "EntreFunciones\\Components\\Pages\\CatalogoProgramacion\\ProgramarFunciones.razor",
+              "ToolTip": "C:\\2026-2\\proyectoWeb\\EntreFunciones\\EntreFunciones\\Components\\Pages\\CatalogoProgramacion\\ProgramarFunciones.razor",
+              "RelativeToolTip": "EntreFunciones\\Components\\Pages\\CatalogoProgramacion\\ProgramarFunciones.razor",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-10-26T15:52:07.83Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
               "Title": "Routes.razor",
               "DocumentMoniker": "C:\\2026-2\\proyectoWeb\\EntreFunciones\\EntreFunciones\\Components\\Routes.razor",
               "RelativeDocumentMoniker": "EntreFunciones\\Components\\Routes.razor",
@@ -135,7 +199,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 6,
               "Title": "Error.razor",
               "DocumentMoniker": "C:\\2026-2\\proyectoWeb\\EntreFunciones\\EntreFunciones\\Components\\Pages\\Error.razor",
               "RelativeDocumentMoniker": "EntreFunciones\\Components\\Pages\\Error.razor",
@@ -143,25 +207,24 @@
               "RelativeToolTip": "EntreFunciones\\Components\\Pages\\Error.razor",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAAHAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-10-26T15:48:58.186Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-10-26T15:48:58.186Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 5,
               "Title": "Catalogo.razor",
               "DocumentMoniker": "C:\\2026-2\\proyectoWeb\\EntreFunciones\\EntreFunciones\\Components\\Pages\\CatalogoProgramacion\\Catalogo.razor",
               "RelativeDocumentMoniker": "EntreFunciones\\Components\\Pages\\CatalogoProgramacion\\Catalogo.razor",
               "ToolTip": "C:\\2026-2\\proyectoWeb\\EntreFunciones\\EntreFunciones\\Components\\Pages\\CatalogoProgramacion\\Catalogo.razor",
               "RelativeToolTip": "EntreFunciones\\Components\\Pages\\CatalogoProgramacion\\Catalogo.razor",
-              "ViewState": "AgIAAAUAAAAAAAAAAAAgwAkAAAADAAAAAAAAAA==",
+              "ViewState": "AgIAAAUAAAAAAAAAAAAgwBAAAAA2AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
               "WhenOpened": "2026-10-26T15:51:25.168Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 10,
+              "DocumentIndex": 13,
               "Title": "_Imports.razor",
               "DocumentMoniker": "C:\\2026-2\\proyectoWeb\\EntreFunciones\\EntreFunciones\\Components\\_Imports.razor",
               "RelativeDocumentMoniker": "EntreFunciones\\Components\\_Imports.razor",
@@ -173,7 +236,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 8,
               "Title": "TarjetaFuncion.razor",
               "DocumentMoniker": "C:\\2026-2\\proyectoWeb\\EntreFunciones\\EntreFunciones\\Components\\Shared\\TarjetaFuncion.razor",
               "RelativeDocumentMoniker": "EntreFunciones\\Components\\Shared\\TarjetaFuncion.razor",
@@ -185,19 +248,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "MainLayout.razor",
-              "DocumentMoniker": "C:\\2026-2\\proyectoWeb\\EntreFunciones\\EntreFunciones\\Components\\Layout\\MainLayout.razor",
-              "RelativeDocumentMoniker": "EntreFunciones\\Components\\Layout\\MainLayout.razor",
-              "ToolTip": "C:\\2026-2\\proyectoWeb\\EntreFunciones\\EntreFunciones\\Components\\Layout\\MainLayout.razor",
-              "RelativeToolTip": "EntreFunciones\\Components\\Layout\\MainLayout.razor",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-10-26T16:11:55.121Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 9,
               "Title": "TarjetaResumen.razor",
               "DocumentMoniker": "C:\\2026-2\\proyectoWeb\\EntreFunciones\\EntreFunciones\\Components\\Shared\\TarjetaResumen.razor",
               "RelativeDocumentMoniker": "EntreFunciones\\Components\\Shared\\TarjetaResumen.razor",
@@ -209,7 +260,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 12,
+              "DocumentIndex": 15,
               "Title": "App.razor",
               "DocumentMoniker": "C:\\2026-2\\proyectoWeb\\EntreFunciones\\EntreFunciones\\Components\\App.razor",
               "RelativeDocumentMoniker": "EntreFunciones\\Components\\App.razor",
@@ -221,7 +272,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 11,
+              "DocumentIndex": 14,
               "Title": "MainLayout.razor.css",
               "DocumentMoniker": "C:\\2026-2\\proyectoWeb\\EntreFunciones\\EntreFunciones\\Components\\Layout\\MainLayout.razor.css",
               "RelativeDocumentMoniker": "EntreFunciones\\Components\\Layout\\MainLayout.razor.css",
@@ -233,7 +284,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 13,
+              "DocumentIndex": 16,
               "Title": "ReconnectModal.razor",
               "DocumentMoniker": "C:\\2026-2\\proyectoWeb\\EntreFunciones\\EntreFunciones\\Components\\Layout\\ReconnectModal.razor",
               "RelativeDocumentMoniker": "EntreFunciones\\Components\\Layout\\ReconnectModal.razor",
@@ -245,7 +296,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 14,
+              "DocumentIndex": 17,
               "Title": "Program.cs",
               "DocumentMoniker": "C:\\2026-2\\proyectoWeb\\EntreFunciones\\EntreFunciones\\Program.cs",
               "RelativeDocumentMoniker": "EntreFunciones\\Program.cs",
