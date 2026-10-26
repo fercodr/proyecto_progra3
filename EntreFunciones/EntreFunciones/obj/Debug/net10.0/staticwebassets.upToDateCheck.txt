@@ -1,8 +1,0 @@
-wwwroot\app.css
-Components\Layout\ReconnectModal.razor.js
-C:\Users\LENOVO\.nuget\packages\microsoft.aspnetcore.app.internal.assets\10.0.12\build\..\_framework\blazor.web.js
-C:\Users\LENOVO\.nuget\packages\microsoft.aspnetcore.app.internal.assets\10.0.12\build\..\_framework\blazor.server.js
-C:\2026-2\proyectoWeb\EntreFunciones\EntreFunciones\wwwroot\app.css
-C:\2026-2\proyectoWeb\EntreFunciones\EntreFunciones\Components\Layout\ReconnectModal.razor.js
-C:\Users\LENOVO\.nuget\packages\microsoft.aspnetcore.app.internal.assets\10.0.12\_framework\blazor.web.js
-C:\Users\LENOVO\.nuget\packages\microsoft.aspnetcore.app.internal.assets\10.0.12\_framework\blazor.server.js
