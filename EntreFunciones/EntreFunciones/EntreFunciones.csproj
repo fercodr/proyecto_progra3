@@ -7,4 +7,13 @@
     <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Folder Include="Components\Pages\Espacios\" />
+    <Folder Include="Components\Pages\CarteleraSeleccion\" />
+    <Folder Include="Components\Pages\IngresoSeguimiento\" />
+    <Folder Include="Components\Pages\Ventas\" />
+    <Folder Include="Components\Pages\Seguridad\" />
+    <Folder Include="Seguridad\" />
+  </ItemGroup>
+
 </Project>
