@@ -1,0 +1,108 @@
+@page "/registro"
+@using System.Text.RegularExpressions
+@inject NavigationManager Nav;
+
+<PageTitle>Registro</PageTitle>
+
+<div class="col-md-6 mx-auto">
+    <h3 class="mb-3">Registro de cliente</h3>
+
+    @if (Errores.Any()) {
+        <div class="alert alert-danger">Revise los campos marcados en rojo.</div>
+    }
+
+    <form @onsubmit="Registrar">
+        <h5>Cuenta de usuario</h5>
+        <div class="mb-3">
+            <label class="form-label">Correo electrónico</label>
+            <input tabindex="1" class="form-control @Clase("Correo")" @bind="Correo" @bind:event="oninput" />
+            <div class="invalid-feedback">@Errores.GetValueOrDefault("Correo")</div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Contraseña</label>
+            <input tabindex="2" type="password" class="form-control @Clase("Password")" @bind="Password" @bind:event="oninput" />
+            <div class="invalid-feedback">@Errores.GetValueOrDefault("Password")</div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Confirmar contraseña</label>
+            <input tabindex="3" type="password" class="form-control @Clase("ConfirmarPassword")" @bind="ConfirmarPassword" @bind:event="oninput" />
+            <div class="invalid-feedback">@Errores.GetValueOrDefault("ConfirmarPassword")</div>
+        </div>
+
+        <h5 class="mt-4">Datos personales</h5>
+        <div class="mb-3">
+            <label class="form-label">DNI</label>
+            <input tabindex="4" class="form-control @Clase("Dni")" maxlength="8" @bind="Dni" @bind:event="oninput" />
+            <div class="invalid-feedback">@Errores.GetValueOrDefault("Dni")</div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Nombres</label>
+            <input tabindex="5" class="form-control @Clase("Nombres")" @bind="Nombres" @bind:event="oninput" />
+            <div class="invalid-feedback">@Errores.GetValueOrDefault("Nombres")</div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Apellidos</label>
+            <input tabindex="6" class="form-control @Clase("Apellidos")" @bind="Apellidos" @bind:event="oninput" />
+            <div class="invalid-feedback">@Errores.GetValueOrDefault("Apellidos")</div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Teléfono</label>
+            <input tabindex="7" class="form-control @Clase("Telefono")" maxlength="9" @bind="Telefono" @bind:event="oninput" />
+            <div class="invalid-feedback">@Errores.GetValueOrDefault("Telefono")</div>
+        </div>
+
+        <button tabindex="8" type="submit" class="btn btn-primary">Registrarse</button>
+        <a tabindex="9" class="btn btn-outline-secondary" href="login">Cancelar</a>
+    </form>
+</div>
+
+@code {
+    private string Correo { get; set; } = string.Empty;
+    private string Password { get; set; } = string.Empty;
+    private string ConfirmarPassword { get; set; } = string.Empty;
+    private string Dni { get; set; } = string.Empty;
+    private string Nombres { get; set; } = string.Empty;
+    private string Apellidos { get; set; } = string.Empty;
+    private string Telefono { get; set; } = string.Empty;
+    private Dictionary<string, string> Errores { get; set; } = new();
+
+    private string Clase(string campo) => Errores.ContainsKey(campo) ? "is-invalid" : "";
+
+    private bool Validar() {
+        Errores = new();
+        if (string.IsNullOrWhiteSpace(Correo)) {
+            Errores["Correo"] = "El correo es obligatorio";
+        } else if (!Regex.IsMatch(Correo, @"^[^@\s]+@[^@\s]+\.[^@\s]+$")) {
+            Errores["Correo"] = "El correo debe tener formato válido";
+        }
+        if (string.IsNullOrWhiteSpace(Password)) {
+            Errores["Password"] = "La contraseña es obligatoria";
+        } else if (Password.Length < 6) {
+            Errores["Password"] = "Mínimo 6 caracteres";
+        }
+        if (ConfirmarPassword != Password) {
+            Errores["ConfirmarPassword"] = "Las contraseñas no coinciden";
+        }
+        if (!Regex.IsMatch(Dni, @"^\d{8}$")) {
+            Errores["Dni"] = "El DNI debe tener 8 dígitos";
+        }
+        if (string.IsNullOrWhiteSpace(Nombres)) {
+            Errores["Nombres"] = "Los nombres son obligatorios";
+        }
+        if (string.IsNullOrWhiteSpace(Apellidos)) {
+            Errores["Apellidos"] = "Los apellidos son obligatorios";
+        }
+        if (!Regex.IsMatch(Telefono, @"^9\d{8}$")) {
+            Errores["Telefono"] = "El teléfono debe tener 9 dígitos y empezar con 9";
+        }
+        return Errores.Count == 0;
+    }
+
+    private void Registrar() {
+        if (!Validar()) {
+            return;
+        }
+        // Simulación: no se guarda nada, solo se vuelve al login con el aviso de éxito.
+        Nav.NavigateTo("/login?registrado=true");
+    }
+}

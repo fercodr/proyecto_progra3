@@ -1,0 +1,84 @@
+@page "/login"
+@using System.Text.RegularExpressions
+@inject NavigationManager Nav;
+
+<PageTitle>Iniciar sesión</PageTitle>
+
+<div class="col-md-4 mx-auto">
+    <h3 class="mb-3">Iniciar sesión</h3>
+
+    @if (Registrado) {
+        <div class="alert alert-success">Registro exitoso. Ya puede iniciar sesión.</div>
+    }
+    @if (MensajeError != null) {
+        <div class="alert alert-danger">@MensajeError</div>
+    }
+
+    <form @onsubmit="Ingresar">
+        <div class="mb-3">
+            <label class="form-label">Correo</label>
+            <input tabindex="1" class="form-control @(Errores.ContainsKey("Correo") ? "is-invalid" : "")"
+                   placeholder="correo@ejemplo.com" @bind="Correo" @bind:event="oninput" />
+            <div class="invalid-feedback">@Errores.GetValueOrDefault("Correo")</div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Contraseña</label>
+            <input tabindex="2" type="password" class="form-control @(Errores.ContainsKey("Password") ? "is-invalid" : "")"
+                   @bind="Password" @bind:event="oninput" />
+            <div class="invalid-feedback">@Errores.GetValueOrDefault("Password")</div>
+        </div>
+        <button tabindex="3" type="submit" class="btn btn-primary w-100">Ingresar</button>
+    </form>
+
+    <div class="d-flex justify-content-between mt-3">
+        <a tabindex="4" href="recuperar">¿Olvidaste tu contraseña?</a>
+        <a tabindex="5" href="registro">Registrarse</a>
+    </div>
+
+    <div class="alert alert-secondary mt-4 small">
+        <strong>Datos de prueba (contraseña 123456):</strong><br />
+        Administrador: admin@softprog.com<br />
+        Cliente: cliente@softprog.com
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery]
+    public bool Registrado { get; set; }
+
+    private string Correo { get; set; } = string.Empty;
+    private string Password { get; set; } = string.Empty;
+    private string? MensajeError { get; set; }
+    private Dictionary<string, string> Errores { get; set; } = new();
+
+    private bool Validar() {
+        Errores = new();
+        if (string.IsNullOrWhiteSpace(Correo)) {
+            Errores["Correo"] = "El correo es obligatorio";
+        } else if (!Regex.IsMatch(Correo, @"^[^@\s]+@[^@\s]+\.[^@\s]+$")) {
+            Errores["Correo"] = "El correo debe tener formato válido";
+        }
+        if (string.IsNullOrWhiteSpace(Password)) {
+            Errores["Password"] = "La contraseña es obligatoria";
+        }
+        return Errores.Count == 0;
+    }
+
+    private void Ingresar() {
+        MensajeError = null;
+        if (!Validar()) {
+            return;
+        }
+        if (Password != "123456") {
+            MensajeError = "Credenciales incorrectas";
+            return;
+        }
+        if (Correo == "admin@softprog.com") {
+            Nav.NavigateTo("/admin/usuarios");
+        } else if (Correo == "cliente@softprog.com") {
+            Nav.NavigateTo("/");
+        } else {
+            MensajeError = "Credenciales incorrectas";
+        }
+    }
+}
