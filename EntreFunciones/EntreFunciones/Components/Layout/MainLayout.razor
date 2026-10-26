@@ -1,0 +1,21 @@
+﻿@inherits LayoutComponentBase
+
+<nav class="navbar navbar-expand navbar-dark bg-primary px-3">
+    <a class="navbar-brand" href="admin/funciones">EntreFunciones</a>
+    <div class="navbar-nav">
+        <NavLink class="nav-link" href="admin/catalogo">Catálogo</NavLink>
+        <NavLink class="nav-link" href="admin/funciones">Funciones</NavLink>
+        @*<NavLink class="nav-link" href="admin/funciones/nueva">Programar función</NavLink>*@
+        @*<NavLink class="nav-link" href="login">Cerrar sesión</NavLink>*@
+    </div>
+</nav>
+
+<main class="container mt-4">
+    @Body
+</main>
+
+<div id="blazor-error-ui" data-nosnippet>
+    An unhandled error has occurred.
+    <a href="." class="reload">Reload</a>
+    <span class="dismiss">🗙</span>
+</div>

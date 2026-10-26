@@ -1,0 +1,23 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v10.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v10.0": {
+      "EntreFunciones/1.0.0": {
+        "runtime": {
+          "EntreFunciones.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "EntreFunciones/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}
