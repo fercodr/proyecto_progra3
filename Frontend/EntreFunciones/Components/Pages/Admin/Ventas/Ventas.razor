@@ -1,0 +1,362 @@
+﻿@page "/"
+@rendermode InteractiveServer
+
+<div class="mx-auto p-3" style="max-width: 1100px;">
+
+    <!-- Encabezado -->
+    <h1 class="fs-2 fw-bold mb-1">Ventas</h1>
+    <p class="text-secondary mb-4">
+        Consulta las reservas y gestiona los pagos de las funciones.
+    </p>
+
+    <!-- Pestañas -->
+    <ul class="nav nav-tabs mb-4">
+        <li class="nav-item">
+            <button type="button" class="nav-link active">
+                Reservas
+            </button>
+        </li>
+        <li class="nav-item">
+            <button type="button" class="nav-link">
+                Pagos
+            </button>
+        </li>
+    </ul>
+
+    <!-- SECCIÓN: RESERVAS -->
+    <section class="mb-5">
+
+        <h2 class="fs-5 mb-3">Reservas</h2>
+
+        <!-- Filtros -->
+        <div class="border rounded p-3 mb-4"
+             style="background-color: #f3f8ff;">
+
+            <div class="row g-3">
+
+                <div class="col-md-6 col-lg-3">
+                    <label for="funcion" class="form-label">
+                        Función
+                    </label>
+                    <select id="funcion" class="form-select">
+                        <option value="">Todas</option>
+                        <option value="1">Evento A · 28/10, 18:00</option>
+                        <option value="2">Evento B · 28/10, 19:00</option>
+                        <option value="3">Evento C · 29/10, 17:00</option>
+                    </select>
+                </div>
+
+                <div class="col-md-6 col-lg-3">
+                    <label for="cliente" class="form-label">
+                        Cliente
+                    </label>
+                    <input type="text"
+                           id="cliente"
+                           class="form-control"
+                           placeholder="Nombre o DNI" />
+                </div>
+
+                <div class="col-md-6 col-lg-3">
+                    <label for="estadoReserva" class="form-label">
+                        Estado
+                    </label>
+                    <select id="estadoReserva" class="form-select">
+                        <option value="">Todos</option>
+                        <option value="Pendiente">Pendiente</option>
+                        <option value="Confirmada">Confirmada</option>
+                        <option value="Expirada">Expirada</option>
+                        <option value="Cancelada">Cancelada</option>
+                    </select>
+                </div>
+
+                <div class="col-md-6 col-lg-3">
+                    <label for="expiracion" class="form-label">
+                        Expiración
+                    </label>
+                    <select id="expiracion" class="form-select">
+                        <option value="">Todas</option>
+                        <option value="NoVencido">Plazo no vencido</option>
+                        <option value="Vencido">Plazo vencido</option>
+                    </select>
+                </div>
+
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 mt-3">
+                <button type="button" class="btn btn-outline-secondary">
+                    Limpiar
+                </button>
+                <button type="button" class="btn btn-primary">
+                    Filtrar
+                </button>
+            </div>
+
+        </div>
+
+        <!-- Tabla de reservas -->
+        <div class="table-responsive">
+            <table class="table table-bordered align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th scope="col">Reserva</th>
+                        <th scope="col">Cliente</th>
+                        <th scope="col">Función</th>
+                        <th scope="col" class="text-center">Cantidad</th>
+                        <th scope="col">Expira</th>
+                        <th scope="col">Estado</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    <tr>
+                        <th scope="row" class="fw-normal">RES-001</th>
+                        <td>
+                            Ana Torres
+                            <div class="small text-secondary">
+                                DNI: 12345678
+                            </div>
+                        </td>
+                        <td>
+                            Evento A
+                            <div class="small text-secondary">
+                                28/10/2026 · 18:00
+                            </div>
+                        </td>
+                        <td class="text-center">2</td>
+                        <td>27/10/2026 · 16:30</td>
+                        <td>
+                            <span class="badge bg-warning text-dark">
+                                Pendiente
+                            </span>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th scope="row" class="fw-normal">RES-002</th>
+                        <td>
+                            Luis Pérez
+                            <div class="small text-secondary">
+                                DNI: 23456789
+                            </div>
+                        </td>
+                        <td>
+                            Evento B
+                            <div class="small text-secondary">
+                                28/10/2026 · 19:00
+                            </div>
+                        </td>
+                        <td class="text-center">1</td>
+                        <td>27/10/2026 · 15:30</td>
+                        <td>
+                            <span class="badge bg-success">
+                                Confirmada
+                            </span>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th scope="row" class="fw-normal">RES-003</th>
+                        <td>
+                            María Soto
+                            <div class="small text-secondary">
+                                DNI: 34567890
+                            </div>
+                        </td>
+                        <td>
+                            Evento C
+                            <div class="small text-secondary">
+                                29/10/2026 · 17:00
+                            </div>
+                        </td>
+                        <td class="text-center">3</td>
+                        <td>26/10/2026 · 16:00</td>
+                        <td>
+                            <span class="badge bg-secondary">
+                                Expirada
+                            </span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Mensaje para cuando no haya resultados -->
+        <p class="text-secondary text-center">
+            No se encontraron reservas con los filtros seleccionados.
+        </p>
+
+    </section>
+
+    <!-- SECCIÓN: PAGOS -->
+    <section>
+
+        <h2 class="fs-5 mb-3">Pagos</h2>
+
+        <!-- Filtros -->
+        <div class="border rounded p-3 mb-4"
+             style="background-color: #f3f8ff;">
+
+            <div class="row g-3 align-items-end">
+
+                <div class="col-md-5">
+                    <label for="codigoPago" class="form-label">
+                        Código de pago
+                    </label>
+                    <input type="text"
+                           id="codigoPago"
+                           class="form-control"
+                           placeholder="Ej.: PAG-001" />
+                </div>
+
+                <div class="col-md-3">
+                    <div class="form-check mb-2">
+                        <input type="checkbox"
+                               id="soloPendientes"
+                               class="form-check-input"
+                               checked />
+                        <label for="soloPendientes"
+                               class="form-check-label">
+                            Solo pendientes
+                        </label>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="d-flex justify-content-end gap-2">
+                        <button type="button"
+                                class="btn btn-outline-secondary">
+                            Limpiar
+                        </button>
+                        <button type="button" class="btn btn-primary">
+                            Buscar
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Mensaje de resultado -->
+        <div class="alert alert-info" role="status">
+            Aquí se mostrará el resultado de la operación.
+        </div>
+
+        <!-- Tabla de pagos -->
+        <div class="table-responsive">
+            <table class="table table-bordered align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th scope="col">Código de pago</th>
+                        <th scope="col">Reserva / Cliente</th>
+                        <th scope="col" class="text-end">Monto</th>
+                        <th scope="col">Fecha de pago</th>
+                        <th scope="col">Estado</th>
+                        <th scope="col">Acciones</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    <tr>
+                        <th scope="row" class="fw-normal">PAG-001</th>
+                        <td>
+                            RES-001
+                            <div class="small text-secondary">
+                                Ana Torres
+                            </div>
+                        </td>
+                        <td class="text-end text-nowrap">S/ 60.00</td>
+                        <td>27/10/2026 · 16:00</td>
+                        <td>
+                            <span class="badge bg-warning text-dark">
+                                Pendiente
+                            </span>
+                        </td>
+                        <td>
+                            <div class="d-flex gap-2">
+                                <button type="button"
+                                        class="btn btn-success btn-sm">
+                                    Validar
+                                </button>
+                                <button type="button"
+                                        class="btn btn-outline-danger btn-sm">
+                                    Rechazar
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th scope="row" class="fw-normal">PAG-002</th>
+                        <td>
+                            RES-002
+                            <div class="small text-secondary">
+                                Luis Pérez
+                            </div>
+                        </td>
+                        <td class="text-end text-nowrap">S/ 30.00</td>
+                        <td>27/10/2026 · 15:00</td>
+                        <td>
+                            <span class="badge bg-success">
+                                Validado
+                            </span>
+                        </td>
+                        <td class="text-secondary">
+                            Sin acciones
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th scope="row" class="fw-normal">PAG-003</th>
+                        <td>
+                            RES-003
+                            <div class="small text-secondary">
+                                María Soto
+                            </div>
+                        </td>
+                        <td class="text-end text-nowrap">S/ 90.00</td>
+                        <td>26/10/2026 · 15:50</td>
+                        <td>
+                            <span class="badge bg-danger">
+                                Rechazado
+                            </span>
+                        </td>
+                        <td class="text-secondary">
+                            Sin acciones
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Mensaje para cuando no haya resultados -->
+        <p class="text-secondary text-center">
+            No se encontraron pagos con los filtros seleccionados.
+        </p>
+
+        <!-- Confirmación de la operación -->
+        <div class="card border-primary mt-4">
+            <div class="card-body">
+
+                <h3 class="fs-5 card-title">Confirmar operación</h3>
+
+                <p class="card-text">
+                    ¿Deseas validar el pago PAG-001 de Ana Torres
+                    por S/ 60.00?
+                </p>
+
+                <div class="d-flex justify-content-end gap-2">
+                    <button type="button"
+                            class="btn btn-outline-secondary">
+                        Cancelar
+                    </button>
+                    <button type="button" class="btn btn-primary">
+                        Confirmar
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+    </section>
+
+</div>
