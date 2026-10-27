@@ -1,0 +1,121 @@
+﻿@page "/admin/catalogo/nuevo"
+@page "/admin/catalogo/editar/{Id:int}"
+@inject NavigationManager Nav;
+@attribute [Authorize(Policy = "Programacion")]
+<PageTitle>GestionarCatalogo</PageTitle> @*ES LO QUE APARECE ARRIBA EN LA PESTAÑA*@
+
+<h3 class="mb-3">@(Id == null ? "Nuevo evento" : "Editar evento") </h3>
+
+@if (MensajeError != null)
+{
+    <div class="alert alert-danger">@MensajeError</div>
+}
+<div class="mb-3">
+    <label class="form-label">Tipo de evento</label>
+    <select class="form-select" @bind="TipoEvento">
+        <option value="">-- Seleccione un tipo --</option>
+        <option value="PELICULA">Película</option>
+        <option value="ACTIVIDAD_CULTURAL">Actividad cultural</option>
+        <option value="OBRA_TEATRO">Obra de teatro</option>
+    </select>
+</div>
+@if (TipoEvento != ""){
+    <div class="card mb-3">
+        <div class="card-header">Datos generales</div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label class="form-label">Precio (S/)</label>
+                <input type="number" step="0.01" class="form-control" value="25.00" />
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="chkActivo" checked />
+                <label class="form-check-label" for="chkActivo">Activo</label>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header">Datos específicos</div>
+        <div class="card-body">
+
+            @if (TipoEvento == "PELICULA")
+            {
+                <div class="mb-3">
+                    <label class="form-label">Nombre de la película</label>
+                    <input type="text" class="form-control" value="Interestelar" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Duración (minutos)</label>
+                    <input type="number" class="form-control" value="169" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Género</label>
+                    <select class="form-select">
+                        <option>ACCION</option>
+                        <option>COMEDIA</option>
+                        <option>DRAMA</option>
+                        <option selected>CIENCIA_FICCION</option>
+                        <option>TERROR</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Clasificación por edad</label>
+                    <select class="form-select">
+                        <option>APT</option>
+                        <option selected>MAYORES_14</option>
+                        <option>MAYORES_18</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Director</label>
+                    <input type="text" class="form-control" value="Christopher Nolan" />
+                </div>
+            }
+            else if (TipoEvento == "ACTIVIDAD_CULTURAL")
+            {
+                <div class="mb-3">
+                    <label class="form-label">Nombre</label>
+                    <input type="text" class="form-control" value="Conversatorio de literatura peruana" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Expositor</label>
+                    <input type="text" class="form-control" value="María Fernández" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Tipo de actividad</label>
+                    <select class="form-select">
+                        <option selected>CONVERSATORIO</option>
+                        <option>TALLER</option>
+                        <option>EXPOSICION</option>
+                        <option>CONCIERTO</option>
+                    </select>
+                </div>
+            }
+            else if (TipoEvento == "OBRA_TEATRO")
+            {
+                <div class="mb-3">
+                    <label class="form-label">Título</label>
+                    <input type="text" class="form-control" value="La casa de Bernarda Alba" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Nombre del director</label>
+                    <input type="text" class="form-control" value="Carlos Gutiérrez" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Elenco</label>
+                    <textarea class="form-control" rows="3">Ana Torres, Lucía Ramos, Sofía Vargas</textarea>
+                </div>
+            }
+
+        </div>
+    </div>
+}
+
+
+
+@code {
+    [Parameter]
+    public int? Id { get; set; } 
+    private string TipoEvento { get; set; } = ""; @*le da un valor inicial, inicialmente es un texto vacio, sin "", la variable empezaría en null, y el @if fallaría*@
+    private string? MensajeError { get; set; }
+}
