@@ -1,0 +1,114 @@
+﻿@page "/admin/usuarios/administradores/nuevo"
+@attribute [Authorize(Policy = "UsuariosRoles")]
+@using System.Text.RegularExpressions
+@inject NavigationManager Nav;
+
+<PageTitle>Usuarios y roles</PageTitle>
+
+<h3 class="mb-3">Nuevo administrador</h3>
+
+@if (Errores.Any())
+{
+    <div class="alert alert-danger">Revise los campos marcados en rojo.</div>
+}
+
+<form @onsubmit="Guardar">
+    <div class="mb-3">
+        <label class="form-label">Código de empleado</label>
+        <input tabindex="1" class="form-control @Clase("CodigoEmpleado")" placeholder="EMP-0000"
+               @bind="CodigoEmpleado" @bind:event="oninput" />
+        <div class="invalid-feedback">@Errores.GetValueOrDefault("CodigoEmpleado")</div>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Nombres</label>
+        <input tabindex="2" class="form-control @Clase("Nombres")" @bind="Nombres" @bind:event="oninput" />
+        <div class="invalid-feedback">@Errores.GetValueOrDefault("Nombres")</div>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Apellidos</label>
+        <input tabindex="3" class="form-control @Clase("Apellidos")" @bind="Apellidos" @bind:event="oninput" />
+        <div class="invalid-feedback">@Errores.GetValueOrDefault("Apellidos")</div>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Correo electrónico</label>
+        <input tabindex="4" class="form-control @Clase("Correo")" @bind="Correo" @bind:event="oninput" />
+        <div class="invalid-feedback">@Errores.GetValueOrDefault("Correo")</div>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Contraseña</label>
+        <input tabindex="5" type="password" class="form-control @Clase("Password")" @bind="Password" @bind:event="oninput" />
+        <div class="invalid-feedback">@Errores.GetValueOrDefault("Password")</div>
+    </div>
+    <div class="form-check mb-3">
+        <input tabindex="6" type="checkbox" class="form-check-input" @bind="IsActivo" />
+        <label class="form-check-label">Activo</label>
+    </div>
+
+    <button tabindex="7" type="submit" class="btn btn-primary">Guardar</button>
+    <a tabindex="8" class="btn btn-outline-secondary" href="admin/usuarios?pestana=administradores">Cancelar</a>
+</form>
+
+@code {
+    private string CodigoEmpleado { get; set; } = string.Empty;
+    private string Nombres { get; set; } = string.Empty;
+    private string Apellidos { get; set; } = string.Empty;
+    private string Correo { get; set; } = string.Empty;
+    private string Password { get; set; } = string.Empty;
+    private bool IsActivo { get; set; } = true;
+    private Dictionary<string, string> Errores { get; set; } = new();
+
+    private string Clase(string campo) => Errores.ContainsKey(campo) ? "is-invalid" : "";
+
+    private bool Validar()
+    {
+        Errores = new();
+        if (!Regex.IsMatch(CodigoEmpleado, @"^EMP-\d{4}$"))
+        {
+            Errores["CodigoEmpleado"] = "Formato esperado: EMP-0000";
+        }
+        if (string.IsNullOrWhiteSpace(Nombres))
+        {
+            Errores["Nombres"] = "Los nombres son obligatorios";
+        }
+        if (string.IsNullOrWhiteSpace(Apellidos))
+        {
+            Errores["Apellidos"] = "Los apellidos son obligatorios";
+        }
+        if (string.IsNullOrWhiteSpace(Correo))
+        {
+            Errores["Correo"] = "El correo es obligatorio";
+        }
+        else if (!Regex.IsMatch(Correo, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+        {
+            Errores["Correo"] = "El correo debe tener formato válido";
+        }
+        if (string.IsNullOrWhiteSpace(Password))
+        {
+            Errores["Password"] = "La contraseña es obligatoria";
+        }
+        else if (Password.Length < 6)
+        {
+            Errores["Password"] = "Mínimo 6 caracteres";
+        }
+        return Errores.Count == 0;
+    }
+
+    private void Guardar()
+    {
+        if (!Validar())
+        {
+            return;
+        }
+        // Simulación: se agrega a la lista en memoria (se pierde al reiniciar la app).
+        DatosDemo.Administradores.Add(new AdministradorDemo
+        {
+            Id = DatosDemo.Administradores.Max(a => a.Id) + 1,
+            CodigoEmpleado = CodigoEmpleado,
+            Nombres = Nombres,
+            Apellidos = Apellidos,
+            Correo = Correo,
+            IsActivo = IsActivo
+        });
+        Nav.NavigateTo("/admin/usuarios?pestana=administradores");
+    }
+}
