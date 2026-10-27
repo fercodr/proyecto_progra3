@@ -1,0 +1,90 @@
+@page "/admin/sedes"
+@attribute [Authorize(Policy = "Espacios")]
+@inject NavigationManager Nav;
+
+@using Microsoft.AspNetCore.Components.QuickGrid
+@using EntreFunciones.ViewModels
+
+@* 11. Sedes · RF-M2-01 (Lab 9: solo interfaz, datos de ejemplo) *@
+
+<PageTitle>Sedes</PageTitle>
+
+<div class="d-flex justify-content-between mb-3">
+    <h3 class="mb-3">Sedes</h3>
+    <button tabindex="4" class="btn btn-success" @onclick="() => NuevaSede()">
+        Nueva sede
+    </button>
+</div>
+
+<div class="d-flex align-items-center gap-2 mb-3">
+    <label class="text-nowrap">Razón social:</label>
+    <input tabindex="1" class="form-control" placeholder="Ingrese la razón social o ciudad..." @bind="Filtro" />
+    <button tabindex="2" class="btn btn-primary" @onclick="() => FiltrarSedes()">Filtrar</button>
+    <button tabindex="3" class="btn btn-secondary" @onclick="() => LimpiarFiltro()">Limpiar</button>
+</div>
+
+@if (!Sedes.Any()) {
+    <div class="alert alert-info">No hay sedes registradas.</div>
+}
+else {
+    <QuickGrid Items="Sedes" Pagination="Paginacion" Class="table table-striped table-hover">
+        <PropertyColumn Title="Id" Property="s => s.Id" Sortable="true" />
+        <PropertyColumn Title="Razón social" Property="s => s.RazonSocial" Sortable="true" />
+        <PropertyColumn Title="Dirección" Property="s => s.Direccion" />
+        <PropertyColumn Title="Ciudad" Property="s => s.Ciudad" Sortable="true" />
+        <PropertyColumn Title="Teléfono" Property="s => s.TelefonoContacto" />
+        <TemplateColumn Title="Activo" Align="Align.Center">
+            <input type="checkbox" checked="@context.IsActivo" disabled />
+        </TemplateColumn>
+        <TemplateColumn Title="Acciones">
+            <button class="btn btn-outline-primary btn-sm" @onclick="() => VerSalas(context.Id)">
+                Salas
+            </button>
+            <button class="btn btn-primary btn-sm" @onclick="() => EditarSede(context.Id)">
+                Editar
+            </button>
+            <button class="btn btn-danger btn-sm" @onclick="() => DesactivarSede(context.Id)">
+                Desactivar
+            </button>
+        </TemplateColumn>
+    </QuickGrid>
+    <Paginator State="Paginacion"></Paginator>
+}
+
+@code {
+    private IQueryable<SedeViewModel> Sedes { get; set; } = Enumerable.Empty<SedeViewModel>().AsQueryable();
+    private string Filtro { get; set; } = string.Empty;
+    private PaginationState Paginacion { get; } = new() { ItemsPerPage = 5 };
+
+    protected override void OnInitialized() {
+        Sedes = DatosEspaciosDemo.Sedes.AsQueryable();
+    }
+
+    private void NuevaSede() {
+        Nav.NavigateTo("/admin/sedes/nuevo");
+    }
+
+    private void EditarSede(int id) {
+        Nav.NavigateTo($"/admin/sedes/editar/{id}");
+    }
+
+    private void VerSalas(int idSede) {
+        Nav.NavigateTo($"/admin/salas?sede={idSede}");
+    }
+
+    private void DesactivarSede(int id) {
+        // Lab 9: solo interfaz. Aquí se llamará al servicio de sedes (eliminado lógico).
+    }
+
+    private void FiltrarSedes() {
+        Sedes = DatosEspaciosDemo.Sedes
+            .Where(s => s.RazonSocial.Contains(Filtro, StringComparison.OrdinalIgnoreCase)
+                     || s.Ciudad.Contains(Filtro, StringComparison.OrdinalIgnoreCase))
+            .AsQueryable();
+    }
+
+    private void LimpiarFiltro() {
+        Filtro = string.Empty;
+        Sedes = DatosEspaciosDemo.Sedes.AsQueryable();
+    }
+}

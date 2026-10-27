@@ -1,0 +1,104 @@
+@page "/admin/salas"
+@attribute [Authorize(Policy = "Espacios")]
+@inject NavigationManager Nav;
+
+@using Microsoft.AspNetCore.Components.QuickGrid
+@using EntreFunciones.ViewModels
+
+@* 11. Salas · RF-M2-01 (Lab 9: solo interfaz, datos de ejemplo)
+   Se puede abrir filtrada por sede desde el listado de sedes: /admin/salas?sede=1 *@
+
+<PageTitle>Salas</PageTitle>
+
+<div class="d-flex justify-content-between mb-3">
+    <h3 class="mb-3">Salas</h3>
+    <button tabindex="5" class="btn btn-success" @onclick="() => NuevaSala()">
+        Nueva sala
+    </button>
+</div>
+
+<div class="d-flex align-items-center gap-2 mb-3">
+    <label class="text-nowrap">Sede:</label>
+    <select tabindex="1" class="form-select" @bind="FiltroSede">
+        <option value="0">Todas las sedes</option>
+        @foreach (SedeViewModel sede in DatosEspaciosDemo.Sedes) {
+            <option value="@sede.Id">@sede.RazonSocial</option>
+        }
+    </select>
+    <label class="text-nowrap">Nombre:</label>
+    <input tabindex="2" class="form-control" placeholder="Ingrese el nombre..." @bind="Filtro" />
+    <button tabindex="3" class="btn btn-primary" @onclick="() => FiltrarSalas()">Filtrar</button>
+    <button tabindex="4" class="btn btn-secondary" @onclick="() => LimpiarFiltro()">Limpiar</button>
+</div>
+
+@if (!Salas.Any()) {
+    <div class="alert alert-info">No hay salas registradas.</div>
+}
+else {
+    <QuickGrid Items="Salas" Pagination="Paginacion" Class="table table-striped table-hover">
+        <PropertyColumn Title="Id" Property="s => s.Id" Sortable="true" />
+        <PropertyColumn Title="Sede" Property="s => s.NombreSede" Sortable="true" />
+        <PropertyColumn Title="Nombre" Property="s => s.Nombre" Sortable="true" />
+        <PropertyColumn Title="Tipo" Property="s => s.TipoSala" Sortable="true" />
+        <PropertyColumn Title="Aforo" Property="s => s.Aforo" Sortable="true" Align="Align.End" />
+        <TemplateColumn Title="Activo" Align="Align.Center">
+            <input type="checkbox" checked="@context.IsActivo" disabled />
+        </TemplateColumn>
+        <TemplateColumn Title="Acciones">
+            <button class="btn btn-outline-primary btn-sm" @onclick="() => VerButacas(context.Id)">
+                Butacas
+            </button>
+            <button class="btn btn-primary btn-sm" @onclick="() => EditarSala(context.Id)">
+                Editar
+            </button>
+            <button class="btn btn-danger btn-sm" @onclick="() => DesactivarSala(context.Id)">
+                Desactivar
+            </button>
+        </TemplateColumn>
+    </QuickGrid>
+    <Paginator State="Paginacion"></Paginator>
+}
+
+@code {
+    [SupplyParameterFromQuery(Name = "sede")]
+    public int? SedeInicial { get; set; }
+
+    private IQueryable<SalaViewModel> Salas { get; set; } = Enumerable.Empty<SalaViewModel>().AsQueryable();
+    private int FiltroSede { get; set; }
+    private string Filtro { get; set; } = string.Empty;
+    private PaginationState Paginacion { get; } = new() { ItemsPerPage = 5 };
+
+    protected override void OnParametersSet() {
+        FiltroSede = SedeInicial ?? 0;
+        FiltrarSalas();
+    }
+
+    private void NuevaSala() {
+        Nav.NavigateTo("/admin/salas/nuevo");
+    }
+
+    private void EditarSala(int id) {
+        Nav.NavigateTo($"/admin/salas/editar/{id}");
+    }
+
+    private void VerButacas(int idSala) {
+        Nav.NavigateTo($"/admin/salas/{idSala}/butacas");
+    }
+
+    private void DesactivarSala(int id) {
+        // Lab 9: solo interfaz. Aquí se llamará al servicio de salas (eliminado lógico).
+    }
+
+    private void FiltrarSalas() {
+        Salas = DatosEspaciosDemo.Salas
+            .Where(s => FiltroSede == 0 || s.IdSede == FiltroSede)
+            .Where(s => s.Nombre.Contains(Filtro, StringComparison.OrdinalIgnoreCase))
+            .AsQueryable();
+    }
+
+    private void LimpiarFiltro() {
+        FiltroSede = 0;
+        Filtro = string.Empty;
+        Salas = DatosEspaciosDemo.Salas.AsQueryable();
+    }
+}

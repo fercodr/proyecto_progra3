@@ -1,0 +1,78 @@
+@page "/admin/sedes/nuevo"
+@page "/admin/sedes/editar/{Id:int}"
+@attribute [Authorize(Policy = "Espacios")]
+@inject NavigationManager Nav;
+
+@using EntreFunciones.ViewModels
+
+@* 11. Sedes · RF-M2-01 (Lab 9: solo interfaz, Guardar no registra nada) *@
+
+<PageTitle>Sedes</PageTitle>
+
+<h3 class="mb-3">@(Id == null ? "Nueva sede" : "Editar sede")</h3>
+
+@if (MensajeError != null) {
+    <div class="alert alert-danger">@MensajeError</div>
+}
+
+<EditForm Model="ViewModel" OnValidSubmit="Guardar">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label class="form-label">Razón social</label>
+        <InputText tabindex="1" class="form-control" @bind-Value="ViewModel.RazonSocial" />
+        <ValidationMessage For="() => ViewModel.RazonSocial" />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Dirección</label>
+        <InputText tabindex="2" class="form-control" @bind-Value="ViewModel.Direccion" />
+        <ValidationMessage For="() => ViewModel.Direccion" />
+    </div>
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Ciudad</label>
+            <InputText tabindex="3" class="form-control" @bind-Value="ViewModel.Ciudad" />
+            <ValidationMessage For="() => ViewModel.Ciudad" />
+        </div>
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Teléfono de contacto</label>
+            <InputText tabindex="4" class="form-control" @bind-Value="ViewModel.TelefonoContacto" />
+            <ValidationMessage For="() => ViewModel.TelefonoContacto" />
+        </div>
+    </div>
+    <div class="form-check mb-3">
+        <InputCheckbox tabindex="5" class="form-check-input" @bind-Value="ViewModel.IsActivo" />
+        <label class="form-check-label">Activo</label>
+    </div>
+
+    <button tabindex="6" type="submit" class="btn btn-primary">Guardar</button>
+    <a tabindex="7" class="btn btn-outline-secondary" href="admin/sedes">Cancelar</a>
+</EditForm>
+
+@code {
+    [Parameter]
+    public int? Id { get; set; }
+
+    private SedeViewModel ViewModel { get; set; } = new();
+    private string? MensajeError { get; set; }
+
+    protected override void OnParametersSet() {
+        if (Id == null) {
+            ViewModel = new SedeViewModel();
+            return;
+        }
+        SedeViewModel? sede = DatosEspaciosDemo.Sedes.FirstOrDefault(s => s.Id == Id.Value);
+        if (sede == null) {
+            Nav.NavigateTo("/admin/sedes");
+            return;
+        }
+        // Se trabaja sobre una copia para no modificar los datos de ejemplo
+        ViewModel = sede.Clonar();
+    }
+
+    private void Guardar() {
+        // Lab 9: solo interfaz. Aquí se llamará al servicio de sedes (insertar o modificar).
+        Nav.NavigateTo("/admin/sedes");
+    }
+}
