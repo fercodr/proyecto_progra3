@@ -12,7 +12,7 @@ namespace EntreFunciones.Servicios.Impl
         // Según el documento: el login lleva a "/" (cliente) o a "/admin" (administrador, pantalla Reportes).
         // Si aún no existe la pantalla Reportes, cambien RutaInicioAdmin a "/admin/usuarios".
         private const string RutaInicioCliente = "/";
-        private const string RutaInicioAdmin = "/admin/usuarios";
+        private const string RutaInicioAdmin = "/admin";
 
         private readonly IHttpContextAccessor httpContextAccessor;
 

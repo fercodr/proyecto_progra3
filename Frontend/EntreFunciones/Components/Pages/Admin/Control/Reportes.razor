@@ -1,5 +1,6 @@
 ﻿@page "/admin" 
-@using AppWeb.Shared
+@attribute [Authorize(Policy = "Reportes")]
+ 
 @rendermode InteractiveServer
 
 <PageTitle> Reportes | Entre Funciones </PageTitle>

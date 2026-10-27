@@ -4,6 +4,11 @@
     <a class="navbar-brand" href="admin/funciones">EntreFunciones</a>
 
     <div class="navbar-nav me-auto">
+        @* Solo lo ve el administrador (policy Reportes, ver Permisos.cs) *@
+        <AuthorizeView Policy="Reportes">
+            <NavLink class="nav-link" href="admin" Match="NavLinkMatch.All">Reportes</NavLink>
+        </AuthorizeView>
+
         <NavLink class="nav-link" href="admin/catalogo">Catálogo</NavLink>
         <NavLink class="nav-link" href="admin/funciones">Funciones</NavLink>
         @*<NavLink class="nav-link" href="admin/funciones/nueva">Programar función</NavLink>*@
