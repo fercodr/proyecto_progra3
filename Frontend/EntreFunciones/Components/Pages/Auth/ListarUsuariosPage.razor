@@ -1,0 +1,148 @@
+﻿@page "/admin/usuarios"
+@attribute [Authorize(Policy = "UsuariosRoles")]
+@inject NavigationManager Nav;
+
+@using Microsoft.AspNetCore.Components.QuickGrid
+
+<PageTitle>Usuarios y roles</PageTitle>
+
+<div class="d-flex justify-content-between mb-3">
+    <h3 class="mb-3">Usuarios y roles</h3>
+    @if (PestanaActiva == "administradores") {
+        <button tabindex="4" class="btn btn-success" @onclick="() => NuevoAdministrador()">
+            Nuevo administrador
+        </button>
+    }
+</div>
+
+<ul class="nav nav-tabs mb-3">
+    <li class="nav-item">
+        <button class="nav-link @(PestanaActiva == "clientes" ? "active" : "")"
+                @onclick='() => CambiarPestana("clientes")'>Clientes</button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link @(PestanaActiva == "administradores" ? "active" : "")"
+                @onclick='() => CambiarPestana("administradores")'>Administradores</button>
+    </li>
+</ul>
+
+@if (MensajeExito != null) {
+    <div class="alert alert-success">@MensajeExito</div>
+}
+
+<div class="d-flex align-items-center gap-2 mb-3">
+    <label class="text-nowrap">Nombre:</label>
+    <input tabindex="1" class="form-control" placeholder="Ingrese el nombre..." @bind="Filtro" />
+    <button tabindex="2" class="btn btn-primary" @onclick="() => Filtrar()">Filtrar</button>
+    <button tabindex="3" class="btn btn-secondary" @onclick="() => LimpiarFiltro()">Limpiar</button>
+</div>
+
+@if (PestanaActiva == "clientes") {
+    @if (!Clientes.Any()) {
+        <div class="alert alert-info">No hay clientes registrados.</div>
+    }
+    else {
+        <QuickGrid Items="Clientes" Pagination="PaginacionClientes" Class="table table-striped table-hover">
+            <PropertyColumn Title="Id" Property="c => c.Id" Sortable="true" />
+            <PropertyColumn Title="DNI" Property="c => c.Dni" Sortable="true" />
+            <PropertyColumn Title="Nombres" Property="c => c.Nombres" Sortable="true" />
+            <PropertyColumn Title="Apellidos" Property="c => c.Apellidos" Sortable="true" />
+            <PropertyColumn Title="Correo" Property="c => c.Correo" Sortable="true" />
+            <PropertyColumn Title="Teléfono" Property="c => c.Telefono" />
+            <TemplateColumn Title="Activo" Align="Align.Center">
+                <input type="checkbox" checked="@context.IsActivo" disabled />
+            </TemplateColumn>
+            <TemplateColumn Title="Acciones">
+                <button class="btn btn-sm @(context.IsActivo ? "btn-warning" : "btn-success")"
+                        @onclick="() => CambiarEstadoCliente(context)">
+                    @(context.IsActivo ? "Desactivar" : "Activar")
+                </button>
+            </TemplateColumn>
+        </QuickGrid>
+        <Paginator State="PaginacionClientes"></Paginator>
+    }
+}
+else {
+    @if (!Administradores.Any()) {
+        <div class="alert alert-info">No hay administradores registrados.</div>
+    }
+    else {
+        <QuickGrid Items="Administradores" Pagination="PaginacionAdministradores" Class="table table-striped table-hover">
+            <PropertyColumn Title="Id" Property="a => a.Id" Sortable="true" />
+            <PropertyColumn Title="Cód. empleado" Property="a => a.CodigoEmpleado" Sortable="true" />
+            <PropertyColumn Title="Nombres" Property="a => a.Nombres" Sortable="true" />
+            <PropertyColumn Title="Apellidos" Property="a => a.Apellidos" Sortable="true" />
+            <PropertyColumn Title="Correo" Property="a => a.Correo" Sortable="true" />
+            <TemplateColumn Title="Activo" Align="Align.Center">
+                <input type="checkbox" checked="@context.IsActivo" disabled />
+            </TemplateColumn>
+            <TemplateColumn Title="Acciones">
+                <button class="btn btn-sm @(context.IsActivo ? "btn-warning" : "btn-success")"
+                        @onclick="() => CambiarEstadoAdministrador(context)">
+                    @(context.IsActivo ? "Desactivar" : "Activar")
+                </button>
+            </TemplateColumn>
+        </QuickGrid>
+        <Paginator State="PaginacionAdministradores"></Paginator>
+    }
+}
+
+@code {
+    [SupplyParameterFromQuery(Name = "pestana")]
+    public string? Pestana { get; set; }
+
+    private IQueryable<ClienteDemo> Clientes { get; set; } = Enumerable.Empty<ClienteDemo>().AsQueryable();
+    private IQueryable<AdministradorDemo> Administradores { get; set; } = Enumerable.Empty<AdministradorDemo>().AsQueryable();
+    private string PestanaActiva { get; set; } = "clientes";
+    private string Filtro { get; set; } = string.Empty;
+    private string? MensajeExito { get; set; }
+    private PaginationState PaginacionClientes { get; } = new() { ItemsPerPage = 5 };
+    private PaginationState PaginacionAdministradores { get; } = new() { ItemsPerPage = 5 };
+
+    protected override void OnInitialized() {
+        if (Pestana == "administradores") {
+            PestanaActiva = "administradores";
+        }
+        CargarTodo();
+    }
+
+    private void CargarTodo() {
+        Clientes = DatosDemo.Clientes.AsQueryable();
+        Administradores = DatosDemo.Administradores.AsQueryable();
+    }
+
+    private void CambiarPestana(string pestana) {
+        PestanaActiva = pestana;
+        MensajeExito = null;
+        LimpiarFiltro();
+    }
+
+    private void NuevoAdministrador() {
+        Nav.NavigateTo("/admin/usuarios/administradores/nuevo");
+    }
+
+    private void Filtrar() {
+        string f = Filtro.Trim().ToLower();
+        Clientes = DatosDemo.Clientes
+            .Where(c => (c.Nombres + " " + c.Apellidos).ToLower().Contains(f))
+            .AsQueryable();
+        Administradores = DatosDemo.Administradores
+            .Where(a => (a.Nombres + " " + a.Apellidos).ToLower().Contains(f))
+            .AsQueryable();
+    }
+
+    private void LimpiarFiltro() {
+        Filtro = string.Empty;
+        CargarTodo();
+    }
+
+    private void CambiarEstadoCliente(ClienteDemo cliente) {
+        cliente.IsActivo = !cliente.IsActivo;
+        MensajeExito = $"Cliente {cliente.Nombres} {(cliente.IsActivo ? "activado" : "desactivado")}.";
+    }
+
+    private void CambiarEstadoAdministrador(AdministradorDemo admin) {
+        admin.IsActivo = !admin.IsActivo;
+        MensajeExito = $"Administrador {admin.Nombres} {(admin.IsActivo ? "activado" : "desactivado")}.";
+    }
+}
