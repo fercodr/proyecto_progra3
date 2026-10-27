@@ -1,0 +1,22 @@
+﻿
+
+<div class="card h-100 w-100 bg-light text-start">
+    <div class="card-body p-3">
+        
+        <h6 class="small fw-semibold text-secondary mb-1">@Atribute</h6>
+        <h5 class="fs-2 fw-bold text-dark mb-0">@Unit</h5>
+        <h5 class="fs-2 fw-bold text-dark mb-0">@Amount</h5>
+
+    </div>
+</div>
+@code {
+    [Parameter, EditorRequired]
+    public string Atribute { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public int Amount { get; set; } = default!;
+
+    [Parameter]
+    public string Unit { get; set; } = default!;
+
+}
