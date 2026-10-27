@@ -61,9 +61,9 @@
 
     public List<EntradaDto> Entradas { get; set; } = new()
     {
-        new EntradaDto { Id = 1, CodigoEntrada = "ENT-8921", ObraONombre = "Función Estelar", FuncionFechaHora = DateTime.Now.AddDays(2), Butaca = "A-12", Estado = "Vigente" },
-        new EntradaDto { Id = 2, CodigoEntrada = "ENT-4412", ObraONombre = "Obra Teatral A", FuncionFechaHora = DateTime.Now.AddDays(-5), Butaca = "B-05", Estado = "Utilizada" },
-        new EntradaDto { Id = 3, CodigoEntrada = "ENT-1102", ObraONombre = "Concierto de Gala", FuncionFechaHora = DateTime.Now.AddDays(10), Butaca = "C-01", Estado = "Cancelada" }
+        new EntradaDto { Id = 1, CodigoEntrada = "ENT-8921", ObraONombre = "Avengers Doomsday", FuncionFechaHora = DateTime.Now.AddDays(2), Butaca = "A-12", Estado = "Vigente" },
+        new EntradaDto { Id = 2, CodigoEntrada = "ENT-4412", ObraONombre = "ChainsawMan: Reze Arc", FuncionFechaHora = DateTime.Now.AddDays(-5), Butaca = "B-05", Estado = "Utilizada" },
+        new EntradaDto { Id = 3, CodigoEntrada = "ENT-1102", ObraONombre = "La Odisea", FuncionFechaHora = DateTime.Now.AddDays(10), Butaca = "C-01", Estado = "Cancelada" }
     };
 
     private string ObtenerBadgeEstadoEntrada(string estado) => estado switch
