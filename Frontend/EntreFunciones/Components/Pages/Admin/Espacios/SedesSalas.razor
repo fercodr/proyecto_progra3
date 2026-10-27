@@ -1,0 +1,320 @@
+@page "/admin/sedes"
+@attribute [Authorize(Policy = "Espacios")]
+@inject NavigationManager Nav
+
+@* 11. Sedes y salas · RF-M2-01
+   Pantalla maestro-detalle: a la izquierda las sedes, a la derecha las salas de la sede elegida.
+   Solo visual (Lab 9): los botones Guardar y Desactivar no persisten nada. *@
+
+<PageTitle>Sedes y salas</PageTitle>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <div>
+        <h3 class="mb-0">Sedes y salas</h3>
+        <small class="text-muted">Registra, modifica, consulta y desactiva las sedes y sus salas.</small>
+    </div>
+    <button class="btn btn-primary" @onclick="NuevaSede">+ Nueva sede</button>
+</div>
+
+<div class="row g-4">
+
+    @* ===== MAESTRO: SEDES ===== *@
+    <div class="col-lg-5">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="fw-semibold">Sedes</span>
+                    <span class="badge text-bg-secondary">@sedes.Count</span>
+                </div>
+                <input id="buscarSede" class="form-control form-control-sm mt-2" placeholder="Buscar por nombre o ciudad..." />
+            </div>
+            <div class="list-group list-group-flush">
+                @foreach (var sede in sedes)
+                {
+                    <button type="button"
+                            class="list-group-item list-group-item-action @(sede.Id == sedeSeleccionada?.Id ? "active" : "")"
+                            @onclick="() => SeleccionarSede(sede)">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="fw-semibold">@sede.RazonSocial</span>
+                            @if (!sede.Activo)
+                            {
+                                <span class="badge text-bg-warning">Inactiva</span>
+                            }
+                        </div>
+                        <small>@sede.Direccion · @sede.Ciudad</small>
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+
+    @* ===== DETALLE: SEDE ELEGIDA Y SUS SALAS ===== *@
+    <div class="col-lg-7">
+        @if (sedeSeleccionada is null)
+        {
+            <div class="alert alert-light border">Selecciona una sede para ver sus salas.</div>
+        }
+        else
+        {
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="d-flex flex-wrap justify-content-between gap-2">
+                        <div>
+                            <h5 class="card-title mb-1">@sedeSeleccionada.RazonSocial</h5>
+                            <span class="badge @(sedeSeleccionada.Activo ? "text-bg-success" : "text-bg-warning")">
+                                @(sedeSeleccionada.Activo ? "Activa" : "Inactiva")
+                            </span>
+                        </div>
+                        <div class="d-flex gap-2 align-items-start">
+                            <button class="btn btn-outline-secondary btn-sm" @onclick="() => EditarSede(sedeSeleccionada)">Editar sede</button>
+                            <button class="btn btn-outline-danger btn-sm">@(sedeSeleccionada.Activo ? "Desactivar" : "Activar")</button>
+                        </div>
+                    </div>
+                    <dl class="row mt-3 mb-0 small">
+                        <dt class="col-sm-3">Dirección</dt>
+                        <dd class="col-sm-9">@sedeSeleccionada.Direccion</dd>
+                        <dt class="col-sm-3">Ciudad</dt>
+                        <dd class="col-sm-9">@sedeSeleccionada.Ciudad</dd>
+                        <dt class="col-sm-3">Teléfono</dt>
+                        <dd class="col-sm-9">@sedeSeleccionada.TelefonoContacto</dd>
+                    </dl>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <span class="fw-semibold">Salas de la sede <span class="badge text-bg-secondary">@SalasDeSede.Count</span></span>
+                    <button class="btn btn-primary btn-sm" @onclick="NuevaSala">+ Nueva sala</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Tipo</th>
+                                <th class="text-end">Aforo</th>
+                                <th>Estado</th>
+                                <th class="text-end">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (SalasDeSede.Count == 0)
+                            {
+                                <tr><td colspan="5" class="text-center text-muted py-4">Esta sede aún no tiene salas registradas.</td></tr>
+                            }
+                            @foreach (var sala in SalasDeSede)
+                            {
+                                <tr>
+                                    <td class="fw-semibold">@sala.Nombre</td>
+                                    <td>@sala.TipoSala</td>
+                                    <td class="text-end">@sala.Aforo</td>
+                                    <td>
+                                        <span class="badge @(sala.Activo ? "text-bg-success" : "text-bg-secondary")">
+                                            @(sala.Activo ? "Activa" : "Inactiva")
+                                        </span>
+                                    </td>
+                                    <td class="text-end text-nowrap">
+                                        <button class="btn btn-outline-primary btn-sm" @onclick="() => VerButacas(sala)">Ver butacas</button>
+                                        <button class="btn btn-outline-secondary btn-sm" @onclick="() => EditarSala(sala)">Editar</button>
+                                        <button class="btn btn-outline-danger btn-sm">@(sala.Activo ? "Desactivar" : "Activar")</button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@* ===== MODAL: FORMULARIO DE SEDE ===== *@
+@if (modalSede)
+{
+    <div class="modal d-block" tabindex="-1" style="background: rgba(0,0,0,.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@(sedeEnEdicion is null ? "Nueva sede" : "Editar sede")</h5>
+                    <button type="button" class="btn-close" @onclick="CerrarModales"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label" for="razonSocial">Razón social</label>
+                        <input id="razonSocial" class="form-control" value="@sedeEnEdicion?.RazonSocial" placeholder="EntreFunciones Miraflores" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="direccion">Dirección</label>
+                        <input id="direccion" class="form-control" value="@sedeEnEdicion?.Direccion" placeholder="Av. Larco 1150" />
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label" for="ciudad">Ciudad</label>
+                            <input id="ciudad" class="form-control" value="@sedeEnEdicion?.Ciudad" placeholder="Lima" />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label" for="telefono">Teléfono de contacto</label>
+                            <input id="telefono" class="form-control" value="@sedeEnEdicion?.TelefonoContacto" placeholder="01 445 1200" />
+                        </div>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input id="sedeActiva" class="form-check-input" type="checkbox" checked="@(sedeEnEdicion?.Activo ?? true)" />
+                        <label class="form-check-label" for="sedeActiva">Sede activa</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline-secondary" @onclick="CerrarModales">Cancelar</button>
+                    <button class="btn btn-primary" @onclick="CerrarModales">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@* ===== MODAL: FORMULARIO DE SALA ===== *@
+@if (modalSala)
+{
+    <div class="modal d-block" tabindex="-1" style="background: rgba(0,0,0,.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@(salaEnEdicion is null ? "Nueva sala" : "Editar sala")</h5>
+                    <button type="button" class="btn-close" @onclick="CerrarModales"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label" for="salaSede">Sede</label>
+                        <select id="salaSede" class="form-select">
+                            @foreach (var sede in sedes)
+                            {
+                                <option value="@sede.Id" selected="@(sede.Id == sedeSeleccionada?.Id)">@sede.RazonSocial</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="salaNombre">Nombre</label>
+                        <input id="salaNombre" class="form-control" value="@salaEnEdicion?.Nombre" placeholder="Sala 1" />
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label" for="salaAforo">Aforo</label>
+                            <input id="salaAforo" type="number" min="1" class="form-control" value="@salaEnEdicion?.Aforo" placeholder="120" />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label" for="salaTipo">Tipo de sala</label>
+                            <select id="salaTipo" class="form-select">
+                                @foreach (var tipo in tiposSala)
+                                {
+                                    <option selected="@(tipo == salaEnEdicion?.TipoSala)">@tipo</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input id="salaActiva" class="form-check-input" type="checkbox" checked="@(salaEnEdicion?.Activo ?? true)" />
+                        <label class="form-check-label" for="salaActiva">Sala activa</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline-secondary" @onclick="CerrarModales">Cancelar</button>
+                    <button class="btn btn-primary" @onclick="CerrarModales">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    // ---- Clases solo para mostrar datos de ejemplo (luego vendrán del backend Java) ----
+    private class Sede
+    {
+        public int Id { get; set; }
+        public string RazonSocial { get; set; } = "";
+        public string Direccion { get; set; } = "";
+        public string Ciudad { get; set; } = "";
+        public string TelefonoContacto { get; set; } = "";
+        public bool Activo { get; set; } = true;
+    }
+
+    private class Sala
+    {
+        public int Id { get; set; }
+        public int IdSede { get; set; }
+        public string Nombre { get; set; } = "";
+        public int Aforo { get; set; }
+        public string TipoSala { get; set; } = "";
+        public bool Activo { get; set; } = true;
+    }
+
+    // ---- Datos de ejemplo ----
+    private readonly List<Sede> sedes = new()
+    {
+        new Sede { Id = 1, RazonSocial = "EntreFunciones Miraflores", Direccion = "Av. Larco 1150", Ciudad = "Lima", TelefonoContacto = "01 445 1200" },
+        new Sede { Id = 2, RazonSocial = "EntreFunciones San Miguel", Direccion = "Av. La Marina 2000", Ciudad = "Lima", TelefonoContacto = "01 578 3300" },
+        new Sede { Id = 3, RazonSocial = "EntreFunciones Arequipa Centro", Direccion = "Calle Mercaderes 212", Ciudad = "Arequipa", TelefonoContacto = "054 22 8800" },
+        new Sede { Id = 4, RazonSocial = "EntreFunciones Surco", Direccion = "Av. Primavera 645", Ciudad = "Lima", TelefonoContacto = "01 344 9010", Activo = false }
+    };
+
+    private readonly List<Sala> salas = new()
+    {
+        new Sala { Id = 1, IdSede = 1, Nombre = "Sala 1", Aforo = 96, TipoSala = "2D" },
+        new Sala { Id = 2, IdSede = 1, Nombre = "Sala 2", Aforo = 120, TipoSala = "3D" },
+        new Sala { Id = 3, IdSede = 1, Nombre = "Sala IMAX", Aforo = 220, TipoSala = "IMAX" },
+        new Sala { Id = 4, IdSede = 1, Nombre = "Teatro Larco", Aforo = 300, TipoSala = "Teatro" },
+        new Sala { Id = 5, IdSede = 2, Nombre = "Sala 1", Aforo = 110, TipoSala = "2D" },
+        new Sala { Id = 6, IdSede = 2, Nombre = "Sala 2", Aforo = 80, TipoSala = "2D", Activo = false },
+        new Sala { Id = 7, IdSede = 3, Nombre = "Auditorio Mercaderes", Aforo = 180, TipoSala = "Auditorio" }
+    };
+
+    private readonly string[] tiposSala = { "2D", "3D", "IMAX", "Teatro", "Auditorio" };
+
+    // ---- Estado de la pantalla ----
+    private Sede? sedeSeleccionada;
+    private Sede? sedeEnEdicion;
+    private Sala? salaEnEdicion;
+    private bool modalSede;
+    private bool modalSala;
+
+    private List<Sala> SalasDeSede =>
+        salas.Where(s => s.IdSede == sedeSeleccionada?.Id).ToList();
+
+    protected override void OnInitialized()
+    {
+        sedeSeleccionada = sedes.First();
+    }
+
+    private void SeleccionarSede(Sede sede) => sedeSeleccionada = sede;
+
+    private void NuevaSede()
+    {
+        sedeEnEdicion = null;
+        modalSede = true;
+    }
+
+    private void EditarSede(Sede sede)
+    {
+        sedeEnEdicion = sede;
+        modalSede = true;
+    }
+
+    private void NuevaSala()
+    {
+        salaEnEdicion = null;
+        modalSala = true;
+    }
+
+    private void EditarSala(Sala sala)
+    {
+        salaEnEdicion = sala;
+        modalSala = true;
+    }
+
+    private void CerrarModales()
+    {
+        // Lab 9: solo interfaz, no se guarda nada.
+        modalSede = false;
+        modalSala = false;
+    }
+
+    private void VerButacas(Sala sala) => Nav.NavigateTo($"/admin/salas/{sala.Id}/butacas");
+}
