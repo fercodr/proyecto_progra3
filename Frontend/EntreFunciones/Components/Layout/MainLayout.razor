@@ -9,6 +9,11 @@
             <NavLink class="nav-link" href="admin" Match="NavLinkMatch.All">Reportes</NavLink>
         </AuthorizeView>
 
+        <AuthorizeView Policy="Espacios">
+            <NavLink class="nav-link" href="admin/sedes">Sedes y salas</NavLink>
+            <NavLink class="nav-link" href="admin/recursos">Recursos y bloqueos</NavLink>
+        </AuthorizeView>
+
         <AuthorizeView Policy="Programacion">
             <NavLink class="nav-link" href="admin/catalogo">Catálogo</NavLink>
             <NavLink class="nav-link" href="admin/funciones">Funciones</NavLink>
