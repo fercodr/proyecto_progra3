@@ -1,17 +1,17 @@
 ﻿@page "/"
+@* Provisional: según el documento, "/" será la Cartelera (pantalla 04). Reemplazar cuando exista. *@
 
 <PageTitle>Inicio</PageTitle>
 
-<AuthorizeView> 
-    <!-- <Authorized>
-        <h3 class="mb-3">Bienvenido Admin</h3>
-        <AuthorizeView Policy="Resumen" Context="resumen">
-            <PanelAdministrador />
+<AuthorizeView>
+    <Authorized>
+        <h3 class="mb-3">Bienvenido, @context.User.Identity?.Name</h3>
+        <AuthorizeView Roles="Administrador" Context="admin">
+            <p>Use el menú <strong>Seguridad</strong> para gestionar usuarios y roles.</p>
         </AuthorizeView>
-    </Authorized> -->
-    <!-- hola -->
+    </Authorized>
     <NotAuthorized>
-        <h3 class="mb-3">Bienvenido a EntreFuncion</h3>
+        <h3 class="mb-3">Bienvenido a EntreFunciones</h3>
         <p>Inicie sesión para continuar o regístrese como cliente.</p>
         <div class="d-flex gap-2">
             <a class="btn btn-primary" href="login">Iniciar sesión</a>

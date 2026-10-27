@@ -2,13 +2,33 @@
 
 <nav class="navbar navbar-expand navbar-dark bg-primary px-3">
     <a class="navbar-brand" href="admin/funciones">EntreFunciones</a>
-    <div class="navbar-nav">
+
+    <div class="navbar-nav me-auto">
         <NavLink class="nav-link" href="admin/catalogo">Catálogo</NavLink>
         <NavLink class="nav-link" href="admin/funciones">Funciones</NavLink>
-        <NavLink class="nav-link" href="/login">Login</NavLink>
-        <NavLink class="nav-link" href="/registro">Registro</NavLink>
         @*<NavLink class="nav-link" href="admin/funciones/nueva">Programar función</NavLink>*@
-        @*<NavLink class="nav-link" href="login">Cerrar sesión</NavLink>*@
+
+        @* Solo lo ve el administrador (policy UsuariosRoles, ver Permisos.cs) *@
+        <AuthorizeView Policy="UsuariosRoles">
+            <NavLink class="nav-link" href="admin/usuarios">Usuarios y roles</NavLink>
+        </AuthorizeView>
+    </div>
+
+    <div class="navbar-nav align-items-center">
+        <AuthorizeView>
+            <Authorized>
+                <span class="navbar-text me-2">@context.User.Identity?.Name</span>
+                @* Cerrar sesión debe ser un POST para que el servidor borre la cookie *@
+                <form method="post" action="cuenta/logout" class="m-0">
+                    <AntiforgeryToken />
+                    <button type="submit" class="nav-link bg-transparent border-0">Cerrar sesión</button>
+                </form>
+            </Authorized>
+            <NotAuthorized>
+                <NavLink class="nav-link" href="login">Login</NavLink>
+                <NavLink class="nav-link" href="registro">Registro</NavLink>
+            </NotAuthorized>
+        </AuthorizeView>
     </div>
 </nav>
 

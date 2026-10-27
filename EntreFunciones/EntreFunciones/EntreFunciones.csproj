@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -12,7 +12,10 @@
     <Folder Include="Components\Pages\CarteleraSeleccion\" />
     <Folder Include="Components\Pages\IngresoSeguimiento\" />
     <Folder Include="Components\Pages\Ventas\" />
-    <Folder Include="Seguridad\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.QuickGrid" Version="10.0.14" />
   </ItemGroup>
 
 </Project>
