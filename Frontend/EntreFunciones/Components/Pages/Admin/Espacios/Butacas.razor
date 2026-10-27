@@ -1,0 +1,311 @@
+@page "/admin/salas/{IdSala:int}/butacas"
+@attribute [Authorize(Policy = "Espacios")]
+@inject NavigationManager Nav
+
+@* 12. Butacas · RF-M2-03
+   Mapa de asientos de una sala. Al hacer clic en una butaca se edita en el panel derecho.
+   Se entra desde "Ver butacas" en Sedes y salas. Solo visual (Lab 9). *@
+
+<PageTitle>Butacas · @sala.Nombre</PageTitle>
+
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/admin/sedes">Sedes y salas</a></li>
+        <li class="breadcrumb-item">@sala.Sede</li>
+        <li class="breadcrumb-item active" aria-current="page">@sala.Nombre</li>
+    </ol>
+</nav>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <div>
+        <h3 class="mb-0">Butacas · @sala.Nombre</h3>
+        <small class="text-muted">Registra y modifica las butacas que forman el mapa de asientos de la sala.</small>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-secondary" @onclick="Volver">Volver</button>
+        <button class="btn btn-outline-primary" @onclick="AbrirGenerarMapa">Generar mapa</button>
+        <button class="btn btn-primary" @onclick="NuevaButaca">+ Nueva butaca</button>
+    </div>
+</div>
+
+@* ===== RESUMEN ===== *@
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card shadow-sm"><div class="card-body py-2">
+            <small class="text-muted">Tipo de sala</small>
+            <div class="fs-5 fw-semibold">@sala.Tipo</div>
+        </div></div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card shadow-sm"><div class="card-body py-2">
+            <small class="text-muted">Aforo</small>
+            <div class="fs-5 fw-semibold">@sala.Aforo</div>
+        </div></div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card shadow-sm"><div class="card-body py-2">
+            <small class="text-muted">Butacas activas</small>
+            <div class="fs-5 fw-semibold">@butacas.Count(b => b.Activo)</div>
+        </div></div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card shadow-sm"><div class="card-body py-2">
+            <small class="text-muted">Filas × columnas</small>
+            <div class="fs-5 fw-semibold">@Filas.Count × @butacas.Max(b => b.Columna)</div>
+        </div></div>
+    </div>
+</div>
+
+<div class="row g-4">
+
+    @* ===== MAPA DE BUTACAS ===== *@
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="pantalla">PANTALLA / ESCENARIO</div>
+
+                <div class="mapa">
+                    @foreach (var fila in Filas)
+                    {
+                        <div class="fila">
+                            <span class="etiqueta-fila">@fila</span>
+                            @foreach (var butaca in ButacasDeFila(fila))
+                            {
+                                <button type="button"
+                                        class="@ClaseButaca(butaca)"
+                                        title="@Titulo(butaca)"
+                                        @onclick="() => SeleccionarButaca(butaca)">
+                                    @butaca.Columna
+                                </button>
+                                @if (butaca.Columna == ColumnaPasillo)
+                                {
+                                    <span class="pasillo"></span>
+                                }
+                            }
+                            <span class="etiqueta-fila">@fila</span>
+                        </div>
+                    }
+                </div>
+
+                <div class="d-flex flex-wrap gap-3 justify-content-center mt-4 small">
+                    <span><span class="muestra general"></span> General</span>
+                    <span><span class="muestra preferencial"></span> Preferencial</span>
+                    <span><span class="muestra accesible"></span> Accesible</span>
+                    <span><span class="muestra inactiva"></span> Inactiva</span>
+                    <span><span class="muestra seleccionada"></span> Seleccionada</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* ===== PANEL DE EDICIÓN ===== *@
+    <div class="col-lg-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white fw-semibold">
+                @if (creando)
+                {
+                    <span>Nueva butaca</span>
+                }
+                else if (seleccionada is not null)
+                {
+                    <span>Butaca @Codigo(seleccionada)</span>
+                }
+                else
+                {
+                    <span>Detalle de butaca</span>
+                }
+            </div>
+            <div class="card-body">
+                @if (!creando && seleccionada is null)
+                {
+                    <p class="text-muted mb-0">Haz clic en una butaca del mapa para editarla, o usa <b>+ Nueva butaca</b>.</p>
+                }
+                else
+                {
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label" for="butacaFila">Fila</label>
+                            <input id="butacaFila" class="form-control" maxlength="2" value="@seleccionada?.Fila" placeholder="A" />
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label" for="butacaColumna">Columna</label>
+                            <input id="butacaColumna" type="number" min="1" class="form-control" value="@seleccionada?.Columna" placeholder="1" />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="butacaTipo">Tipo de butaca</label>
+                        <select id="butacaTipo" class="form-select">
+                            @foreach (var tipo in tiposButaca)
+                            {
+                                <option selected="@(tipo == seleccionada?.Tipo)">@tipo</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="form-check form-switch mb-4">
+                        <input id="butacaActiva" class="form-check-input" type="checkbox" checked="@(seleccionada?.Activo ?? true)" />
+                        <label class="form-check-label" for="butacaActiva">Butaca activa</label>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-primary" @onclick="Cancelar">Guardar</button>
+                        <button class="btn btn-outline-secondary" @onclick="Cancelar">Cancelar</button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@* ===== MODAL: GENERAR MAPA COMPLETO ===== *@
+@if (modalGenerar)
+{
+    <div class="modal d-block" tabindex="-1" style="background: rgba(0,0,0,.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Generar mapa de butacas</h5>
+                    <button type="button" class="btn-close" @onclick="CerrarGenerarMapa"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted small">Crea todas las butacas de la sala de una vez. Luego puedes editar cada una en el mapa.</p>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label" for="genFilas">Cantidad de filas</label>
+                            <input id="genFilas" type="number" min="1" max="26" class="form-control" value="8" />
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label" for="genColumnas">Butacas por fila</label>
+                            <input id="genColumnas" type="number" min="1" class="form-control" value="12" />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="genTipo">Tipo por defecto</label>
+                        <select id="genTipo" class="form-select">
+                            @foreach (var tipo in tiposButaca)
+                            {
+                                <option>@tipo</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="form-check">
+                        <input id="genPasillo" class="form-check-input" type="checkbox" checked />
+                        <label class="form-check-label" for="genPasillo">Dejar pasillo central</label>
+                    </div>
+                    <div class="alert alert-warning small mt-3 mb-0">Esto reemplaza el mapa actual de la sala.</div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline-secondary" @onclick="CerrarGenerarMapa">Cancelar</button>
+                    <button class="btn btn-primary" @onclick="CerrarGenerarMapa">Generar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int IdSala { get; set; }
+
+    // ---- Clases solo para mostrar datos de ejemplo ----
+    private class InfoSala
+    {
+        public string Nombre { get; set; } = "";
+        public string Sede { get; set; } = "";
+        public string Tipo { get; set; } = "";
+        public int Aforo { get; set; }
+    }
+
+    private class Butaca
+    {
+        public string Fila { get; set; } = "";
+        public int Columna { get; set; }
+        public string Tipo { get; set; } = "General";
+        public bool Activo { get; set; } = true;
+    }
+
+    // Mismas salas de ejemplo que en Sedes y salas
+    private readonly Dictionary<int, InfoSala> salasEjemplo = new()
+    {
+        [1] = new InfoSala { Nombre = "Sala 1", Sede = "EntreFunciones Miraflores", Tipo = "2D", Aforo = 96 },
+        [2] = new InfoSala { Nombre = "Sala 2", Sede = "EntreFunciones Miraflores", Tipo = "3D", Aforo = 120 },
+        [3] = new InfoSala { Nombre = "Sala IMAX", Sede = "EntreFunciones Miraflores", Tipo = "IMAX", Aforo = 220 },
+        [4] = new InfoSala { Nombre = "Teatro Larco", Sede = "EntreFunciones Miraflores", Tipo = "Teatro", Aforo = 300 },
+        [5] = new InfoSala { Nombre = "Sala 1", Sede = "EntreFunciones San Miguel", Tipo = "2D", Aforo = 110 },
+        [6] = new InfoSala { Nombre = "Sala 2", Sede = "EntreFunciones San Miguel", Tipo = "2D", Aforo = 80 },
+        [7] = new InfoSala { Nombre = "Auditorio Mercaderes", Sede = "EntreFunciones Arequipa Centro", Tipo = "Auditorio", Aforo = 180 }
+    };
+
+    private readonly string[] tiposButaca = { "General", "Preferencial", "Accesible" };
+    private const int ColumnaPasillo = 6;
+
+    // ---- Estado de la pantalla ----
+    private InfoSala sala = new();
+    private List<Butaca> butacas = new();
+    private Butaca? seleccionada;
+    private bool creando;
+    private bool modalGenerar;
+
+    private List<string> Filas => butacas.Select(b => b.Fila).Distinct().ToList();
+
+    private IEnumerable<Butaca> ButacasDeFila(string fila) =>
+        butacas.Where(b => b.Fila == fila).OrderBy(b => b.Columna);
+
+    protected override void OnParametersSet()
+    {
+        sala = salasEjemplo.TryGetValue(IdSala, out var info)
+            ? info
+            : new InfoSala { Nombre = $"Sala {IdSala}", Sede = "Sede de ejemplo", Tipo = "2D", Aforo = 96 };
+
+        // Mapa de ejemplo: 8 filas (A-H) × 12 columnas = 96 butacas
+        butacas = new List<Butaca>();
+        foreach (var fila in "ABCDEFGH")
+        {
+            for (int col = 1; col <= 12; col++)
+            {
+                var butaca = new Butaca { Fila = fila.ToString(), Columna = col };
+                if (fila is 'G' or 'H') butaca.Tipo = "Preferencial";
+                if (fila == 'A' && col <= 2) butaca.Tipo = "Accesible";
+                if (col == 12 && fila is 'D' or 'E') butaca.Activo = false;
+                butacas.Add(butaca);
+            }
+        }
+        seleccionada = null;
+        creando = false;
+    }
+
+    private static string Codigo(Butaca b) => b.Fila + b.Columna;
+    private static string Titulo(Butaca b) => Codigo(b) + " · " + b.Tipo;
+
+    private string ClaseButaca(Butaca b)
+    {
+        if (b == seleccionada) return "butaca seleccionada";
+        if (!b.Activo) return "butaca inactiva";
+        return b.Tipo switch
+        {
+            "Preferencial" => "butaca preferencial",
+            "Accesible" => "butaca accesible",
+            _ => "butaca general"
+        };
+    }
+
+    private void SeleccionarButaca(Butaca butaca)
+    {
+        seleccionada = butaca;
+        creando = false;
+    }
+
+    private void NuevaButaca()
+    {
+        seleccionada = null;
+        creando = true;
+    }
+
+    private void Cancelar()
+    {
+        // Lab 9: solo interfaz, no se guarda nada.
+        seleccionada = null;
+        creando = false;
+    }
+
+    private void AbrirGenerarMapa() => modalGenerar = true;
+    private void CerrarGenerarMapa() => modalGenerar = false;
+    private void Volver() => Nav.NavigateTo("/admin/sedes");
+}

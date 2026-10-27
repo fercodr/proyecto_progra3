@@ -1,0 +1,78 @@
+/* Estilos solo de la pantalla Butacas (CSS isolation de Blazor) */
+
+.pantalla {
+    margin: 0 auto 24px;
+    max-width: 70%;
+    padding: 6px 0;
+    text-align: center;
+    font-size: .75rem;
+    letter-spacing: .15em;
+    color: #6c757d;
+    border-top: 6px solid #6f42c1;
+    border-radius: 50% 50% 0 0 / 14px 14px 0 0;
+}
+
+.mapa {
+    overflow-x: auto;
+    padding-bottom: 4px;
+}
+
+.fila {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 6px;
+    min-width: max-content;
+}
+
+.etiqueta-fila {
+    width: 18px;
+    text-align: center;
+    font-weight: 600;
+    font-size: .8rem;
+    color: #6c757d;
+}
+
+.pasillo {
+    width: 22px;
+}
+
+.butaca {
+    width: 32px;
+    height: 30px;
+    padding: 0;
+    font-size: .7rem;
+    border: 1px solid transparent;
+    border-radius: 6px 6px 10px 10px;
+    cursor: pointer;
+    transition: transform .1s;
+}
+
+.butaca:hover {
+    transform: translateY(-2px);
+}
+
+.butaca:focus-visible {
+    outline: 2px solid #0d6efd;
+    outline-offset: 2px;
+}
+
+.general, .muestra.general { background: #dee2e6; color: #343a40; }
+.preferencial, .muestra.preferencial { background: #ffe08a; color: #664d03; }
+.accesible, .muestra.accesible { background: #9ec5fe; color: #052c65; }
+.inactiva, .muestra.inactiva {
+    background: repeating-linear-gradient(45deg, #f8f9fa 0 4px, #ced4da 4px 6px);
+    color: #adb5bd;
+    border-color: #ced4da;
+}
+.seleccionada, .muestra.seleccionada { background: #6f42c1; color: #fff; }
+
+.muestra {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    vertical-align: -2px;
+    margin-right: 4px;
+}
