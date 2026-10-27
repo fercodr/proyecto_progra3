@@ -1,0 +1,413 @@
+@page "/admin/recursos"
+@attribute [Authorize(Policy = "Espacios")]
+
+@* 13. Recursos y bloqueos · RF-M2-02
+   Dos pestañas: Recursos (registro de recursos) y Bloqueos (salas o recursos no disponibles por un periodo).
+   Solo visual (Lab 9): Guardar y Desactivar no persisten nada. *@
+
+<PageTitle>Recursos y bloqueos</PageTitle>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <div>
+        <h3 class="mb-0">Recursos y bloqueos</h3>
+        <small class="text-muted">Registra los recursos disponibles y bloquea salas o recursos durante periodos en los que no puedan usarse.</small>
+    </div>
+    @if (pestana == Pestana.Recursos)
+    {
+        <button class="btn btn-primary" @onclick="NuevoRecurso">+ Nuevo recurso</button>
+    }
+    else
+    {
+        <button class="btn btn-primary" @onclick="NuevoBloqueo">+ Nuevo bloqueo</button>
+    }
+</div>
+
+<ul class="nav nav-tabs mb-3">
+    <li class="nav-item">
+        <button class="nav-link @(pestana == Pestana.Recursos ? "active" : "")" @onclick="VerRecursos">
+            Recursos <span class="badge text-bg-secondary">@recursos.Count</span>
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link @(pestana == Pestana.Bloqueos ? "active" : "")" @onclick="VerBloqueos">
+            Bloqueos <span class="badge text-bg-secondary">@bloqueos.Count</span>
+        </button>
+    </li>
+</ul>
+
+@if (pestana == Pestana.Recursos)
+{
+    @* ===== PESTAÑA RECURSOS ===== *@
+    <div class="card shadow-sm">
+        <div class="card-header bg-white">
+            <div class="row g-2">
+                <div class="col-md-6">
+                    <input id="buscarRecurso" class="form-control form-control-sm" placeholder="Buscar recurso..." />
+                </div>
+                <div class="col-md-4">
+                    <select id="filtroTipoRecurso" class="form-select form-select-sm">
+                        <option>Todos los tipos</option>
+                        @foreach (var tipo in tiposRecurso)
+                        {
+                            <option>@tipo</option>
+                        }
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Tipo</th>
+                        <th>Estado</th>
+                        <th class="text-end">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var recurso in recursos)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@recurso.Nombre</td>
+                            <td>@recurso.Tipo</td>
+                            <td>
+                                <span class="badge @(recurso.Activo ? "text-bg-success" : "text-bg-secondary")">
+                                    @(recurso.Activo ? "Activo" : "Inactivo")
+                                </span>
+                            </td>
+                            <td class="text-end text-nowrap">
+                                <button class="btn btn-outline-secondary btn-sm" @onclick="() => EditarRecurso(recurso)">Editar</button>
+                                <button class="btn btn-outline-warning btn-sm" @onclick="() => BloquearRecurso(recurso)">Bloquear</button>
+                                <button class="btn btn-outline-danger btn-sm">@(recurso.Activo ? "Desactivar" : "Activar")</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+else
+{
+    @* ===== PESTAÑA BLOQUEOS ===== *@
+    <div class="card shadow-sm">
+        <div class="card-header bg-white d-flex flex-wrap gap-2 justify-content-between align-items-center">
+            <div class="btn-group btn-group-sm" role="group" aria-label="Filtrar por estado">
+                @foreach (var estado in estadosFiltro)
+                {
+                    <button type="button"
+                            class="btn @(filtroEstado == estado ? "btn-dark" : "btn-outline-dark")"
+                            @onclick="() => filtroEstado = estado">
+                        @estado
+                    </button>
+                }
+            </div>
+            <select id="filtroObjetivo" class="form-select form-select-sm w-auto">
+                <option>Salas y recursos</option>
+                <option>Solo salas</option>
+                <option>Solo recursos</option>
+            </select>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Bloqueado</th>
+                        <th>Motivo</th>
+                        <th>Inicio</th>
+                        <th>Fin</th>
+                        <th>Estado</th>
+                        <th class="text-end">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (BloqueosFiltrados.Count == 0)
+                    {
+                        <tr><td colspan="6" class="text-center text-muted py-4">No hay bloqueos con este estado.</td></tr>
+                    }
+                    @foreach (var bloqueo in BloqueosFiltrados)
+                    {
+                        <tr>
+                            <td>
+                                <span class="badge text-bg-light border me-1">@bloqueo.TipoObjetivo</span>
+                                <span class="fw-semibold">@bloqueo.NombreObjetivo</span>
+                            </td>
+                            <td>@bloqueo.Motivo</td>
+                            <td class="text-nowrap">@bloqueo.FechaInicio.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td class="text-nowrap">@bloqueo.FechaFin.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td><span class="badge @ClaseEstado(bloqueo)">@EstadoDe(bloqueo)</span></td>
+                            <td class="text-end text-nowrap">
+                                <button class="btn btn-outline-secondary btn-sm" @onclick="() => EditarBloqueo(bloqueo)">Editar</button>
+                                <button class="btn btn-outline-danger btn-sm">Levantar</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@* ===== MODAL: FORMULARIO DE RECURSO ===== *@
+@if (modalRecurso)
+{
+    <div class="modal d-block" tabindex="-1" style="background: rgba(0,0,0,.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@(recursoEnEdicion is null ? "Nuevo recurso" : "Editar recurso")</h5>
+                    <button type="button" class="btn-close" @onclick="CerrarModales"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label" for="recursoNombre">Nombre</label>
+                        <input id="recursoNombre" class="form-control" value="@recursoEnEdicion?.Nombre" placeholder="Proyector láser 4K" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="recursoTipo">Tipo</label>
+                        <select id="recursoTipo" class="form-select">
+                            @foreach (var tipo in tiposRecurso)
+                            {
+                                <option selected="@(tipo == recursoEnEdicion?.Tipo)">@tipo</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input id="recursoActivo" class="form-check-input" type="checkbox" checked="@(recursoEnEdicion?.Activo ?? true)" />
+                        <label class="form-check-label" for="recursoActivo">Recurso activo</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline-secondary" @onclick="CerrarModales">Cancelar</button>
+                    <button class="btn btn-primary" @onclick="CerrarModales">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@* ===== MODAL: FORMULARIO DE BLOQUEO ===== *@
+@if (modalBloqueo)
+{
+    <div class="modal d-block" tabindex="-1" style="background: rgba(0,0,0,.5);">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@(bloqueoEnEdicion is null ? "Nuevo bloqueo" : "Editar bloqueo")</h5>
+                    <button type="button" class="btn-close" @onclick="CerrarModales"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label d-block">¿Qué deseas bloquear?</label>
+                    <div class="mb-3">
+                        <div class="form-check form-check-inline">
+                            <input id="objetivoSala" class="form-check-input" type="radio" name="objetivo"
+                                   checked="@(objetivoBloqueo == "Sala")" @onchange="ElegirSala" />
+                            <label class="form-check-label" for="objetivoSala">Una sala</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input id="objetivoRecurso" class="form-check-input" type="radio" name="objetivo"
+                                   checked="@(objetivoBloqueo == "Recurso")" @onchange="ElegirRecurso" />
+                            <label class="form-check-label" for="objetivoRecurso">Un recurso</label>
+                        </div>
+                    </div>
+
+                    @if (objetivoBloqueo == "Sala")
+                    {
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label" for="bloqueoSede">Sede</label>
+                                <select id="bloqueoSede" class="form-select">
+                                    <option>EntreFunciones Miraflores</option>
+                                    <option>EntreFunciones San Miguel</option>
+                                    <option>EntreFunciones Arequipa Centro</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label" for="bloqueoSala">Sala</label>
+                                <select id="bloqueoSala" class="form-select">
+                                    <option>Sala 1</option>
+                                    <option>Sala 2</option>
+                                    <option>Sala IMAX</option>
+                                    <option>Teatro Larco</option>
+                                </select>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="mb-3">
+                            <label class="form-label" for="bloqueoRecurso">Recurso</label>
+                            <select id="bloqueoRecurso" class="form-select">
+                                @foreach (var recurso in recursos.Where(r => r.Activo))
+                                {
+                                    <option selected="@(recurso.Nombre == bloqueoEnEdicion?.NombreObjetivo || recurso.Nombre == recursoPorBloquear?.Nombre)">@recurso.Nombre</option>
+                                }
+                            </select>
+                        </div>
+                    }
+
+                    <div class="mb-3">
+                        <label class="form-label" for="bloqueoMotivo">Motivo</label>
+                        <textarea id="bloqueoMotivo" class="form-control" rows="2" placeholder="Mantenimiento del sistema de proyección" value="@bloqueoEnEdicion?.Motivo"></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label" for="bloqueoInicio">Fecha y hora de inicio</label>
+                            <input id="bloqueoInicio" type="datetime-local" class="form-control" value="@ParaInput(bloqueoEnEdicion?.FechaInicio)" />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label" for="bloqueoFin">Fecha y hora de fin</label>
+                            <input id="bloqueoFin" type="datetime-local" class="form-control" value="@ParaInput(bloqueoEnEdicion?.FechaFin)" />
+                        </div>
+                    </div>
+                    <div class="alert alert-info small mb-0">
+                        Mientras el bloqueo esté vigente, la sala o el recurso no podrá asignarse a ninguna función.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline-secondary" @onclick="CerrarModales">Cancelar</button>
+                    <button class="btn btn-primary" @onclick="CerrarModales">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    // ---- Clases solo para mostrar datos de ejemplo ----
+    private enum Pestana { Recursos, Bloqueos }
+
+    private class Recurso
+    {
+        public int Id { get; set; }
+        public string Nombre { get; set; } = "";
+        public string Tipo { get; set; } = "";
+        public bool Activo { get; set; } = true;
+    }
+
+    private class Bloqueo
+    {
+        public int Id { get; set; }
+        public string TipoObjetivo { get; set; } = "";   // "Sala" o "Recurso"
+        public string NombreObjetivo { get; set; } = "";
+        public string Motivo { get; set; } = "";
+        public DateTime FechaInicio { get; set; }
+        public DateTime FechaFin { get; set; }
+    }
+
+    // ---- Datos de ejemplo ----
+    private readonly string[] tiposRecurso = { "Proyección", "Audio", "Iluminación", "Escenografía", "Accesibilidad" };
+    private readonly string[] estadosFiltro = { "Todos", "Vigentes", "Programados", "Finalizados" };
+
+    private readonly List<Recurso> recursos = new()
+    {
+        new Recurso { Id = 1, Nombre = "Proyector láser 4K #1", Tipo = "Proyección" },
+        new Recurso { Id = 2, Nombre = "Proyector láser 4K #2", Tipo = "Proyección" },
+        new Recurso { Id = 3, Nombre = "Sistema de sonido Dolby Atmos", Tipo = "Audio" },
+        new Recurso { Id = 4, Nombre = "Micrófonos inalámbricos (set de 8)", Tipo = "Audio" },
+        new Recurso { Id = 5, Nombre = "Consola de iluminación", Tipo = "Iluminación" },
+        new Recurso { Id = 6, Nombre = "Escenario modular 6 × 4 m", Tipo = "Escenografía" },
+        new Recurso { Id = 7, Nombre = "Rampa de accesibilidad portátil", Tipo = "Accesibilidad", Activo = false }
+    };
+
+    private List<Bloqueo> bloqueos = new();
+
+    // ---- Estado de la pantalla ----
+    private Pestana pestana = Pestana.Recursos;
+    private string filtroEstado = "Todos";
+    private bool modalRecurso;
+    private bool modalBloqueo;
+    private Recurso? recursoEnEdicion;
+    private Recurso? recursoPorBloquear;
+    private Bloqueo? bloqueoEnEdicion;
+    private string objetivoBloqueo = "Sala";
+
+    protected override void OnInitialized()
+    {
+        // Fechas relativas a hoy para que siempre haya bloqueos vigentes, programados y finalizados
+        var hoy = DateTime.Today;
+        bloqueos = new List<Bloqueo>
+        {
+            new Bloqueo { Id = 1, TipoObjetivo = "Sala", NombreObjetivo = "Sala 2 · Miraflores", Motivo = "Cambio de pantalla", FechaInicio = hoy.AddDays(-1).AddHours(8), FechaFin = hoy.AddDays(2).AddHours(18) },
+            new Bloqueo { Id = 2, TipoObjetivo = "Recurso", NombreObjetivo = "Proyector láser 4K #2", Motivo = "Mantenimiento preventivo", FechaInicio = hoy.AddHours(9), FechaFin = hoy.AddDays(1).AddHours(13) },
+            new Bloqueo { Id = 3, TipoObjetivo = "Sala", NombreObjetivo = "Teatro Larco · Miraflores", Motivo = "Evento privado", FechaInicio = hoy.AddDays(6).AddHours(15), FechaFin = hoy.AddDays(6).AddHours(23) },
+            new Bloqueo { Id = 4, TipoObjetivo = "Recurso", NombreObjetivo = "Consola de iluminación", Motivo = "Reparación de canal DMX", FechaInicio = hoy.AddDays(-12).AddHours(10), FechaFin = hoy.AddDays(-9).AddHours(18) }
+        };
+    }
+
+    private List<Bloqueo> BloqueosFiltrados => filtroEstado switch
+    {
+        "Vigentes" => bloqueos.Where(b => EstadoDe(b) == "Vigente").ToList(),
+        "Programados" => bloqueos.Where(b => EstadoDe(b) == "Programado").ToList(),
+        "Finalizados" => bloqueos.Where(b => EstadoDe(b) == "Finalizado").ToList(),
+        _ => bloqueos
+    };
+
+    private static string EstadoDe(Bloqueo b)
+    {
+        var ahora = DateTime.Now;
+        if (ahora < b.FechaInicio) return "Programado";
+        if (ahora > b.FechaFin) return "Finalizado";
+        return "Vigente";
+    }
+
+    private static string ClaseEstado(Bloqueo b) => EstadoDe(b) switch
+    {
+        "Vigente" => "text-bg-danger",
+        "Programado" => "text-bg-warning",
+        _ => "text-bg-secondary"
+    };
+
+    private static string ParaInput(DateTime? fecha) => fecha?.ToString("yyyy-MM-ddTHH:mm") ?? "";
+
+    private void VerRecursos() => pestana = Pestana.Recursos;
+    private void VerBloqueos() => pestana = Pestana.Bloqueos;
+
+    private void NuevoRecurso()
+    {
+        recursoEnEdicion = null;
+        modalRecurso = true;
+    }
+
+    private void EditarRecurso(Recurso recurso)
+    {
+        recursoEnEdicion = recurso;
+        modalRecurso = true;
+    }
+
+    private void NuevoBloqueo()
+    {
+        bloqueoEnEdicion = null;
+        recursoPorBloquear = null;
+        objetivoBloqueo = "Sala";
+        modalBloqueo = true;
+    }
+
+    private void EditarBloqueo(Bloqueo bloqueo)
+    {
+        bloqueoEnEdicion = bloqueo;
+        recursoPorBloquear = null;
+        objetivoBloqueo = bloqueo.TipoObjetivo;
+        modalBloqueo = true;
+    }
+
+    // Atajo desde la tabla de recursos: abre el formulario de bloqueo con ese recurso elegido
+    private void BloquearRecurso(Recurso recurso)
+    {
+        bloqueoEnEdicion = null;
+        recursoPorBloquear = recurso;
+        objetivoBloqueo = "Recurso";
+        modalBloqueo = true;
+    }
+
+    private void ElegirSala() => objetivoBloqueo = "Sala";
+    private void ElegirRecurso() => objetivoBloqueo = "Recurso";
+
+    private void CerrarModales()
+    {
+        // Lab 9: solo interfaz, no se guarda nada.
+        modalRecurso = false;
+        modalBloqueo = false;
+    }
+}
