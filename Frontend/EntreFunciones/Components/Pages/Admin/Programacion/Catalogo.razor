@@ -1,0 +1,41 @@
+﻿@page "/admin/catalogo"
+
+<PageTitle>Catalogo</PageTitle> @*ES LO QUE APARECE ARRIBA EN LA PESTAÑA*@
+<h3>Catálogo</h3> @*TITULO EN EL LAYOUT*@
+@*@code {@*codigo C# que se va a compilar
+	protected override void OnInitialized()
+	{
+		base.OnInitialized();@*OBJETO DONDE SE INICIA
+	}
+}*@
+
+<div class="row g-3">
+    <div class="md:col-6 lg:col-3">
+        <TarjetaResumen Titulo="Coco"
+                       Tipo="Película"
+                       Imagen="img/coco.jpg"
+                       Detalle="Dir. Lee Unkrich · Animación · 105 min"
+                       Enlace="admin/catalogo/editar/1" />
+    </div>
+    <div class="md:col-6 lg:col-3">
+        <TarjetaResumen Titulo="Interestelar"
+                       Tipo="Película"
+                       Imagen="img/interestelar.jpg"
+                       Detalle="Dir. Christopher Nolan · Drama · 169 min"
+                       Enlace="admin/catalogo/editar/2" />
+    </div>
+    <div class="md:col-6 lg:col-3">
+        <TarjetaResumen Titulo="La casa de Bernarda Alba"
+                       Tipo="Obra de teatro"
+                       Imagen="img/bernarda.jpg"
+                       Detalle="Dir. Lucía Ramos · Elenco: Ana Torres, Rosa Díaz"
+                       Enlace="admin/catalogo/editar/3" />
+    </div>
+    <div class="md:col-6 lg:col-3">
+        <TarjetaResumen Titulo="Taller de fotografía urbana"
+                       Tipo="Actividad cultural"
+                       Imagen="img/fotografia.jpg"
+                       Detalle="Taller · Expositora: María Quispe"
+                       Enlace="admin/catalogo/editar/4" />
+    </div>
+</div>
