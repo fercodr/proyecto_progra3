@@ -1,0 +1,122 @@
+@page "/evento/{Id:int}"
+@using System.Globalization
+@inject NavigationManager Nav
+
+<PageTitle>Detalle del evento</PageTitle>
+
+@if (Evento == null)
+{
+    <div class="alert alert-warning">
+        No se encontró el evento solicitado.
+        <a href="/cartelera">Volver a la cartelera</a>
+    </div>
+}
+else
+{
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/cartelera">Cartelera</a></li>
+            <li class="breadcrumb-item active">@Evento.Titulo</li>
+        </ol>
+    </nav>
+
+    <div class="row g-4">
+        <div class="col-12 col-md-7">
+            <span class="badge text-bg-secondary mb-2">@TextoTipo(Evento.Tipo)</span>
+            <h1>@Evento.Titulo</h1>
+            <p class="text-muted mb-1">@Evento.Duracion min &middot; @Evento.Clasificacion</p>
+            <p class="mb-1"><strong>@CampoSecundario</strong>: @Evento.ValorSecundario</p>
+            <p class="mb-3">@Evento.Descripcion</p>
+            <p class="fs-4"><strong>S/ @Evento.Precio.ToString("N2", CultureInfo.InvariantCulture)</strong></p>
+        </div>
+        <div class="col-12 col-md-5">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Funciones disponibles</h5>
+                    @if (!Funciones.Any())
+                    {
+                        <p class="text-muted mb-0">No hay funciones programadas por el momento.</p>
+                    }
+                    else
+                    {
+                        <div class="list-group">
+                            @foreach (FuncionDetalle funcion in Funciones)
+                            {
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div><strong>@funcion.Fecha.ToString("dd/MM/yyyy")</strong> &middot; @funcion.HoraInicio.ToString("hh\\:mm")</div>
+                                        <div class="text-muted small">@funcion.Sede &middot; Sala @funcion.Sala &middot; @funcion.Idioma</div>
+                                    </div>
+                                    <button class="btn btn-sm btn-primary" @onclick="() => ElegirFuncion(funcion.Id)">
+                                        Elegir
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    // RF-M4-01: datos de ejemplo mientras no hay conexion al backend Java.
+    // Reemplazar por EventoBL.findById(Id) y FuncionBL al integrar con el backend.
+    private List<EventoDetalle> Eventos = new()
+    {
+        new EventoDetalle(1, "Pelicula", "Interestelar", "Director", "Christopher Nolan", 169, "Apta para todo publico",
+            "Un grupo de astronautas viaja a traves de un agujero de gusano en busca de un nuevo hogar para la humanidad.", 22.00),
+        new EventoDetalle(2, "Pelicula", "Spider-Man: Brand New Day", "Director", "Destin Daniel Cretton", 130, "Apta para todo publico",
+            "Peter Parker enfrenta un nuevo enemigo mientras intenta equilibrar su vida como superheroe y como estudiante.", 18.50),
+        new EventoDetalle(3, "ObraTeatro", "La Muralla", "Elenco", "Compania Teatral Lima", 120, "Apta para todo publico",
+            "Un drama historico sobre la construccion de la muralla de Lima en el siglo XVII.", 35.00),
+        new EventoDetalle(4, "ActividadCultural", "Charla: Arte Contemporaneo", "Expositor", "Maria Fernandez", 60, "Apta para todo publico",
+            "Una charla introductoria sobre las corrientes del arte contemporaneo en el Peru.", 10.00),
+        new EventoDetalle(5, "ActividadCultural", "Taller de Ceramica", "Expositor", "Carlos Quispe", 180, "Apta para todo publico",
+            "Taller practico de ceramica para principiantes, materiales incluidos.", 25.00),
+    };
+
+    // RF-M3-01: funciones de ejemplo asociadas a cada evento.
+    private List<FuncionDetalle> TodasLasFunciones = new()
+    {
+        new FuncionDetalle(101, 1, DateTime.Today.AddDays(1), new TimeSpan(18, 30, 0), "Cineplanet Jockey Plaza", "3", "Subtitulada"),
+        new FuncionDetalle(102, 1, DateTime.Today.AddDays(1), new TimeSpan(21, 0, 0), "Cineplanet Jockey Plaza", "3", "Doblada"),
+        new FuncionDetalle(103, 2, DateTime.Today.AddDays(2), new TimeSpan(20, 0, 0), "Cineplanet Norte", "1", "Doblada"),
+        new FuncionDetalle(104, 3, DateTime.Today.AddDays(3), new TimeSpan(19, 0, 0), "Teatro Municipal", "Principal", "Espanol"),
+        new FuncionDetalle(105, 4, DateTime.Today.AddDays(2), new TimeSpan(17, 0, 0), "Sede Miraflores", "Auditorio", "Espanol"),
+        new FuncionDetalle(106, 5, DateTime.Today.AddDays(4), new TimeSpan(10, 0, 0), "Sede Barranco", "Taller 1", "Espanol"),
+    };
+
+    private EventoDetalle? Evento;
+    private List<FuncionDetalle> Funciones = new();
+
+    protected override void OnParametersSet()
+    {
+        Evento = Eventos.FirstOrDefault(e => e.Id == Id);
+        Funciones = TodasLasFunciones.Where(f => f.EventoId == Id).OrderBy(f => f.Fecha).ToList();
+    }
+
+    private string TextoTipo(string tipo) => tipo switch
+    {
+        "Pelicula" => "Película",
+        "ObraTeatro" => "Obra de teatro",
+        "ActividadCultural" => "Actividad cultural",
+        _ => tipo
+    };
+
+    private string CampoSecundario => Evento?.EtiquetaSecundaria ?? string.Empty;
+
+    private void ElegirFuncion(int funcionId)
+    {
+        Nav.NavigateTo($"/funcion/{funcionId}/butacas");
+    }
+
+    private record EventoDetalle(int Id, string Tipo, string Titulo, string EtiquetaSecundaria, string ValorSecundario,
+        int Duracion, string Clasificacion, string Descripcion, double Precio);
+
+    private record FuncionDetalle(int Id, int EventoId, DateTime Fecha, TimeSpan HoraInicio, string Sede, string Sala, string Idioma);
+}
