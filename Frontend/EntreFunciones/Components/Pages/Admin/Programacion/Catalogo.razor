@@ -1,7 +1,19 @@
 ﻿@page "/admin/catalogo"
+@inject NavigationManager Nav;
 @attribute [Authorize(Policy = "Programacion")]
 <PageTitle>Catalogo</PageTitle> @*ES LO QUE APARECE ARRIBA EN LA PESTAÑA*@
-<h3>Catálogo</h3> @*TITULO EN EL LAYOUT*@
+
+<div class="d-flex justify-content-between mb-3">
+
+    <h3 class="mb-3">Catálogo</h3>
+
+    <button class="btn btn-success" @onclick='() => Nav.NavigateTo("admin/catalogo/nuevo")'>
+
+        Nuevo evento
+
+    </button>
+</div>
+@*TITULO EN EL LAYOUT*@
 @*@code {@*codigo C# que se va a compilar
 	protected override void OnInitialized()
 	{
