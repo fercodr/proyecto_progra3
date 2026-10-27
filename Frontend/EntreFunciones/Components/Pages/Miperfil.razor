@@ -1,5 +1,48 @@
-﻿<h3>Miperfil</h3>
+﻿@page "/perfil"
+
+<PageTitle>Mi Perfil</PageTitle>
+
+<div class="col-md-6 mx-auto">
+    <h3 class="mb-4">Mi Perfil</h3>
+    <form method="post" @onsubmit="GuardarPerfil">
+        <AntiforgeryToken />
+        
+        <div class="mb-3">
+            <label class="form-label">Nombre completo</label>
+            <input tabindex="1" @bind="Nombre" type="text" class="form-control" placeholder="Tu nombre" required />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Correo electrónico</label>
+            <input tabindex="2" @bind="Correo" type="email" class="form-control" placeholder="correo@ejemplo.com" required />
+        </div>
+
+        <hr class="my-4" />
+
+        <h5 class="mb-3">Cambiar contraseña</h5>
+        <div class="mb-3">
+            <label class="form-label">Contraseña actual</label>
+            <input tabindex="3" @bind="PasswordActual" type="password" class="form-control" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Nueva contraseña</label>
+            <input tabindex="4" @bind="PasswordNuevo" type="password" class="form-control" />
+        </div>
+
+        <button tabindex="5" type="submit" class="btn btn-primary w-100">Guardar cambios</button>
+    </form>
+</div>
 
 @code {
 
+    public string Nombre { get; set; } = "Pablo Backyardigan";
+    public string Correo { get; set; } = "PablitoBackyardigan@gmail.com";
+    public string PasswordActual { get; set; } = string.Empty;
+    public string PasswordNuevo { get; set; } = string.Empty;
+
+    private void GuardarPerfil()
+    {
+       
+    }
 }
