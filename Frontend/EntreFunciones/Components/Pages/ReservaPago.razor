@@ -1,5 +1,110 @@
-﻿<h3>ReservaPago</h3>
+@page "/reserva/{id:int}/pago"
+<PageTitle>Reserva y Pago</PageTitle>
+
+<div class="container py-4">
+    <div class="col-md-8 mx-auto">
+        <h3 class="mb-4">Detalle de Reserva y Pago</h3>
+
+        @if (Reserva == null)
+        {
+            <div class="alert alert-warning">Cargando detalles de la reserva...</div>
+        }
+        else
+        {
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title mb-0">Código / ID: <span class="text-primary">@Reserva.CodigoOId</span></h5>
+                        <span class="badge bg-warning text-dark">Pendiente de Pago</span>
+                    </div>
+
+                    <p class="mb-1 text-muted"><strong>Función:</strong> @Reserva.FuncionNombre</p>
+                    <p class="mb-1 text-muted"><strong>Fecha de Reserva:</strong> @Reserva.FechaCreacion.ToString("dd/MM/yyyy HH:mm")</p>
+                    <p class="mb-3 text-muted"><strong>Monto Total:</strong> S/ @Reserva.MontoTotal.ToString("F2")</p>
+                    <div class="alert alert-danger py-2 mb-0 text-center">
+                        <small><i class="bi bi-clock me-1"></i> Tiempo restante para realizar el pago: <strong>14:59</strong></small>
+                    </div>
+                </div>
+            </div>
+            <div class="card shadow-sm mb-4 text-center bg-light border-0">
+                <div class="card-body">
+                    <h6 class="text-muted mb-2">Código de pago generado</h6>
+                    <h4 class="text-primary font-monospace mb-0">9876-5432-1098</h4>
+                </div>
+            </div>
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="mb-3">Datos de la Tarjeta</h5>
+                    <form @onsubmit="RegistrarPago">
+                        <AntiforgeryToken />
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Nombre del titular</label>
+                            <input @bind="NombreTitular" type="text" class="form-control" placeholder="Como figura en la tarjeta" required />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Número de tarjeta</label>
+                            <input @bind="NumeroTarjeta" type="text" class="form-control" placeholder="0000 0000 0000 0000" maxlength="19" required />
+                        </div>
+
+                        <div class="row">
+                            <div class="col-6 mb-3">
+                                <label class="form-label">Expiración (MM/AA)</label>
+                                <input @bind="FechaExpiracion" type="text" class="form-control" placeholder="MM/AA" maxlength="5" required />
+                            </div>
+                            <div class="col-6 mb-3">
+                                <label class="form-label">Código CVC / CVV</label>
+                                <input @bind="Cvc" type="password" class="form-control" placeholder="123" maxlength="4" required />
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-success w-100 mt-2">
+                            Pagar S/ @Reserva.MontoTotal.ToString("F2")
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Botón Cancelar reserva -->
+            <div class="text-center">
+                <button class="btn btn-outline-danger btn-sm" @onclick="CancelarReserva">
+                    Cancelar reserva
+                </button>
+            </div>
+        }
+    </div>
+</div>
 
 @code {
+    [Parameter]
+    public int Id { get; set; }
 
+    public class ReservaDetalleDto
+    {
+        public int Id { get; set; }
+        public string CodigoOId { get; set; } = "RES-0001";
+        public string FuncionNombre { get; set; } = "Avengers Doomsday";
+        public DateTime FechaCreacion { get; set; } = DateTime.Now;
+        public decimal MontoTotal { get; set; } = 50.00m;
+    }
+
+    public ReservaDetalleDto? Reserva { get; set; }
+    public string NombreTitular { get; set; } = string.Empty;
+    public string NumeroTarjeta { get; set; } = string.Empty;
+    public string FechaExpiracion { get; set; } = string.Empty;
+    public string Cvc { get; set; } = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        Reserva = new ReservaDetalleDto { Id = Id, CodigoOId = $"RES-{Id:D4}" };
+    }
+
+    private void RegistrarPago()
+    {
+    }
+
+    private void CancelarReserva()
+    {
+    }
 }
