@@ -1,0 +1,114 @@
+@page "/admin/bloqueos/nuevo"
+@page "/admin/bloqueos/editar/{Id:int}"
+@attribute [Authorize(Policy = "Espacios")]
+@inject NavigationManager Nav;
+
+@using EntreFunciones.ViewModels
+
+@* 13. Bloqueos · RF-M2-02 (Lab 9: solo interfaz, Guardar no registra nada)
+   Desde el listado de recursos se puede abrir con el recurso elegido: /admin/bloqueos/nuevo?recurso=2 *@
+
+<PageTitle>Bloqueos</PageTitle>
+
+<h3 class="mb-3">@(Id == null ? "Nuevo bloqueo" : "Editar bloqueo")</h3>
+
+@if (MensajeError != null) {
+    <div class="alert alert-danger">@MensajeError</div>
+}
+
+<EditForm Model="ViewModel" OnValidSubmit="Guardar">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label class="form-label">¿Qué desea bloquear?</label>
+        <InputSelect tabindex="1" class="form-select" @bind-Value="ViewModel.TipoObjetivo">
+            <option value="Sala">Una sala</option>
+            <option value="Recurso">Un recurso</option>
+        </InputSelect>
+    </div>
+
+    @if (ViewModel.TipoObjetivo == "Sala") {
+        <div class="mb-3">
+            <label class="form-label">Sala</label>
+            <InputSelect tabindex="2" class="form-select" @bind-Value="ViewModel.IdSala">
+                <option value="">-- Seleccione --</option>
+                @foreach (SalaViewModel sala in DatosEspaciosDemo.Salas.Where(s => s.IsActivo)) {
+                    <option value="@sala.Id">@sala.Nombre · @sala.NombreSede</option>
+                }
+            </InputSelect>
+            <ValidationMessage For="() => ViewModel.IdSala" />
+        </div>
+    }
+    else {
+        <div class="mb-3">
+            <label class="form-label">Recurso</label>
+            <InputSelect tabindex="2" class="form-select" @bind-Value="ViewModel.IdRecurso">
+                <option value="">-- Seleccione --</option>
+                @foreach (RecursoViewModel recurso in DatosEspaciosDemo.Recursos.Where(r => r.IsActivo)) {
+                    <option value="@recurso.Id">@recurso.Nombre</option>
+                }
+            </InputSelect>
+            <ValidationMessage For="() => ViewModel.IdRecurso" />
+        </div>
+    }
+
+    <div class="mb-3">
+        <label class="form-label">Motivo</label>
+        <InputTextArea tabindex="3" class="form-control" rows="2" @bind-Value="ViewModel.Motivo" />
+        <ValidationMessage For="() => ViewModel.Motivo" />
+    </div>
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Fecha y hora de inicio</label>
+            <InputDate tabindex="4" Type="InputDateType.DateTimeLocal" class="form-control" @bind-Value="ViewModel.FechaInicio" />
+            <ValidationMessage For="() => ViewModel.FechaInicio" />
+        </div>
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Fecha y hora de fin</label>
+            <InputDate tabindex="5" Type="InputDateType.DateTimeLocal" class="form-control" @bind-Value="ViewModel.FechaFin" />
+            <ValidationMessage For="() => ViewModel.FechaFin" />
+        </div>
+    </div>
+
+    <div class="alert alert-info small">
+        Mientras el bloqueo esté vigente, la sala o el recurso no podrá asignarse a ninguna función.
+    </div>
+
+    <button tabindex="6" type="submit" class="btn btn-primary">Guardar</button>
+    <a tabindex="7" class="btn btn-outline-secondary" href="admin/bloqueos">Cancelar</a>
+</EditForm>
+
+@code {
+    [Parameter]
+    public int? Id { get; set; }
+
+    [SupplyParameterFromQuery(Name = "recurso")]
+    public int? IdRecursoInicial { get; set; }
+
+    private BloqueoViewModel ViewModel { get; set; } = new();
+    private string? MensajeError { get; set; }
+
+    protected override void OnParametersSet() {
+        if (Id == null) {
+            ViewModel = new BloqueoViewModel();
+            if (IdRecursoInicial != null) {
+                ViewModel.TipoObjetivo = "Recurso";
+                ViewModel.IdRecurso = IdRecursoInicial;
+            }
+            return;
+        }
+        BloqueoViewModel? bloqueo = DatosEspaciosDemo.Bloqueos.FirstOrDefault(b => b.Id == Id.Value);
+        if (bloqueo == null) {
+            Nav.NavigateTo("/admin/bloqueos");
+            return;
+        }
+        // Se trabaja sobre una copia para no modificar los datos de ejemplo
+        ViewModel = bloqueo.Clonar();
+    }
+
+    private void Guardar() {
+        // Lab 9: solo interfaz. Aquí se llamará al servicio de bloqueos (insertar o modificar).
+        Nav.NavigateTo("/admin/bloqueos");
+    }
+}
