@@ -1,0 +1,257 @@
+﻿@page "/incidencias"
+
+
+<div class="mx-auto" style="max-width: 1100px; color: #102039;">
+
+    <!-- ENCABEZADO -->
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-2">
+        <h1 class="fs-2 fw-bold mb-0">Incidencias</h1>
+
+        <button type="button" class="btn btn-primary">
+            + Nueva incidencia
+        </button>
+    </div>
+
+    <p class="text-secondary mb-4">
+        Registra y consulta las incidencias de cada función.
+    </p>
+
+    <!-- FILTROS -->
+    <div class="border rounded p-3 mb-4"
+         style="background-color: #f3f8ff;">
+
+        <div class="row g-3">
+            <div class="col-12 col-md-7">
+                <label for="buscar" class="form-label">
+                    Buscar por código o descripción
+                </label>
+
+                <input id="buscar"
+                       type="search"
+                       class="form-control"
+                       placeholder="Ej. 23 o dato incorrecto" />
+            </div>
+
+            <div class="col-12 col-md-5">
+                <label for="filtroEstado" class="form-label">
+                    Estado
+                </label>
+
+                <select id="filtroEstado" class="form-select">
+                    <option value="Todos" selected>Todos</option>
+                    <option value="Pendiente">Pendiente</option>
+                    <option value="Atendida">Atendida</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- LISTADO -->
+    <div class="table-responsive mb-4">
+        <table class="table table-bordered align-middle mb-0"
+               style="min-width: 850px;">
+
+            <thead style="--bs-table-bg: #edf2f9;">
+                <tr>
+                    <th scope="col">Código</th>
+                    <th scope="col">Función</th>
+                    <th scope="col">Descripción</th>
+                    <th scope="col">Fecha</th>
+                    <th scope="col">Responsable</th>
+                    <th scope="col">Estado</th>
+                    <th scope="col">Acción</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                <tr>
+                    <th scope="row" class="fw-normal">#23</th>
+                    <td>Evento A · 27/10, 18:00</td>
+                    <td>Dato incorrecto de la función.</td>
+                    <td class="text-nowrap">27/10/2026</td>
+                    <td>Ana Pérez</td>
+                    <td>
+                        <span class="badge rounded-pill"
+                              style="background-color: #e3eeff; color: #244c87;">
+                            Pendiente
+                        </span>
+                    </td>
+                    <td>
+                        <button type="button"
+                                class="btn btn-outline-primary btn-sm">
+                            Gestionar
+                        </button>
+                    </td>
+                </tr>
+
+                <tr>
+                    <th scope="row" class="fw-normal">#24</th>
+                    <td>Evento B · 28/10, 19:30</td>
+                    <td>Horario por corregir.</td>
+                    <td class="text-nowrap">27/10/2026</td>
+                    <td>Luis Torres</td>
+                    <td>
+                        <span class="badge rounded-pill"
+                              style="background-color: #e5ecf5; color: #244c87;">
+                            Atendida
+                        </span>
+                    </td>
+                    <td>
+                        <button type="button"
+                                class="btn btn-outline-primary btn-sm">
+                            Gestionar
+                        </button>
+                    </td>
+                </tr>
+            </tbody>
+
+        </table>
+    </div>
+
+    <!-- PANEL: NUEVA INCIDENCIA -->
+    <section class="border rounded p-4 mb-4"
+             style="background-color: #f3f8ff;">
+
+        <h2 class="fs-4 fw-bold mb-3">Nueva incidencia</h2>
+
+        <div class="mb-3">
+            <label for="nuevaFuncion" class="form-label">
+                Función
+            </label>
+
+            <select id="nuevaFuncion" class="form-select">
+                <option value="0" selected>Selecciona una función</option>
+                <option value="1">
+                    Evento A · 27/10/2026, 18:00 · Centro / Sala 1
+                </option>
+                <option value="2">
+                    Evento B · 28/10/2026, 19:30 · Norte / Sala 2
+                </option>
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label for="nuevaDescripcion" class="form-label">
+                Descripción
+            </label>
+
+            <textarea id="nuevaDescripcion"
+                      class="form-control"
+                      rows="3"
+                      placeholder="Describe lo ocurrido..."></textarea>
+        </div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-12 col-md-6">
+                <label for="nuevoResponsable" class="form-label">
+                    Responsable
+                </label>
+
+                <select id="nuevoResponsable" class="form-select">
+                    <option value="" selected>
+                        Selecciona un responsable
+                    </option>
+                    <option value="Ana Pérez">Ana Pérez</option>
+                    <option value="Luis Torres">Luis Torres</option>
+                    <option value="María Rojas">María Rojas</option>
+                </select>
+            </div>
+
+            <div class="col-12 col-md-6">
+                <div class="form-label">Estado inicial</div>
+
+                <span class="badge rounded-pill"
+                      style="background-color: #e3eeff; color: #244c87;">
+                    Pendiente
+                </span>
+            </div>
+        </div>
+
+        <p class="small text-secondary mb-0">
+            El código y la fecha se asignarán al registrar.
+        </p>
+
+        <div class="d-flex justify-content-end gap-2 mt-4">
+            <button type="button" class="btn btn-outline-secondary">
+                Cancelar
+            </button>
+
+            <button type="button" class="btn btn-primary">
+                Registrar incidencia
+            </button>
+        </div>
+
+    </section>
+
+    <!-- PANEL: ATENDER INCIDENCIA -->
+    <section class="border rounded p-4"
+             style="background-color: #f3f8ff;">
+
+        <h2 class="fs-4 fw-bold mb-3">
+            Atender incidencia #23
+        </h2>
+
+        <!-- DATOS ORIGINALES: SOLO LECTURA -->
+        <div class="row g-3">
+            <div class="col-12 col-md-8">
+                <div class="fw-semibold mb-1">Función</div>
+
+                <p class="mb-0">
+                    Evento A · 27/10/2026, 18:00 · Centro / Sala 1
+                </p>
+            </div>
+
+            <div class="col-12 col-md-4">
+                <div class="fw-semibold mb-1">Fecha de registro</div>
+                <p class="mb-0">27/10/2026, 09:15</p>
+            </div>
+
+            <div class="col-12">
+                <div class="fw-semibold mb-1">Descripción original</div>
+                <p class="mb-0">Dato incorrecto de la función.</p>
+            </div>
+        </div>
+
+        <hr class="my-4" />
+
+        <!-- DATOS EDITABLES -->
+        <h3 class="fs-5 text-primary mb-3">Atención</h3>
+
+        <div class="row g-3">
+            <div class="col-12 col-md-6">
+                <label for="editarResponsable" class="form-label">
+                    Responsable
+                </label>
+
+                <select id="editarResponsable" class="form-select">
+                    <option value="Ana Pérez" selected>Ana Pérez</option>
+                    <option value="Luis Torres">Luis Torres</option>
+                    <option value="María Rojas">María Rojas</option>
+                </select>
+            </div>
+
+            <div class="col-12 col-md-6">
+                <label for="editarEstado" class="form-label">
+                    Estado
+                </label>
+
+                <select id="editarEstado" class="form-select">
+                    <option value="Pendiente" selected>Pendiente</option>
+                    <option value="Atendida">Atendida</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2 mt-4">
+            <button type="button" class="btn btn-outline-secondary">
+                Cancelar
+            </button>
+
+            <button type="button" class="btn btn-primary">
+                Guardar cambios
+            </button>
+        </div>
+
+    </section>
+
+</div>
