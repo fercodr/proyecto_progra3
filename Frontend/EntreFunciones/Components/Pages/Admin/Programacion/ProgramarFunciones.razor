@@ -1,5 +1,6 @@
 ﻿@page "/admin/funciones/nueva"
 @page "/admin/funciones/editar/{Id:int}"
+@attribute [Authorize(Policy = "Programacion")]
 @inject NavigationManager Nav
 
 <PageTitle>Programar función</PageTitle>
