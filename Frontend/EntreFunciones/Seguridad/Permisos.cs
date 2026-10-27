@@ -34,10 +34,12 @@ namespace EntreFunciones.Seguridad
             // ["Reportes"] = [
             //     new OpcionMenu { Texto = "Reportes", Href = "admin", Permiso = "Reportes" }
             // ],
-            // ["Espacios"] = [
-            //     new OpcionMenu { Texto = "Sedes y salas", Href = "admin/sedes", Permiso = "Espacios" },
-            //     new OpcionMenu { Texto = "Recursos y bloqueos", Href = "admin/recursos", Permiso = "Espacios" }
-            // ],
+            ["Espacios"] = [
+                new OpcionMenu { Texto = "Sedes", Href = "admin/sedes", Permiso = "Espacios" },
+                new OpcionMenu { Texto = "Salas", Href = "admin/salas", Permiso = "Espacios" },
+                new OpcionMenu { Texto = "Recursos", Href = "admin/recursos", Permiso = "Espacios" },
+                new OpcionMenu { Texto = "Bloqueos", Href = "admin/bloqueos", Permiso = "Espacios" }
+            ],
             // ["Programación"] = [
             //     new OpcionMenu { Texto = "Catálogo", Href = "admin/catalogo", Permiso = "Programacion" },
             //     new OpcionMenu { Texto = "Funciones", Href = "admin/funciones", Permiso = "Programacion" }
