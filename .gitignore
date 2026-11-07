@@ -5,6 +5,17 @@
 # Maven
 **/target/
 
+# Other build and test outputs
+**/bin/
+**/obj/
+**/out/
+**/build/
+**/dist/
+**/TestResults/
+**/test-results/
+coverage/
+coverage.*
+
 # Local and private configuration
 .env
 .env.*
@@ -22,9 +33,29 @@
 *.tmp
 *.temp
 *.bak
+*.old
+*.orig
+*.rej
+*.save
 *.log
+*.swp
+*.swo
 *~
-/EntreFunciones_*.zip
+~$*
+.DS_Store
+Thumbs.db
+[Dd]esktop.ini
+
+# Delivery archives and review artifacts
+*.zip
+*.7z
+*.rar
+*.tar
+*.tar.gz
+*.tgz
+*.patch
+*.diff
+/docs/LAB11/
 
 # Final delivery documents are intentionally versioned.
 !docs/
