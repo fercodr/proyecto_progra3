@@ -1,6 +1,11 @@
-@page "/reserva/{id:int}/pago"
+@page "/reserva/{Id:int}/pago"
+@attribute [Authorize(Policy = "Compras")]
+@using EntreFunciones.Servicios.Rest
+@implements IDisposable
+@inject CompraRestService Api
 @inject NavigationManager Nav
 <PageTitle>Reserva y Pago</PageTitle>
+@if (!string.IsNullOrEmpty(Mensaje)) { <div class="alert alert-info">@Mensaje</div> }
 
 <div class="container py-4">
     <div class="col-md-8 mx-auto">
@@ -16,27 +21,27 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h5 class="card-title mb-0">Código / ID: <span class="text-primary">@Reserva.CodigoOId</span></h5>
-                        <span class="badge bg-warning text-dark">Pendiente de Pago</span>
+                        <span class="badge bg-warning text-dark">@Reserva.Estado</span>
                     </div>
 
                     <p class="mb-1 text-muted"><strong>Función:</strong> @Reserva.FuncionNombre</p>
                     <p class="mb-1 text-muted"><strong>Fecha de Reserva:</strong> @Reserva.FechaCreacion.ToString("dd/MM/yyyy HH:mm")</p>
                     <p class="mb-3 text-muted"><strong>Monto Total:</strong> S/ @Reserva.MontoTotal.ToString("F2")</p>
                     <div class="alert alert-danger py-2 mb-0 text-center">
-                        <small><i class="bi bi-clock me-1"></i> Tiempo restante para realizar el pago: <strong>14:59</strong></small>
+                        <small><i class="bi bi-clock me-1"></i> Tiempo restante para realizar el pago: <strong>@TiempoRestante</strong></small>
                     </div>
                 </div>
             </div>
             <div class="card shadow-sm mb-4 text-center bg-light border-0">
                 <div class="card-body">
                     <h6 class="text-muted mb-2">Código de pago generado</h6>
-                    <h4 class="text-primary font-monospace mb-0">9876-5432-1098</h4>
+                    <h4 class="text-primary font-monospace mb-0">@(Pago?.CodigoPago ?? "Sin pago pendiente")</h4>
                 </div>
             </div>
             <div class="card shadow-sm mb-4">
                 <div class="card-body">
                     <h5 class="mb-3">Datos de la Tarjeta</h5>
-                    <form @onsubmit="RegistrarPago">
+                    <form @onsubmit="RegistrarPago" @onsubmit:preventDefault="true">
                         <AntiforgeryToken />
                         
                         <div class="mb-3">
@@ -60,7 +65,7 @@
                             </div>
                         </div>
 
-                        <button type="submit" class="btn btn-success w-100 mt-2">
+                        <button type="submit" class="btn btn-success w-100 mt-2" disabled="@(Enviando || !PuedePagar)">
                             Pagar S/ @Reserva.MontoTotal.ToString("F2")
                         </button>
                     </form>
@@ -69,7 +74,7 @@
 
             <!-- Botón Cancelar reserva -->
             <div class="text-center">
-                <button class="btn btn-outline-danger btn-sm" @onclick="CancelarReserva">
+                <button class="btn btn-outline-danger btn-sm" disabled="@(Enviando || Reserva.Estado != "ACTIVA")" @onclick="CancelarReserva">
                     Cancelar reserva
                 </button>
             </div>
@@ -78,36 +83,55 @@
 </div>
 
 @code {
-    [Parameter]
-    public int Id { get; set; }
-
-    public class ReservaDetalleDto
+    [Parameter] public int Id {get;set;}
+    private ReservaDto? Reserva;
+    private PagoDto? Pago;
+    private string Mensaje="";
+    private bool Enviando;
+    private double SegundosIniciales;
+    private readonly System.Diagnostics.Stopwatch Reloj=new();
+    private readonly CancellationTokenSource Cierre=new();
+    private Task? Temporizador;
+    private double Segundos=>Math.Max(0,SegundosIniciales-Reloj.Elapsed.TotalSeconds);
+    private bool PuedePagar=>Reserva?.Estado=="ACTIVA" && Segundos>0 && Pago?.Estado=="PENDIENTE" && string.IsNullOrEmpty(Pago.FechaPago);
+    private string TiempoRestante=>TimeSpan.FromSeconds(Segundos).ToString(@"mm\:ss");
+    private string NombreTitular="",NumeroTarjeta="",FechaExpiracion="",Cvc="";
+    protected override async Task OnParametersSetAsync()
     {
-        public int Id { get; set; }
-        public string CodigoOId { get; set; } = "RES-0001";
-        public string FuncionNombre { get; set; } = "Avengers Doomsday";
-        public DateTime FechaCreacion { get; set; } = DateTime.Now;
-        public decimal MontoTotal { get; set; } = 50.00m;
+        Reserva=null;Pago=null;Mensaje="";
+        try {
+            Reserva=await Api.Obtener(Id);
+            SegundosIniciales=Math.Max(0,(Reserva.FechaExpiracion-Reserva.FechaServidor).TotalSeconds);Reloj.Restart();
+            if(Reserva.Estado=="ACTIVA") {
+                Pago=await Api.GenerarPago(Id);
+                if(!string.IsNullOrEmpty(Pago.FechaPago))Mensaje="Pago registrado, pendiente de validación administrativa.";
+            }
+            Temporizador ??= ActualizarTiempo();
+        }catch(Exception e) when(e is HttpRequestException or InvalidOperationException or TaskCanceledException) { Mensaje=e.Message; }
     }
-
-    public ReservaDetalleDto? Reserva { get; set; }
-    public string NombreTitular { get; set; } = string.Empty;
-    public string NumeroTarjeta { get; set; } = string.Empty;
-    public string FechaExpiracion { get; set; } = string.Empty;
-    public string Cvc { get; set; } = string.Empty;
-
-    protected override void OnInitialized()
+    private async Task ActualizarTiempo()
     {
-        Reserva = new ReservaDetalleDto { Id = Id, CodigoOId = $"RES-{Id:D4}" };
+        using var timer=new PeriodicTimer(TimeSpan.FromSeconds(1));
+        try { while(await timer.WaitForNextTickAsync(Cierre.Token))await InvokeAsync(StateHasChanged); }
+        catch(OperationCanceledException) { }
     }
-
-    private void RegistrarPago()
+    private async Task RegistrarPago()
     {
+        if(Enviando || !PuedePagar || Pago==null)return;
+        Enviando=true;
+        try {
+            // Pago simulado: nunca se envían ni almacenan tarjeta o CVC.
+            await Api.RegistrarPago(Pago.Id);Pago.FechaPago="Registrado";
+            Mensaje="Pago registrado, pendiente de validación administrativa.";
+        }catch(Exception e) when(e is HttpRequestException or InvalidOperationException or TaskCanceledException) { Mensaje=e.Message; }
+        finally { NombreTitular=NumeroTarjeta=FechaExpiracion=Cvc="";Enviando=false; }
     }
-
-    private void CancelarReserva()
+    private async Task CancelarReserva()
     {
-        // RF-M5-01: por ahora solo regresa a la cartelera; falta liberar la reserva en el backend.
-        Nav.NavigateTo("/cartelera");
+        if(Enviando)return;Enviando=true;
+        try {await Api.Cancelar(Id);Nav.NavigateTo("/cartelera");}
+        catch(Exception e) when(e is HttpRequestException or InvalidOperationException or TaskCanceledException) { Mensaje=e.Message; }
+        finally {Enviando=false;}
     }
+    public void Dispose(){Cierre.Cancel();Cierre.Dispose();}
 }

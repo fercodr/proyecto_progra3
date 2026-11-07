@@ -11,8 +11,6 @@ import pe.edu.pucp.entrefunciones.modelo.usuarios.Cliente;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Sede;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Sala;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Butaca;
-import pe.edu.pucp.entrefunciones.modelo.espacios.Recurso;
-import pe.edu.pucp.entrefunciones.modelo.espacios.Bloqueo;
 import pe.edu.pucp.entrefunciones.modelo.catalogo.Evento;
 import pe.edu.pucp.entrefunciones.modelo.catalogo.Pelicula;
 import pe.edu.pucp.entrefunciones.modelo.catalogo.ObraTeatro;
@@ -65,7 +63,7 @@ public class Main {
                 + " (DNI " + admin.getDni() + ", codigo " + admin.getCodigoEmpleado() + ")");
         System.out.println("Clientes registrados: " + valeria.getNombres() + ", " + diego.getNombres());
 
-        // ---------- 2. Espacios: sede, salas, butacas, recurso, bloqueo ----------
+        // ---------- 2. Espacios: sede, salas, butacas ----------
         Sede sede = new Sede(1, "EntreFunciones Miraflores S.A.C.", "Av. Larco 1234", "Lima", "014001122");
         Sala sala1 = new Sala(1, sede, "Sala 1", 80, "Cine 2D");
         Sala sala2 = new Sala(2, sede, "Sala 2", 40, "Teatro");
@@ -83,15 +81,7 @@ public class Main {
         System.out.println("Sala 1 pertenece a: " + sala1.getSede().getRazonSocial());
         System.out.println("Butaca A1 pertenece a la sala: " + a1.getSala().getNombre());
 
-        Recurso proyector = new Recurso(1, "Proyector 4K Sala 1", "Proyeccion");
-        Bloqueo bloqueo = new Bloqueo();
-        bloqueo.setId(1);
-        bloqueo.setMotivo("Calibracion de proyector");
-        bloqueo.setFechaInicio(LocalDateTime.of(2026, 9, 18, 9, 0));
-        bloqueo.setFechaFin(LocalDateTime.of(2026, 9, 18, 11, 0));
-        bloqueo.setRecurso(proyector);
-        boolean bloqueoVigente = bloqueo.estaVigente(LocalDateTime.of(2026, 9, 18, 10, 0));
-        System.out.println("Bloqueo activo el 18/09 10:00? " + bloqueoVigente);
+
 
         // ---------- 3. Eventos (catalogo) y Funciones (programacion) ----------
 
@@ -286,8 +276,7 @@ public class Main {
 
         verificar("Sala 1 conoce su Sede", sala1.getSede() == sede);
         verificar("Butaca A1 conoce su Sala", a1.getSala() == sala1);
-        verificar("El bloqueo del proyector esta vigente dentro del intervalo configurado",
-                bloqueoVigente && bloqueo.getRecurso() == proyector && bloqueo.getSala() == null);
+
         verificar("La funcion de las 15h conoce su Sala", funcion15h.getSala() == sala1);
         verificar("Pelicula, ObraTeatro y ActividadCultural son Evento (herencia)",
                 (Object) interestelar instanceof Evento && (Object) laMuralla instanceof Evento

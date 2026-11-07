@@ -20,6 +20,8 @@ public class Reserva {
     private LocalDateTime fechaExpiracion;
     private EstadoReserva estado;
     private Pago pago;
+    private int cantidad = 1;
+    private double precioUnitario;
 
     public Reserva (int id, Funcion funcion, Cliente cliente, ArrayList<Butaca> butacas, LocalDateTime fechaCreacion, LocalDateTime fechaExpiracion){
         if(fechaCreacion != null && fechaExpiracion != null && !fechaExpiracion.isAfter(fechaCreacion)){
@@ -32,6 +34,7 @@ public class Reserva {
         setFechaCreacion(fechaCreacion);
         setFechaExpiracion(fechaExpiracion);
         this.estado=EstadoReserva.ACTIVA;
+        this.precioUnitario=funcion.getEvento().getPrecio();
     }
 
     //Constructor copia
@@ -50,6 +53,8 @@ public class Reserva {
         setFechaExpiracion(reserva.getFechaExpiracion());
         setEstado(reserva.getEstado());
         this.pago=reserva.getPago();
+        this.cantidad=reserva.cantidad;
+        this.precioUnitario=reserva.precioUnitario;
     }
 
     /** Se llama cuando el Pago asociado queda VALIDADO. */
@@ -72,7 +77,7 @@ public class Reserva {
 
     /** RF-M5-01: libera automaticamente el cupo cuando la reserva vence. */
     public boolean expirarSiVencida(LocalDateTime ahora){
-        if(estado == EstadoReserva.ACTIVA && ahora.isAfter(fechaExpiracion)){
+        if(estado == EstadoReserva.ACTIVA && !ahora.isBefore(fechaExpiracion)){
             estado = EstadoReserva.EXPIRADA;
             return true;
         }
@@ -113,14 +118,14 @@ public class Reserva {
     }
 
     public ArrayList<Butaca> getButacas(){
-        return butacas;
+        return new ArrayList<>(butacas);
     }
 
     public void setButacas(ArrayList<Butaca> butacas){
-        if(butacas == null || butacas.isEmpty()){
+        if(butacas == null || (funcion.requiereAsientoNumerado() && butacas.isEmpty())){
             throw new IllegalArgumentException("butacas no puede ser nulo ni vacio");
         }
-        this.butacas=butacas;
+        this.butacas=new ArrayList<>(butacas);
     }
 
     public LocalDateTime getFechaCreacion(){
@@ -164,4 +169,20 @@ public class Reserva {
         this.pago=pago;
     }
 
+
+    /** En aforo numerado, el conteo se obtiene de las butacas. */
+    public int getCantidad() { return funcion.requiereAsientoNumerado() ? butacas.size() : cantidad; }
+    public void setCantidad(int cantidad) {
+        if (cantidad <= 0) throw new IllegalArgumentException("La cantidad debe ser positiva");
+        this.cantidad = cantidad;
+    }
+    public double getPrecioUnitario() { return precioUnitario; }
+    public void setPrecioUnitario(double precio) {
+        if (!Double.isFinite(precio) || precio < 0) throw new IllegalArgumentException("Precio inválido");
+        this.precioUnitario = precio;
+    }
+    public double getMontoTotal() {
+        return java.math.BigDecimal.valueOf(precioUnitario).multiply(java.math.BigDecimal.valueOf(getCantidad()))
+                .setScale(2, java.math.RoundingMode.HALF_UP).doubleValue();
+    }
 }

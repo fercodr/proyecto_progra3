@@ -1,5 +1,6 @@
 package pe.edu.pucp.entrefunciones.dao.impl.ventas;
 
+import pe.edu.pucp.entrefunciones.dao.transacciones.ConnectionScope;
 import pe.edu.pucp.entrefunciones.dao.ventas.ReservaDAO;
 import pe.edu.pucp.entrefunciones.dao.impl.eventos.FuncionDAOImpl;
 import pe.edu.pucp.entrefunciones.dao.impl.usuarios.ClienteDAOImpl;
@@ -19,8 +20,8 @@ public class ReservaDAOImpl implements ReservaDAO {
     public List<Reserva> findAll() throws SQLException {
         String sql = "{call listar_reservas()}";
         try (
-                Connection conn = DBManager.getInstance().getConnection();
-                CallableStatement cmd = conn.prepareCall(sql);
+                ConnectionScope scope = ConnectionScope.openForRead();
+                CallableStatement cmd = scope.connection().prepareCall(sql);
                 ResultSet rs = cmd.executeQuery()) {
 
             List<Reserva> reservas = new ArrayList<>();
@@ -35,8 +36,8 @@ public class ReservaDAOImpl implements ReservaDAO {
     public List<Reserva> findByClienteId(int clienteId) throws SQLException {
         String sql = "{call listar_reservas_por_cliente(?)}";
         try (
-                Connection conn = DBManager.getInstance().getConnection();
-                CallableStatement cmd = conn.prepareCall(sql)) {
+                ConnectionScope scope = ConnectionScope.openForRead();
+                CallableStatement cmd = scope.connection().prepareCall(sql)) {
 
             cmd.setInt("p_cliente_id", clienteId);
 
@@ -54,8 +55,8 @@ public class ReservaDAOImpl implements ReservaDAO {
     public List<Reserva> findByFuncionId(int funcionId) throws SQLException {
         String sql = "{call listar_reservas_por_funcion(?)}";
         try (
-                Connection conn = DBManager.getInstance().getConnection();
-                CallableStatement cmd = conn.prepareCall(sql)) {
+                ConnectionScope scope = ConnectionScope.openForRead();
+                CallableStatement cmd = scope.connection().prepareCall(sql)) {
 
             cmd.setInt("p_funcion_id", funcionId);
 
@@ -77,8 +78,8 @@ public class ReservaDAOImpl implements ReservaDAO {
 
         String sql = "{call buscar_reserva_por_id(?)}";
         try (
-                Connection conn = DBManager.getInstance().getConnection();
-                CallableStatement cmd = conn.prepareCall(sql)) {
+                ConnectionScope scope = ConnectionScope.openForRead();
+                CallableStatement cmd = scope.connection().prepareCall(sql)) {
 
             cmd.setInt("p_id", id);
 
@@ -90,8 +91,8 @@ public class ReservaDAOImpl implements ReservaDAO {
 
     @Override
     public void insert(Reserva reserva) throws SQLException {
-        try (Connection conn = DBManager.getInstance().getConnection()) {
-            insertConButacas(reserva, conn);
+        try (ConnectionScope scope = ConnectionScope.openForRead();) {
+            insertConButacas(reserva, scope.connection());
         }
     }
 
@@ -101,14 +102,18 @@ public class ReservaDAOImpl implements ReservaDAO {
             throw new IllegalArgumentException("La reserva no puede ser nula");
         }
 
-        // 1. Insertar la cabecera "reserva"
-        String sqlReserva = "{call insertar_reserva(?, ?, ?, ?, ?, ?)}";
+        if (conn.getAutoCommit()) throw new SQLException("Crear una reserva requiere transacción");
+        // Cabecera y detalle comparten la transacción del BL.
+        String sqlReserva = "{call insertar_reserva(?, ?, ?, ?, ?, ?, ?, ?)}";
         try (CallableStatement cmd = conn.prepareCall(sqlReserva)) {
             cmd.setInt("p_funcion_id", reserva.getFuncion().getId());
             cmd.setInt("p_cliente_id", reserva.getCliente().getId());
             cmd.setTimestamp("p_fecha_creacion", Timestamp.valueOf(reserva.getFechaCreacion()));
             cmd.setTimestamp("p_fecha_expiracion", Timestamp.valueOf(reserva.getFechaExpiracion()));
             cmd.setString("p_estado", reserva.getEstado().name());
+            if (reserva.getFuncion().requiereAsientoNumerado()) cmd.setNull("p_cantidad", Types.INTEGER);
+            else cmd.setInt("p_cantidad", reserva.getCantidad());
+            cmd.setDouble("p_precio_unitario", reserva.getPrecioUnitario());
             cmd.registerOutParameter("p_id", Types.INTEGER);
 
             if (cmd.executeUpdate() == 0) {
@@ -135,21 +140,12 @@ public class ReservaDAOImpl implements ReservaDAO {
             throw new IllegalArgumentException("La reserva no puede ser nula");
         }
 
-        String sql = "{call modificar_reserva(?, ?, ?, ?, ?, ?, ?)}";
-        try (
-                Connection conn = DBManager.getInstance().getConnection();
-                CallableStatement cmd = conn.prepareCall(sql)) {
-
+        String sql = "{call modificar_reserva(?, ?)}";
+        try (ConnectionScope scope = ConnectionScope.openForRead();
+             CallableStatement cmd = scope.connection().prepareCall(sql)) {
             cmd.setInt("p_id", reserva.getId());
-            cmd.setInt("p_funcion_id", reserva.getFuncion().getId());
-            cmd.setInt("p_cliente_id", reserva.getCliente().getId());
-            cmd.setTimestamp("p_fecha_creacion", Timestamp.valueOf(reserva.getFechaCreacion()));
-            cmd.setTimestamp("p_fecha_expiracion", Timestamp.valueOf(reserva.getFechaExpiracion()));
             cmd.setString("p_estado", reserva.getEstado().name());
-
-            if (cmd.executeUpdate() == 0) {
-                throw new SQLException("No se pudo actualizar la reserva");
-            }
+            cmd.executeUpdate();
         }
     }
 
@@ -161,8 +157,8 @@ public class ReservaDAOImpl implements ReservaDAO {
 
         String sql = "{call eliminar_reserva(?)}";
         try (
-                Connection conn = DBManager.getInstance().getConnection();
-                CallableStatement cmd = conn.prepareCall(sql)) {
+                ConnectionScope scope = ConnectionScope.openForRead();
+                CallableStatement cmd = scope.connection().prepareCall(sql)) {
 
             cmd.setInt("p_id", id);
 
@@ -183,6 +179,8 @@ public class ReservaDAOImpl implements ReservaDAO {
                 rs.getTimestamp("fecha_expiracion").toLocalDateTime()
         );
 
+        if (!reserva.getFuncion().requiereAsientoNumerado()) reserva.setCantidad(rs.getInt("cantidad"));
+        reserva.setPrecioUnitario(rs.getDouble("precio_unitario"));
         reserva.setEstado(Enum.valueOf(EstadoReserva.class, rs.getString("estado")));
         return reserva;
     }

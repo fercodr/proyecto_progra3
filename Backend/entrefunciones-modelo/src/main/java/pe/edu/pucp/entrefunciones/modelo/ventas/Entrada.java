@@ -16,8 +16,8 @@ public class Entrada {
         setFechaEmision(fechaEmision);
         setCodigoQR(codigoQR);
         setPrecioFinal(precioFinal);
-        setButaca(butaca);
         setReserva(reserva);
+        setButaca(butaca);
         this.estado=EstadoEntrada.VIGENTE;
     }
 
@@ -30,8 +30,8 @@ public class Entrada {
         setFechaEmision(entrada.getFechaEmision());
         setCodigoQR(entrada.getCodigoQR());
         setPrecioFinal(entrada.getPrecioFinal());
-        setButaca(entrada.getButaca());
         setReserva(entrada.getReserva());
+        setButaca(entrada.getButaca());
         setEstado(entrada.getEstado());
     }
 
@@ -116,7 +116,7 @@ public class Entrada {
     }
 
     public void setButaca(Butaca butaca){
-        if(butaca == null){
+        if(butaca == null && reserva.getFuncion().requiereAsientoNumerado()){
             throw new IllegalArgumentException("butaca no puede ser nulo");
         }
         this.butaca=butaca;

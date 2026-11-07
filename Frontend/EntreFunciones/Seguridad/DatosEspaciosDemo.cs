@@ -6,7 +6,6 @@ namespace EntreFunciones.Seguridad {
     public static class DatosEspaciosDemo {
         public static readonly string[] TiposSala = ["2D", "3D", "IMAX", "Teatro", "Auditorio"];
         public static readonly string[] TiposButaca = ["General", "Preferencial", "Accesible"];
-        public static readonly string[] TiposRecurso = ["Proyección", "Audio", "Iluminación", "Escenografía", "Accesibilidad"];
 
         public static readonly List<SedeViewModel> Sedes = [
             new() { Id = 1, RazonSocial = "EntreFunciones Miraflores", Direccion = "Av. Larco 1150", Ciudad = "Lima", TelefonoContacto = "014451200" },
@@ -23,28 +22,6 @@ namespace EntreFunciones.Seguridad {
             new() { Id = 5, IdSede = 2, NombreSede = "EntreFunciones San Miguel", Nombre = "Sala 1", Aforo = 110, TipoSala = "2D" },
             new() { Id = 6, IdSede = 2, NombreSede = "EntreFunciones San Miguel", Nombre = "Sala 2", Aforo = 80, TipoSala = "2D", IsActivo = false },
             new() { Id = 7, IdSede = 3, NombreSede = "EntreFunciones Arequipa Centro", Nombre = "Auditorio Mercaderes", Aforo = 180, TipoSala = "Auditorio" }
-        ];
-
-        public static readonly List<RecursoViewModel> Recursos = [
-            new() { Id = 1, Nombre = "Proyector láser 4K #1", Tipo = "Proyección" },
-            new() { Id = 2, Nombre = "Proyector láser 4K #2", Tipo = "Proyección" },
-            new() { Id = 3, Nombre = "Sistema de sonido Dolby Atmos", Tipo = "Audio" },
-            new() { Id = 4, Nombre = "Micrófonos inalámbricos (set de 8)", Tipo = "Audio" },
-            new() { Id = 5, Nombre = "Consola de iluminación", Tipo = "Iluminación" },
-            new() { Id = 6, Nombre = "Escenario modular 6 x 4 m", Tipo = "Escenografía" },
-            new() { Id = 7, Nombre = "Rampa de accesibilidad portátil", Tipo = "Accesibilidad", IsActivo = false }
-        ];
-
-        // Fechas relativas a hoy para que siempre haya bloqueos vigentes, programados y finalizados
-        public static readonly List<BloqueoViewModel> Bloqueos = [
-            new() { Id = 1, TipoObjetivo = "Sala", IdSala = 2, NombreObjetivo = "Sala 2 · Miraflores", Motivo = "Cambio de pantalla",
-                    FechaInicio = DateTime.Today.AddDays(-1).AddHours(8), FechaFin = DateTime.Today.AddDays(2).AddHours(18) },
-            new() { Id = 2, TipoObjetivo = "Recurso", IdRecurso = 2, NombreObjetivo = "Proyector láser 4K #2", Motivo = "Mantenimiento preventivo",
-                    FechaInicio = DateTime.Today.AddHours(9), FechaFin = DateTime.Today.AddDays(1).AddHours(13) },
-            new() { Id = 3, TipoObjetivo = "Sala", IdSala = 4, NombreObjetivo = "Teatro Larco · Miraflores", Motivo = "Evento privado",
-                    FechaInicio = DateTime.Today.AddDays(6).AddHours(15), FechaFin = DateTime.Today.AddDays(6).AddHours(23) },
-            new() { Id = 4, TipoObjetivo = "Recurso", IdRecurso = 5, NombreObjetivo = "Consola de iluminación", Motivo = "Reparación de canal DMX",
-                    FechaInicio = DateTime.Today.AddDays(-12).AddHours(10), FechaFin = DateTime.Today.AddDays(-9).AddHours(18) }
         ];
 
         // Mapa de ejemplo de una sala: 8 filas (A-H) x 12 columnas = 96 butacas

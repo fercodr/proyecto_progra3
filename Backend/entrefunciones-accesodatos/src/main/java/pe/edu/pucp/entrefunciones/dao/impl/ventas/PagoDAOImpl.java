@@ -1,4 +1,5 @@
 package pe.edu.pucp.entrefunciones.dao.impl.ventas;
+import pe.edu.pucp.entrefunciones.dao.transacciones.ConnectionScope;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -30,8 +31,8 @@ public class PagoDAOImpl implements PagoDAO {
     public List<Pago> findAll() throws SQLException {
         String sql = "{call listar_pagos()}";
         try (
-                Connection conn = DBManager.getInstance().getConnection();
-                CallableStatement cmd = conn.prepareCall(sql);
+                ConnectionScope scope = ConnectionScope.openForRead();
+                CallableStatement cmd = scope.connection().prepareCall(sql);
                 ResultSet rs = cmd.executeQuery()) {
 
             List<Pago> pagos = new ArrayList<>();
@@ -50,8 +51,8 @@ public class PagoDAOImpl implements PagoDAO {
 
         String sql = "{call buscar_pago_por_id(?)}";
         try (
-                Connection conn = DBManager.getInstance().getConnection();
-                CallableStatement cmd = conn.prepareCall(sql)) {
+                ConnectionScope scope = ConnectionScope.openForRead();
+                CallableStatement cmd = scope.connection().prepareCall(sql)) {
 
             cmd.setInt("p_id", id);
 
@@ -65,8 +66,8 @@ public class PagoDAOImpl implements PagoDAO {
     public Pago findByReserva(int reservaId) throws SQLException {
         String sql = "{call buscar_pago_por_reserva(?)}";
         try (
-                Connection conn = DBManager.getInstance().getConnection();
-                CallableStatement cmd = conn.prepareCall(sql)) {
+                ConnectionScope scope = ConnectionScope.openForRead();
+                CallableStatement cmd = scope.connection().prepareCall(sql)) {
 
             cmd.setInt("p_reserva_id", reservaId);
 
@@ -84,8 +85,8 @@ public class PagoDAOImpl implements PagoDAO {
 
         String sql = "{call buscar_pago_por_codigo(?)}";
         try (
-                Connection conn = DBManager.getInstance().getConnection();
-                CallableStatement cmd = conn.prepareCall(sql)) {
+                ConnectionScope scope = ConnectionScope.openForRead();
+                CallableStatement cmd = scope.connection().prepareCall(sql)) {
 
             cmd.setString("p_codigo_pago", codigoPago);
 
@@ -103,8 +104,8 @@ public class PagoDAOImpl implements PagoDAO {
 
         String sql = "{call insertar_pago(?, ?, ?, ?, ?, ?)}";
         try (
-                Connection conn = DBManager.getInstance().getConnection();
-                CallableStatement cmd = conn.prepareCall(sql)) {
+                ConnectionScope scope = ConnectionScope.openForRead();
+                CallableStatement cmd = scope.connection().prepareCall(sql)) {
 
             cmd.setInt("p_reserva_id", pago.getReserva().getId());
             cmd.setString("p_codigo_pago", pago.getCodigoPago());
@@ -133,8 +134,8 @@ public class PagoDAOImpl implements PagoDAO {
 
         String sql = "{call modificar_pago(?, ?, ?, ?, ?)}";
         try (
-                Connection conn = DBManager.getInstance().getConnection();
-                CallableStatement cmd = conn.prepareCall(sql)) {
+                ConnectionScope scope = ConnectionScope.openForRead();
+                CallableStatement cmd = scope.connection().prepareCall(sql)) {
 
             cmd.setInt("p_id", pago.getId());
             cmd.setString("p_codigo_pago", pago.getCodigoPago());
@@ -160,8 +161,8 @@ public class PagoDAOImpl implements PagoDAO {
 
         String sql = "{call eliminar_pago(?)}";
         try (
-                Connection conn = DBManager.getInstance().getConnection();
-                CallableStatement cmd = conn.prepareCall(sql)) {
+                ConnectionScope scope = ConnectionScope.openForRead();
+                CallableStatement cmd = scope.connection().prepareCall(sql)) {
 
             cmd.setInt("p_id", id);
 

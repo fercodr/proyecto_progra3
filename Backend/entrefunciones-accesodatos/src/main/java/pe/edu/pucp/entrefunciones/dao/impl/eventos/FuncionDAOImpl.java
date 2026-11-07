@@ -1,4 +1,5 @@
 package pe.edu.pucp.entrefunciones.dao.impl.eventos;
+import pe.edu.pucp.entrefunciones.dao.transacciones.ConnectionScope;
 import pe.edu.pucp.entrefunciones.dao.impl.espacios.SalaDAOImpl;
 import pe.edu.pucp.entrefunciones.dao.transacciones.TransactionsManager;
 import pe.edu.pucp.entrefunciones.db.DBManager;
@@ -53,8 +54,8 @@ public class FuncionDAOImpl implements FuncionDAO {
     @Override
     public List<Funcion> findByEvento(Evento evento) throws SQLException {
         String sql = "{call listar_funciones_por_evento(?)}";
-        try (Connection connection = DBManager.getInstance().getConnection();
-             CallableStatement cmd = connection.prepareCall(sql)) {
+        try (ConnectionScope scope = ConnectionScope.openForRead();
+             CallableStatement cmd = scope.connection().prepareCall(sql)) {
 
             cmd.setInt("p_evento_id", evento.getId());
             try (ResultSet rs = cmd.executeQuery()) {
@@ -69,8 +70,8 @@ public class FuncionDAOImpl implements FuncionDAO {
     @Override
     public List<Funcion> findAll() throws SQLException {
         String sql = "{call listar_funciones()}";
-        try (Connection connection = DBManager.getInstance().getConnection();
-             CallableStatement cmd = connection.prepareCall(sql);
+        try (ConnectionScope scope = ConnectionScope.openForRead();
+             CallableStatement cmd = scope.connection().prepareCall(sql);
              ResultSet rs = cmd.executeQuery()) {
 
             List<Funcion> funciones = new ArrayList<>();
@@ -84,8 +85,8 @@ public class FuncionDAOImpl implements FuncionDAO {
     @Override
     public List<Funcion> findBySalaId(int idSala) throws SQLException {
         String sql = "{call listar_funciones_por_sala(?)}";
-        try (Connection connection = DBManager.getInstance().getConnection();
-             CallableStatement cmd = connection.prepareCall(sql)) {
+        try (ConnectionScope scope = ConnectionScope.openForRead();
+             CallableStatement cmd = scope.connection().prepareCall(sql)) {
 
             cmd.setInt("p_sala_id", idSala);
             try (ResultSet rs = cmd.executeQuery()) {
@@ -105,8 +106,8 @@ public class FuncionDAOImpl implements FuncionDAO {
         }
 
         String sql = "{call buscar_funcion_por_id(?)}";
-        try (Connection connection = DBManager.getInstance().getConnection();
-             CallableStatement cmd = connection.prepareCall(sql)) {
+        try (ConnectionScope scope = ConnectionScope.openForRead();
+             CallableStatement cmd = scope.connection().prepareCall(sql)) {
 
             cmd.setInt("p_id", id);
             try (ResultSet rs = cmd.executeQuery()) {
@@ -121,8 +122,8 @@ public class FuncionDAOImpl implements FuncionDAO {
             throw new IllegalArgumentException("La función no puede ser nula");
         }
 
-        try (Connection connection = DBManager.getInstance().getConnection()) {
-            insertar(connection, funcion.getEvento().getId(), funcion);
+        try (ConnectionScope scope = ConnectionScope.openForRead();) {
+            insertar(scope.connection(), funcion.getEvento().getId(), funcion);
         }
     }
 
@@ -132,8 +133,8 @@ public class FuncionDAOImpl implements FuncionDAO {
             throw new IllegalArgumentException("La función no puede ser nula");
         }
 
-        try (Connection connection = DBManager.getInstance().getConnection()) {
-            modificar(connection, funcion);
+        try (ConnectionScope scope = ConnectionScope.openForRead();) {
+            modificar(scope.connection(), funcion);
         }
     }
 
@@ -144,13 +145,11 @@ public class FuncionDAOImpl implements FuncionDAO {
         }
 
         String sql = "{call cancelar_funcion(?)}";
-        try (Connection connection = DBManager.getInstance().getConnection();
-             CallableStatement cmd = connection.prepareCall(sql)) {
+        try (ConnectionScope scope = ConnectionScope.openForRead();
+             CallableStatement cmd = scope.connection().prepareCall(sql)) {
 
             cmd.setInt("p_id", id);
-            if (cmd.executeUpdate() == 0) {
-                throw new SQLException("No se pudo cancelar la función");
-            }
+            cmd.executeUpdate();
         }
     }
     private void insertar(Connection connection, int idEvento, Funcion funcion) throws SQLException {

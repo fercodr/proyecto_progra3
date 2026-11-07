@@ -1,5 +1,6 @@
 package pe.edu.pucp.entrefunciones.dao.impl.usuarios;
 
+import pe.edu.pucp.entrefunciones.dao.transacciones.ConnectionScope;
 import pe.edu.pucp.entrefunciones.dao.usuarios.UsuarioDAO;
 import pe.edu.pucp.entrefunciones.db.DBManager;
 import pe.edu.pucp.entrefunciones.modelo.usuarios.Usuario;
@@ -37,8 +38,8 @@ public abstract class UsuarioDAOImpl<T extends Usuario>
         String sql = "{call " + getProcedimientoListar() + "()}";
 
         try (
-            Connection conn = DBManager.getInstance().getConnection();
-            CallableStatement cmd = conn.prepareCall(sql);
+            ConnectionScope scope = ConnectionScope.openForRead();
+            CallableStatement cmd = scope.connection().prepareCall(sql);
             ResultSet rs = cmd.executeQuery()
         ) {
 
@@ -62,8 +63,8 @@ public abstract class UsuarioDAOImpl<T extends Usuario>
         String sql = "{call " + getProcedimientoBuscarPorId() + "(?)}";
 
         try (
-            Connection conn = DBManager.getInstance().getConnection();
-            CallableStatement cmd = conn.prepareCall(sql)
+            ConnectionScope scope = ConnectionScope.openForRead();
+            CallableStatement cmd = scope.connection().prepareCall(sql)
         ) {
 
             cmd.setInt("p_id", id);
@@ -84,8 +85,8 @@ public abstract class UsuarioDAOImpl<T extends Usuario>
         String sql = "{call " + getProcedimientoBuscarPorCorreo() + "(?)}";
 
         try (
-            Connection conn = DBManager.getInstance().getConnection();
-            CallableStatement cmd = conn.prepareCall(sql)
+            ConnectionScope scope = ConnectionScope.openForRead();
+            CallableStatement cmd = scope.connection().prepareCall(sql)
         ) {
 
             cmd.setString("p_correo", correo);
@@ -106,8 +107,8 @@ public abstract class UsuarioDAOImpl<T extends Usuario>
         String sql = "{call " + getProcedimientoBuscarPorDni() + "(?)}";
 
         try (
-            Connection conn = DBManager.getInstance().getConnection();
-            CallableStatement cmd = conn.prepareCall(sql)
+            ConnectionScope scope = ConnectionScope.openForRead();
+            CallableStatement cmd = scope.connection().prepareCall(sql)
         ) {
 
             cmd.setString("p_dni", dni);
@@ -129,8 +130,8 @@ public abstract class UsuarioDAOImpl<T extends Usuario>
                 + "(?, ?, ?, ?, ?, ?, ?)}";
 
         try (
-            Connection conn = DBManager.getInstance().getConnection();
-            CallableStatement cmd = conn.prepareCall(sql)
+            ConnectionScope scope = ConnectionScope.openForRead();
+            CallableStatement cmd = scope.connection().prepareCall(sql)
         ) {
 
             cmd.setString("p_nombres", usuario.getNombres());
@@ -161,8 +162,8 @@ public abstract class UsuarioDAOImpl<T extends Usuario>
                 + "(?, ?, ?, ?, ?, ?, ?)}";
 
         try (
-            Connection conn = DBManager.getInstance().getConnection();
-            CallableStatement cmd = conn.prepareCall(sql)
+            ConnectionScope scope = ConnectionScope.openForRead();
+            CallableStatement cmd = scope.connection().prepareCall(sql)
         ) {
 
             cmd.setString("p_nombres", usuario.getNombres());
@@ -189,8 +190,8 @@ public abstract class UsuarioDAOImpl<T extends Usuario>
         String sql = "{call " + getProcedimientoEliminar() + "(?)}";
 
         try (
-            Connection conn = DBManager.getInstance().getConnection();
-            CallableStatement cmd = conn.prepareCall(sql)
+            ConnectionScope scope = ConnectionScope.openForRead();
+            CallableStatement cmd = scope.connection().prepareCall(sql)
         ) {
 
             cmd.setInt("p_id", id);

@@ -1,5 +1,6 @@
 package pe.edu.pucp.entrefunciones.dao.impl.usuarios;
 
+import pe.edu.pucp.entrefunciones.dao.transacciones.ConnectionScope;
 import pe.edu.pucp.entrefunciones.modelo.usuarios.Administrador;
 
 import java.sql.CallableStatement;
@@ -81,8 +82,8 @@ public class AdministradorDAOImpl extends UsuarioDAOImpl<Administrador> implemen
         String sql = "{call buscar_administrador_por_codigo(?)}";
 
         try (
-            Connection conn = DBManager.getInstance().getConnection();
-            CallableStatement cmd = conn.prepareCall(sql)
+            ConnectionScope scope = ConnectionScope.openForRead();
+            CallableStatement cmd = scope.connection().prepareCall(sql)
         ) {
 
             cmd.setString("p_codigo_empleado", codigoEmpleado);
@@ -107,8 +108,8 @@ public class AdministradorDAOImpl extends UsuarioDAOImpl<Administrador> implemen
                 "{call insertar_administrador(?, ?, ?, ?, ?, ?, ?, ?)}";
 
         try (
-            Connection conn = DBManager.getInstance().getConnection();
-            CallableStatement cmd = conn.prepareCall(sql)
+            ConnectionScope scope = ConnectionScope.openForRead();
+            CallableStatement cmd = scope.connection().prepareCall(sql)
         ) {
 
             cmd.setString("p_nombres", administrador.getNombres());
@@ -148,8 +149,8 @@ public class AdministradorDAOImpl extends UsuarioDAOImpl<Administrador> implemen
                 "{call modificar_administrador(?, ?, ?, ?, ?, ?, ?, ?)}";
 
         try (
-            Connection conn = DBManager.getInstance().getConnection();
-            CallableStatement cmd = conn.prepareCall(sql)
+            ConnectionScope scope = ConnectionScope.openForRead();
+            CallableStatement cmd = scope.connection().prepareCall(sql)
         ) {
 
             cmd.setString("p_nombres", administrador.getNombres());

@@ -17,7 +17,7 @@ namespace EntreFunciones.Seguridad
 
             // ---- Módulo Administrador ----
             ["Reportes"] = ["Administrador"],  // 10 Reportes (inicio de /admin)
-            ["Espacios"] = ["Administrador"],  // 11 Sedes y salas, 12 Butacas, 13 Recursos y bloqueos
+            ["Espacios"] = ["Administrador"],  // 11 Sedes y salas, 12 Butacas
             ["Programacion"] = ["Administrador"],  // 14 Catálogo, 15 Funciones, 16 Programar función
             ["Ventas"] = ["Administrador"],  // 17 Ventas, 18 Validación de ingreso
             ["Incidencias"] = ["Administrador"],  // 19 Incidencias
@@ -36,9 +36,7 @@ namespace EntreFunciones.Seguridad
             // ],
             ["Espacios"] = [
                 new OpcionMenu { Texto = "Sedes", Href = "admin/sedes", Permiso = "Espacios" },
-                new OpcionMenu { Texto = "Salas", Href = "admin/salas", Permiso = "Espacios" },
-                new OpcionMenu { Texto = "Recursos", Href = "admin/recursos", Permiso = "Espacios" },
-                new OpcionMenu { Texto = "Bloqueos", Href = "admin/bloqueos", Permiso = "Espacios" }
+                new OpcionMenu { Texto = "Salas", Href = "admin/salas", Permiso = "Espacios" }
             ],
             // ["Programación"] = [
             //     new OpcionMenu { Texto = "Catálogo", Href = "admin/catalogo", Permiso = "Programacion" },

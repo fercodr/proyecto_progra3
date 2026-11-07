@@ -6,6 +6,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddSeguridad();
+builder.Services.AddHttpClient<EntreFunciones.Servicios.Rest.CompraRestService>((sp, client) =>
+{
+    string url=sp.GetRequiredService<IConfiguration>()["Rest:BaseUrl"] ?? "http://localhost:8080/entrefunciones-rest/v1/api/";
+    client.BaseAddress=new Uri(url.TrimEnd('/')+"/");
+    client.Timeout=TimeSpan.FromSeconds(20);
+});
 
 var app = builder.Build();
 

@@ -53,32 +53,14 @@ public class PagoBLImpl implements PagoBL {
         }
     }
 
-    @Override
-    public void insert(Pago pago) throws BLException {
-        try {
-            pagoDAO.insert(pago);
-        } catch (SQLException ex) {
-            throw new BLException("Error de base de datos al registrar el pago", ex);
-        }
+    public PagoBLImpl() {
+        this(new pe.edu.pucp.entrefunciones.dao.impl.ventas.PagoDAOImpl(new pe.edu.pucp.entrefunciones.dao.impl.ventas.ReservaDAOImpl()),
+             new pe.edu.pucp.entrefunciones.dao.impl.ventas.ReservaDAOImpl(),
+             new pe.edu.pucp.entrefunciones.dao.impl.ventas.EntradaDAOImpl(new pe.edu.pucp.entrefunciones.dao.impl.ventas.ReservaDAOImpl(), new pe.edu.pucp.entrefunciones.dao.impl.espacios.ButacaDAOImpl()));
     }
-
-    @Override
-    public void update(Pago pago) throws BLException {
-        try {
-            pagoDAO.update(pago);
-        } catch (SQLException ex) {
-            throw new BLException("Error de base de datos al actualizar el pago", ex);
-        }
-    }
-
-    @Override
-    public void delete(Integer id) throws BLException {
-        try {
-            pagoDAO.delete(id);
-        } catch (SQLException ex) {
-            throw new BLException("Error de base de datos al rechazar el pago " + id, ex);
-        }
-    }
+    @Override public void insert(Pago pago) throws BLException { pago.setId(generarPago(pago.getReserva(),pago.getMonto()).getId()); }
+    @Override public void update(Pago pago) throws BLException { throw new BLException("Use procesarPago, validar o rechazar"); }
+    @Override public void delete(Integer id) throws BLException { rechazar(id); }
 
     @Override
     public Pago buscarPorReserva(int reservaId) throws BLException {
@@ -98,104 +80,77 @@ public class PagoBLImpl implements PagoBL {
         }
     }
 
-    @Override
-    public Pago generarPago(Reserva reserva, double monto) throws BLException {
-        if (reserva == null) {
-            throw new BLException("La reserva no puede ser nula");
-        }
 
-        try {
-            if (pagoDAO.findByReserva(reserva.getId()) != null) {
-                throw new BLException("La reserva " + reserva.getId() + " ya tiene un pago generado");
-            }
-
-            String codigoPago = "PAY-" + String.format("%06d", reserva.getId())
-                    + "-" + (System.currentTimeMillis() % 100000);
-            Pago pago = new Pago(0, codigoPago, monto, reserva);
-            pagoDAO.insert(pago);
-            return pago;
-        } catch (SQLException ex) {
-            throw new BLException(
-                    "Error de base de datos al generar el pago de la reserva " + reserva.getId(), ex);
-        }
+    private final pe.edu.pucp.entrefunciones.dao.impl.ControlOperacionesDAO control = new pe.edu.pucp.entrefunciones.dao.impl.ControlOperacionesDAO();
+    private Reserva bloquearReserva(int id) throws SQLException, BLException {
+        int funcion = control.funcionDeReserva(id);
+        control.bloquearFuncion(funcion);control.bloquearReserva(id);
+        control.expirarEnFuncion(funcion);
+        return reservaDAO.findById(id);
     }
-
-    @Override
-    public void procesarPago(int pagoId, double montoRecibido) throws BLException {
-        try {
-            Pago pago = pagoDAO.findById(pagoId);
-            if (pago == null) {
-                throw new BLException("No existe el pago " + pagoId);
-            }
-            if (!pago.procesarPago(montoRecibido)) {
-                throw new BLException(
-                        "El pago " + pago.getCodigoPago() + " no se pudo procesar: ya no esta "
-                                + "PENDIENTE, o el monto recibido (" + montoRecibido + ") es menor al esperado ("
-                                + pago.getMonto() + ")");
-            }
-            pagoDAO.update(pago);
-        } catch (SQLException ex) {
-            throw new BLException("Error de base de datos al procesar el pago " + pagoId, ex);
-        }
+    private Pago bloquearPago(int id) throws SQLException, BLException {
+        int reserva = control.reservaDePago(id);
+        bloquearReserva(reserva);control.bloquearPago(id);
+        return pagoDAO.findById(id);
     }
-
-    @Override
-    public List<Entrada> validar(int pagoId) throws BLException {
-        try {
-            Pago pago = pagoDAO.findById(pagoId);
-            if (pago == null) {
-                throw new BLException("No existe el pago " + pagoId);
-            }
-            if (!pago.validar()) {
-                throw new BLException(
-                        "El pago " + pago.getCodigoPago() + " no se pudo validar: todavia no esta "
-                                + "PENDIENTE con un pago registrado (ver procesarPago)");
-            }
-            pagoDAO.update(pago);
-
-            Reserva reserva = pago.getReserva();
-            reserva.confirmar();
-            reservaDAO.update(reserva);
-
-            List<Entrada> entradas = emitirEntradas(reserva);
-            for (Entrada entrada : entradas) {
-                entradaDAO.insert(entrada);
+    private void exigirActiva(Reserva reserva) throws SQLException, BLException {
+        if(reserva==null || reserva.getEstado()!=pe.edu.pucp.entrefunciones.modelo.ventas.EstadoReserva.ACTIVA
+            || !control.ahora().isBefore(reserva.getFechaExpiracion())
+            || reserva.getFuncion().getEstado()!=pe.edu.pucp.entrefunciones.modelo.funciones.EstadoFuncion.CONFIRMADA)
+            throw new BLException("La reserva venció, fue cancelada o su función no está disponible");
+    }
+    @Override public Pago generarPago(Reserva solicitada, double montoIgnorado) throws BLException {
+        if(solicitada==null) throw new BLException("Debe indicar una reserva");
+        return pe.edu.pucp.entrefunciones.bl.Transacciones.ejecutar("No se pudo generar el pago",()-> {
+            Reserva reserva=bloquearReserva(solicitada.getId());
+            Pago existente=pagoDAO.findByReserva(reserva.getId());
+            if(existente!=null && existente.getEstado()==pe.edu.pucp.entrefunciones.modelo.ventas.EstadoPago.VALIDADO) return existente;
+            exigirActiva(reserva);
+            if(existente!=null) return existente;
+            Pago pago=new Pago(0,"PAY-"+java.util.UUID.randomUUID(),reserva.getMontoTotal(),reserva);
+            pagoDAO.insert(pago);return pago;
+        });
+    }
+    @Override public void procesarPago(int id,double monto) throws BLException {
+        if(!Double.isFinite(monto) || monto<0) throw new BLException("Monto inválido");
+        pe.edu.pucp.entrefunciones.bl.Transacciones.ejecutar("No se pudo registrar el pago",()-> {
+            Pago pago=bloquearPago(id);
+            if(pago.getEstado()==pe.edu.pucp.entrefunciones.modelo.ventas.EstadoPago.VALIDADO) return null;
+            exigirActiva(pago.getReserva());
+            if(pago.getEstado()!=pe.edu.pucp.entrefunciones.modelo.ventas.EstadoPago.PENDIENTE || monto<pago.getMonto()) throw new BLException("El pago está rechazado o el monto es insuficiente");
+            if(pago.getFechaPago()==null) { pago.setFechaPago(control.ahora());pagoDAO.update(pago); }
+            return null;
+        });
+    }
+    @Override public List<Entrada> validar(int id) throws BLException {
+        return pe.edu.pucp.entrefunciones.bl.Transacciones.ejecutar("No se pudo validar el pago y emitir entradas",()-> {
+            Pago pago=bloquearPago(id);
+            Reserva reserva=pago.getReserva();
+            if(pago.getEstado()==pe.edu.pucp.entrefunciones.modelo.ventas.EstadoPago.VALIDADO)
+                return entradaDAO.findByReserva(reserva.getId());
+            exigirActiva(reserva);
+            if(!pago.validar()) throw new BLException("El cliente todavía no ha registrado el pago o fue rechazado");
+            if(!reserva.confirmar()) throw new BLException("La reserva no puede confirmarse");
+            pagoDAO.update(pago);reservaDAO.update(reserva);
+            List<Entrada> entradas=new ArrayList<>();
+            LocalDateTime ahora=control.ahora();
+            for(int i=0;i<reserva.getCantidad();i++) {
+                Butaca butaca=reserva.getFuncion().requiereAsientoNumerado()?reserva.getButacas().get(i):null;
+                Entrada entrada=new Entrada(0,ahora,"QR-"+java.util.UUID.randomUUID(),reserva.getPrecioUnitario(),butaca,reserva);
+                entradaDAO.insert(entrada);entradas.add(entrada);
             }
             return entradas;
-        } catch (SQLException ex) {
-            throw new BLException("Error de base de datos al validar el pago " + pagoId, ex);
-        }
+        });
     }
-
-    @Override
-    public void rechazar(int pagoId) throws BLException {
-        try {
-            Pago pago = pagoDAO.findById(pagoId);
-            if (pago == null) {
-                throw new BLException("No existe el pago " + pagoId);
-            }
-            if (!pago.rechazar()) {
-                throw new BLException(
-                        "El pago " + pago.getCodigoPago() + " no se pudo rechazar: ya no esta PENDIENTE");
-            }
+    @Override public void rechazar(int id) throws BLException {
+        pe.edu.pucp.entrefunciones.bl.Transacciones.ejecutar("No se pudo rechazar el pago",()-> {
+            Pago pago=bloquearPago(id);
+            if(pago.getEstado()==pe.edu.pucp.entrefunciones.modelo.ventas.EstadoPago.RECHAZADO) return null;
+            if(!pago.rechazar()) throw new BLException("El pago ya fue validado");
             pagoDAO.update(pago);
-        } catch (SQLException ex) {
-            throw new BLException("Error de base de datos al rechazar el pago " + pagoId, ex);
-        }
-    }
-
-
-    private List<Entrada> emitirEntradas(Reserva reserva) {
-        List<Entrada> entradas = new ArrayList<>();
-        double precio = reserva.getFuncion().getEvento().getPrecio();
-        LocalDateTime ahora = LocalDateTime.now();
-
-        int i = 1;
-        for (Butaca butaca : reserva.getButacas()) {
-            String qr = "QR-" + reserva.getPago().getCodigoPago() + "-" + i;
-            entradas.add(new Entrada(0, ahora, qr, precio, butaca, reserva));
-            i++;
-        }
-        return entradas;
+            Reserva reserva=pago.getReserva();
+            if(reserva.cancelar()) reservaDAO.update(reserva);
+            return null;
+        });
     }
 }

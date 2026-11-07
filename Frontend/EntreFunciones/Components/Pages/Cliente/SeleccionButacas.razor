@@ -1,8 +1,12 @@
 @page "/funcion/{Id:int}/butacas"
 @using System.Globalization
 @inject NavigationManager Nav
+@inject EntreFunciones.Servicios.Rest.CompraRestService Api
+@using EntreFunciones.Servicios.Rest
+@attribute [Authorize(Policy = "Compras")]
 
 <PageTitle>Selección de butacas</PageTitle>
+@if (!string.IsNullOrEmpty(Error)) { <div class="alert alert-danger">@Error</div> }
 
 @if (Funcion == null)
 {
@@ -14,7 +18,7 @@
 else
 {
     <h1 class="mb-1">@Funcion.Titulo</h1>
-    <p class="text-muted mb-4">@Funcion.Sede &middot; Sala @Funcion.Sala &middot; @Funcion.Fecha.ToString("dd/MM/yyyy") &middot; @Funcion.HoraInicio.ToString("hh\\:mm")</p>
+    <p class="text-muted mb-4">@Funcion.Sede &middot; Sala @Funcion.Sala &middot; @Funcion.Fecha.ToString("dd/MM/yyyy") &middot; @Funcion.HoraInicio</p>
 
     @if (!Funcion.AforoNumerado)
     {
@@ -42,16 +46,12 @@ else
                 {
                     <div class="d-flex align-items-center mb-1">
                         <span class="fila-letra">@fila</span>
-                        @for (int col = 1; col <= ColumnasPorFila; col++)
+                        @foreach (ButacaDto butaca in Butacas.Where(b => b.Fila == fila).OrderBy(b => b.Columna))
                         {
-                            int columna = col;
-                            string filaActual = fila;
-                            Butaca butaca = Butacas.First(b => b.Fila == filaActual && b.Columna == columna);
-                            <button type="button"
-                                    class="butaca @ClaseButaca(butaca)"
-                                    disabled="@(butaca.Estado != EstadoButaca.Libre && butaca.Estado != EstadoButaca.Elegida)"
+                            <button type="button" class="butaca @ClaseButaca(butaca)"
+                                    disabled="@(!butaca.Activo || butaca.Ocupada || Enviando)"
                                     @onclick="() => ToggleButaca(butaca)">
-                                @columna
+                                @butaca.Columna
                             </button>
                         }
                     </div>
@@ -60,7 +60,7 @@ else
                 <div class="d-flex gap-3 mt-3 small text-muted leyenda">
                     <span class="leyenda-item"><span class="muestra libre"></span>Libre</span>
                     <span class="leyenda-item"><span class="muestra ocupada"></span>Ocupada</span>
-                    <span class="leyenda-item"><span class="muestra bloqueada"></span>Bloqueada</span>
+                    <span class="leyenda-item"><span class="muestra bloqueada"></span>Inactiva</span>
                     <span class="leyenda-item"><span class="muestra elegida"></span>Elegida</span>
                 </div>
             </div>
@@ -72,7 +72,7 @@ else
             <h5 class="card-title">Resumen</h5>
             <p class="mb-1">Cantidad: <strong>@CantidadElegida</strong></p>
             <p class="mb-3">Total: <strong>S/ @((CantidadElegida * Funcion.Precio).ToString("N2", CultureInfo.InvariantCulture))</strong></p>
-            <button class="btn btn-primary w-100" disabled="@(CantidadElegida == 0)" @onclick="ContinuarAReserva">
+            <button class="btn btn-primary w-100" disabled="@(CantidadElegida <= 0 || Enviando)" @onclick="ContinuarAReserva">
                 Reservar
             </button>
         </div>
@@ -121,119 +121,32 @@ else
 </style>
 
 @code {
-    [Parameter]
-    public int Id { get; set; }
-
-    private const int ColumnasPorFila = 8;
-    private readonly string[] Filas = { "A", "B", "C", "D" };
-
-    // RF-M4-02: datos de ejemplo mientras no hay conexion al backend Java.
-    // Reemplazar por FuncionBL.findById(Id) y ButacaBL.listarPorSala al integrar.
-    private List<FuncionButacas> Funciones = new()
-    {
-        new FuncionButacas(101, "Interestelar", "Cineplanet Jockey Plaza", "3", DateTime.Today.AddDays(1), new TimeSpan(18, 30, 0), 22.00, true, 0),
-        new FuncionButacas(102, "Interestelar", "Cineplanet Jockey Plaza", "3", DateTime.Today.AddDays(1), new TimeSpan(21, 0, 0), 22.00, true, 0),
-        new FuncionButacas(103, "Spider-Man: Brand New Day", "Cineplanet Norte", "1", DateTime.Today.AddDays(2), new TimeSpan(20, 0, 0), 18.50, true, 0),
-        new FuncionButacas(104, "La Muralla", "Teatro Municipal", "Principal", DateTime.Today.AddDays(3), new TimeSpan(19, 0, 0), 35.00, true, 0),
-        new FuncionButacas(105, "Charla: Arte Contemporaneo", "Sede Miraflores", "Auditorio", DateTime.Today.AddDays(2), new TimeSpan(17, 0, 0), 10.00, false, 40),
-        new FuncionButacas(106, "Taller de Ceramica", "Sede Barranco", "Taller 1", DateTime.Today.AddDays(4), new TimeSpan(10, 0, 0), 25.00, false, 15),
-    };
-
-    private FuncionButacas? Funcion;
-    private List<Butaca> Butacas = new();
+    [Parameter] public int Id { get; set; }
+    private DisponibilidadDto? Funcion;
+    private List<ButacaDto> Butacas = [];
+    private IEnumerable<string> Filas => Butacas.Select(b=>b.Fila).Distinct().OrderBy(f=>f);
     private int Cantidad = 1;
-
-    protected override void OnParametersSet()
+    private bool Enviando;
+    private string Error = "";
+    protected override async Task OnParametersSetAsync()
     {
-        Funcion = Funciones.FirstOrDefault(f => f.Id == Id);
-        if (Funcion != null && Funcion.AforoNumerado)
-        {
-            GenerarButacasDeEjemplo();
-        }
+        Error="";Funcion=null;Butacas=[];
+        try { Funcion=await Api.Disponibilidad(Id);Butacas=Funcion.Butacas;Cantidad=Math.Min(1,Funcion.CuposDisponibles); }
+        catch(Exception e) when(e is HttpRequestException or InvalidOperationException or TaskCanceledException) { Error=e.Message; }
     }
-
-    private void GenerarButacasDeEjemplo()
+    private int CantidadElegida => Funcion?.AforoNumerado==true?Butacas.Count(b=>b.Elegida):Cantidad;
+    private string ClaseButaca(ButacaDto b)=>!b.Activo?"bloqueada":b.Ocupada?"ocupada":b.Elegida?"elegida":"libre";
+    private void ToggleButaca(ButacaDto b) { if(b.Activo && !b.Ocupada && !Enviando)b.Elegida=!b.Elegida; }
+    private void IncrementarCantidad() { if(Funcion!=null && Cantidad<Funcion.CuposDisponibles)Cantidad++; }
+    private void DecrementarCantidad() { if(Cantidad>1)Cantidad--; }
+    private async Task ContinuarAReserva()
     {
-        Butacas = new List<Butaca>();
-        var ocupadas = new HashSet<(string, int)> { ("A", 3), ("B", 1), ("B", 2), ("C", 5), ("D", 2), ("D", 3), ("D", 8) };
-        var bloqueadas = new HashSet<(string, int)> { ("A", 6), ("A", 7) };
-
-        foreach (string fila in Filas)
-        {
-            for (int columna = 1; columna <= ColumnasPorFila; columna++)
-            {
-                EstadoButaca estado = EstadoButaca.Libre;
-                if (ocupadas.Contains((fila, columna))) estado = EstadoButaca.Ocupada;
-                else if (bloqueadas.Contains((fila, columna))) estado = EstadoButaca.Bloqueada;
-
-                Butacas.Add(new Butaca(fila, columna, estado));
-            }
-        }
+        if(Enviando || Funcion==null || CantidadElegida<=0)return;
+        Enviando=true;Error="";
+        try {
+            var reserva=await Api.Crear(Id,Butacas.Where(b=>b.Elegida).Select(b=>b.Id).ToArray(),CantidadElegida);
+            Nav.NavigateTo($"/reserva/{reserva.Id}/pago");
+        } catch(Exception e) when(e is HttpRequestException or InvalidOperationException or TaskCanceledException) { Error=e.Message; }
+        finally { Enviando=false; }
     }
-
-    private int CantidadElegida => Funcion != null && Funcion.AforoNumerado
-        ? Butacas.Count(b => b.Estado == EstadoButaca.Elegida)
-        : Cantidad;
-
-    private string ClaseButaca(Butaca butaca) => butaca.Estado switch
-    {
-        EstadoButaca.Libre => "libre",
-        EstadoButaca.Ocupada => "ocupada",
-        EstadoButaca.Bloqueada => "bloqueada",
-        EstadoButaca.Elegida => "elegida",
-        _ => "libre"
-    };
-
-    private void ToggleButaca(Butaca butaca)
-    {
-        if (butaca.Estado == EstadoButaca.Libre)
-        {
-            butaca.Estado = EstadoButaca.Elegida;
-        }
-        else if (butaca.Estado == EstadoButaca.Elegida)
-        {
-            butaca.Estado = EstadoButaca.Libre;
-        }
-    }
-
-    private void IncrementarCantidad()
-    {
-        if (Funcion != null && Cantidad < Funcion.CuposDisponibles)
-        {
-            Cantidad++;
-        }
-    }
-
-    private void DecrementarCantidad()
-    {
-        if (Cantidad > 1)
-        {
-            Cantidad--;
-        }
-    }
-
-    private void ContinuarAReserva()
-    {
-        // RF-M5-01: siguiente pantalla (Reserva y pago) la implementa otro integrante del equipo.
-        Nav.NavigateTo($"/reserva/{Id}/pago");
-    }
-
-    private enum EstadoButaca { Libre, Ocupada, Bloqueada, Elegida }
-
-    private class Butaca
-    {
-        public string Fila { get; }
-        public int Columna { get; }
-        public EstadoButaca Estado { get; set; }
-
-        public Butaca(string fila, int columna, EstadoButaca estado)
-        {
-            Fila = fila;
-            Columna = columna;
-            Estado = estado;
-        }
-    }
-
-    private record FuncionButacas(int Id, string Titulo, string Sede, string Sala, DateTime Fecha, TimeSpan HoraInicio,
-        double Precio, bool AforoNumerado, int CuposDisponibles);
 }

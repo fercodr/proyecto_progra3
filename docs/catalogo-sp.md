@@ -1,150 +1,76 @@
-# Catálogo de procedimientos almacenados — LAB06
+# Catálogo de procedimientos almacenados vigente
 
-**Fuente verificada:** declaraciones `CREATE PROCEDURE` extraídas de [`procedimientos.sql`](../entrefunciones/sql/procedimientos.sql) del ZIP entregado para LAB06. **No se ha conectado a MySQL ni ejecutado los SP**.
+Fuente: `Backend/sql/procedimientos.sql`. Hay 68 definiciones únicas. Se verificó estáticamente la existencia y cantidad de argumentos de cada llamada literal de los DAO y la presencia de los procedimientos elegidos por sus métodos de nombres. Las pruebas de integración ejecutan los contratos usados en programación y ventas, además de consultas de usuarios, espacios y eventos. No todos los procedimientos de mantenimiento se ejecutaron individualmente.
 
-> **Regla:** no editar esta tabla sin revisar el SQL correspondiente. Es un inventario de lectura, no evidencia de que cada SP funcione.
+ButacaDAOImpl y algunas operaciones de SedeDAOImpl/SalaDAOImpl utilizan SQL parametrizado directamente: no requieren los SP antiguos de butacas.
 
-## Resumen
-
-| Área | SP declarados |
-| --- | ---: |
-| Usuarios · administrador | 8 |
-| Usuarios · cliente | 7 |
-| Sedes | 6 |
-| Salas | 6 |
-| Recursos | 5 |
-| Eventos | 11 |
-| Funciones | 8 |
-| Reservas | 8 |
-| Pagos | 7 |
-| Entradas | 7 |
-| **Total** | **73** |
-
-**Correspondencias estáticas:** 72 nombres de SP aparecen en alguno de los archivos `*DAOImpl.java`. `buscar_sede_por_razon_social` está declarado en el SQL pero no se encontró por nombre en los DAO de esta entrega. Una referencia textual **no garantiza que el código invoque correctamente el SP**.
-
-## Usuarios · administrador
-
-| Nombre de SP | Operación | DAO que lo menciona |
-| --- | --- | --- |
-| `listar_administradores` | Consulta/listado | AdministradorDAOImpl.java |
-| `buscar_administrador_por_id` | Consulta/búsqueda | AdministradorDAOImpl.java |
-| `buscar_administrador_por_correo` | Consulta/búsqueda | AdministradorDAOImpl.java |
-| `buscar_administrador_por_dni` | Consulta/búsqueda | AdministradorDAOImpl.java |
-| `buscar_administrador_por_codigo` | Consulta/búsqueda | AdministradorDAOImpl.java |
-| `insertar_administrador` | Inserción | AdministradorDAOImpl.java |
-| `modificar_administrador` | Modificación | AdministradorDAOImpl.java |
-| `eliminar_administrador` | Eliminación | AdministradorDAOImpl.java |
-
-## Usuarios · cliente
-
-| Nombre de SP | Operación | DAO que lo menciona |
-| --- | --- | --- |
-| `listar_clientes` | Consulta/listado | ClienteDAOImpl.java |
-| `buscar_cliente_por_id` | Consulta/búsqueda | ClienteDAOImpl.java |
-| `buscar_cliente_por_correo` | Consulta/búsqueda | ClienteDAOImpl.java |
-| `buscar_cliente_por_dni` | Consulta/búsqueda | ClienteDAOImpl.java |
-| `insertar_cliente` | Inserción | ClienteDAOImpl.java |
-| `modificar_cliente` | Modificación | ClienteDAOImpl.java |
-| `eliminar_cliente` | Eliminación | ClienteDAOImpl.java |
-
-## Sedes
-
-| Nombre de SP | Operación | DAO que lo menciona |
-| --- | --- | --- |
-| `listar_sedes` | Consulta/listado | SedeDAOImpl.java |
-| `buscar_sede_por_id` | Consulta/búsqueda | SedeDAOImpl.java |
-| `buscar_sede_por_razon_social` | Consulta/búsqueda | No identificado por nombre |
-| `insertar_sede` | Inserción | SedeDAOImpl.java |
-| `modificar_sede` | Modificación | SedeDAOImpl.java |
-| `eliminar_sede` | Eliminación | SedeDAOImpl.java |
-
-## Salas
-
-| Nombre de SP | Operación | DAO que lo menciona |
-| --- | --- | --- |
-| `listar_salas` | Consulta/listado | SalaDAOImpl.java |
-| `buscar_sala_por_id` | Consulta/búsqueda | SalaDAOImpl.java |
-| `listar_salas_por_sede` | Consulta/listado | SalaDAOImpl.java |
-| `insertar_sala` | Inserción | SalaDAOImpl.java |
-| `modificar_sala` | Modificación | SalaDAOImpl.java |
-| `eliminar_sala` | Eliminación | SalaDAOImpl.java |
-
-## Recursos
-
-| Nombre de SP | Operación | DAO que lo menciona |
-| --- | --- | --- |
-| `listar_recursos` | Consulta/listado | RecursoDAOImpl.java |
-| `buscar_recurso_por_id` | Consulta/búsqueda | RecursoDAOImpl.java |
-| `insertar_recurso` | Inserción | RecursoDAOImpl.java |
-| `modificar_recurso` | Modificación | RecursoDAOImpl.java |
-| `eliminar_recurso` | Eliminación | RecursoDAOImpl.java |
-
-## Eventos
-
-| Nombre de SP | Operación | DAO que lo menciona |
-| --- | --- | --- |
-| `listar_eventos` | Consulta/listado | EventoDAOImpl.java |
-| `buscar_evento_por_id` | Consulta/búsqueda | EventoDAOImpl.java |
-| `insertar_evento` | Inserción | EventoDAOImpl.java |
-| `modificar_evento` | Modificación | EventoDAOImpl.java |
-| `eliminar_evento` | Eliminación | EventoDAOImpl.java |
-| `insertar_evento_pelicula` | Inserción | EventoDAOImpl.java |
-| `modificar_evento_pelicula` | Modificación | EventoDAOImpl.java |
-| `insertar_evento_obra_teatro` | Inserción | EventoDAOImpl.java |
-| `modificar_evento_obra_teatro` | Modificación | EventoDAOImpl.java |
-| `insertar_evento_actividad_cultural` | Inserción | EventoDAOImpl.java |
-| `modificar_evento_actividad_cultural` | Modificación | EventoDAOImpl.java |
-
-## Funciones
-
-| Nombre de SP | Operación | DAO que lo menciona |
-| --- | --- | --- |
-| `listar_funciones` | Consulta/listado | FuncionDAOImpl.java |
-| `listar_funciones_por_evento` | Consulta/listado | FuncionDAOImpl.java |
-| `listar_funciones_por_sala` | Consulta/listado | FuncionDAOImpl.java |
-| `buscar_funcion_por_id` | Consulta/búsqueda | FuncionDAOImpl.java |
-| `insertar_funcion` | Inserción | FuncionDAOImpl.java |
-| `modificar_funcion` | Modificación | FuncionDAOImpl.java |
-| `cancelar_funcion` | Cancelación | FuncionDAOImpl.java |
-| `cancelar_funciones_por_evento` | Cancelación | FuncionDAOImpl.java |
-
-## Reservas
-
-| Nombre de SP | Operación | DAO que lo menciona |
-| --- | --- | --- |
-| `listar_reservas` | Consulta/listado | ReservaDAOImpl.java |
-| `listar_reservas_por_cliente` | Consulta/listado | ReservaDAOImpl.java |
-| `listar_reservas_por_funcion` | Consulta/listado | ReservaDAOImpl.java |
-| `buscar_reserva_por_id` | Consulta/búsqueda | ReservaDAOImpl.java |
-| `insertar_reserva` | Inserción | ReservaDAOImpl.java |
-| `insertar_reserva_butaca` | Inserción | ReservaDAOImpl.java |
-| `modificar_reserva` | Modificación | ReservaDAOImpl.java |
-| `eliminar_reserva` | Eliminación | ReservaDAOImpl.java |
-
-## Pagos
-
-| Nombre de SP | Operación | DAO que lo menciona |
-| --- | --- | --- |
-| `listar_pagos` | Consulta/listado | PagoDAOImpl.java |
-| `buscar_pago_por_id` | Consulta/búsqueda | PagoDAOImpl.java |
-| `buscar_pago_por_reserva` | Consulta/búsqueda | PagoDAOImpl.java |
-| `buscar_pago_por_codigo` | Consulta/búsqueda | PagoDAOImpl.java |
-| `insertar_pago` | Inserción | PagoDAOImpl.java |
-| `modificar_pago` | Modificación | PagoDAOImpl.java |
-| `eliminar_pago` | Eliminación | PagoDAOImpl.java |
-
-## Entradas
-
-| Nombre de SP | Operación | DAO que lo menciona |
-| --- | --- | --- |
-| `listar_entradas` | Consulta/listado | EntradaDAOImpl.java |
-| `buscar_entrada_por_id` | Consulta/búsqueda | EntradaDAOImpl.java |
-| `buscar_entrada_por_reserva` | Consulta/búsqueda | EntradaDAOImpl.java |
-| `buscar_entrada_por_qr` | Consulta/búsqueda | EntradaDAOImpl.java |
-| `insertar_entrada` | Inserción | EntradaDAOImpl.java |
-| `modificar_entrada` | Modificación | EntradaDAOImpl.java |
-| `eliminar_entrada` | Eliminación | EntradaDAOImpl.java |
-
-## Siguiente auditoría
-
-El siguiente paso es comprobar, por cada procedimiento **utilizado en un flujo**, sus parámetros IN/OUT, tablas leídas o escritas, manejo de resultados y transacción. Priorizar `insertar_sede`, `insertar_sala`, `insertar_reserva`, `insertar_pago` e `insertar_entrada`. No completar con supuestos: abrir DAO y SQL y registrar la prueba ejecutada.
+| Procedimiento | Parámetros IN OUT | DAO que lo referencia |
+|---|---|---|
+| `listar_sedes` | Sin parámetros | `SedeDAOImpl.java` |
+| `buscar_sede_por_id` | IN p_id INT | `SedeDAOImpl.java` |
+| `buscar_sede_por_razon_social` | IN p_razon_social VARCHAR(150) |  |
+| `insertar_sede` | IN p_razon_social VARCHAR(150),     IN p_direccion VARCHAR(200),     IN p_ciudad VARCHAR(80),     IN p_telefono_contacto VARCHAR(20),     IN p_activo BOOLEAN,     OUT p_id INT | `SedeDAOImpl.java` |
+| `modificar_sede` | IN p_id INT,     IN p_razon_social VARCHAR(150),     IN p_direccion VARCHAR(200),     IN p_ciudad VARCHAR(80),     IN p_telefono_contacto VARCHAR(20),     IN p_activo BOOLEAN | `SedeDAOImpl.java` |
+| `eliminar_sede` | IN p_id INT | `SedeDAOImpl.java` |
+| `listar_salas` | Sin parámetros | `SalaDAOImpl.java` |
+| `buscar_sala_por_id` | IN p_id INT | `SalaDAOImpl.java` |
+| `listar_salas_por_sede` | IN p_sede_id INT | `SalaDAOImpl.java` |
+| `insertar_sala` | IN p_sede_id INT,     IN p_nombre VARCHAR(100),     IN p_aforo INT,     IN p_tipo_sala VARCHAR(50),     IN p_activo BOOLEAN,     OUT p_id INT | `SalaDAOImpl.java` |
+| `modificar_sala` | IN p_id INT,     IN p_sede_id INT,     IN p_nombre VARCHAR(100),     IN p_aforo INT,     IN p_tipo_sala VARCHAR(50),     IN p_activo BOOLEAN | `SalaDAOImpl.java` |
+| `eliminar_sala` | IN p_id INT | `SalaDAOImpl.java` |
+| `listar_clientes` | Sin parámetros | `ClienteDAOImpl.java` |
+| `buscar_cliente_por_id` | IN p_id INT | `ClienteDAOImpl.java` |
+| `buscar_cliente_por_correo` | IN p_correo VARCHAR(150) | `ClienteDAOImpl.java` |
+| `insertar_cliente` | IN p_nombres VARCHAR(100),     IN p_apellidos VARCHAR(100),     IN p_correo VARCHAR(150),     IN p_contrasena VARCHAR(255),     IN p_dni VARCHAR(15),     IN p_activo BOOLEAN,     IN p_fecha_registro DATE,     IN p_telefono VARCHAR(20),     OUT p_id INT | `ClienteDAOImpl.java` |
+| `modificar_cliente` | IN p_id INT,     IN p_nombres VARCHAR(100),     IN p_apellidos VARCHAR(100),     IN p_correo VARCHAR(150),     IN p_contrasena VARCHAR(255),     IN p_dni VARCHAR(15),     IN p_activo BOOLEAN,     IN p_fecha_registro DATE,     IN p_telefono VARCHAR(20) | `ClienteDAOImpl.java` |
+| `eliminar_cliente` | IN p_id INT | `ClienteDAOImpl.java` |
+| `buscar_cliente_por_dni` | IN p_dni VARCHAR(15) | `ClienteDAOImpl.java` |
+| `buscar_administrador_por_dni` | IN p_dni VARCHAR(15) | `AdministradorDAOImpl.java` |
+| `listar_administradores` | Sin parámetros | `AdministradorDAOImpl.java` |
+| `buscar_administrador_por_id` | IN p_id INT | `AdministradorDAOImpl.java` |
+| `buscar_administrador_por_correo` | IN p_correo VARCHAR(150) | `AdministradorDAOImpl.java` |
+| `buscar_administrador_por_codigo` | IN p_codigo_empleado VARCHAR(20) | `AdministradorDAOImpl.java` |
+| `insertar_administrador` | IN p_nombres VARCHAR(100),IN p_apellidos VARCHAR(100),IN p_correo VARCHAR(150),IN p_contrasena VARCHAR(255),IN p_dni VARCHAR(15),IN p_activo BOOLEAN,IN p_codigo_empleado VARCHAR(20),OUT p_id INT | `AdministradorDAOImpl.java` |
+| `modificar_administrador` | IN p_nombres VARCHAR(100),IN p_apellidos VARCHAR(100),IN p_correo VARCHAR(150),IN p_contrasena VARCHAR(255),IN p_dni VARCHAR(15),IN p_activo BOOLEAN,IN p_codigo_empleado VARCHAR(20),IN p_id INT | `AdministradorDAOImpl.java` |
+| `eliminar_administrador` | IN p_id INT | `AdministradorDAOImpl.java` |
+| `listar_eventos` | Sin parámetros | `EventoDAOImpl.java` |
+| `buscar_evento_por_id` | IN p_id INT | `EventoDAOImpl.java` |
+| `insertar_evento` | IN p_precio DECIMAL(8,2),IN p_activo BOOLEAN,OUT p_id INT | `EventoDAOImpl.java` |
+| `modificar_evento` | IN p_id INT,IN p_precio DECIMAL(8,2),IN p_activo BOOLEAN | `EventoDAOImpl.java` |
+| `eliminar_evento` | IN p_id INT | `EventoDAOImpl.java` |
+| `insertar_evento_pelicula` | IN p_evento_id INT,IN p_nombre_pelicula VARCHAR(150),IN p_duracion_minutos INT,IN p_genero VARCHAR(30),IN p_clasificacion_edad VARCHAR(30),IN p_director VARCHAR(100) | `EventoDAOImpl.java` |
+| `modificar_evento_pelicula` | IN p_evento_id INT,IN p_nombre_pelicula VARCHAR(150),IN p_duracion_minutos INT,IN p_genero VARCHAR(30),IN p_clasificacion_edad VARCHAR(30),IN p_director VARCHAR(100) | `EventoDAOImpl.java` |
+| `insertar_evento_obra_teatro` | IN p_evento_id INT,IN p_titulo VARCHAR(150),IN p_nombre_director VARCHAR(100),IN p_elenco VARCHAR(300) | `EventoDAOImpl.java` |
+| `modificar_evento_obra_teatro` | IN p_evento_id INT,IN p_titulo VARCHAR(150),IN p_nombre_director VARCHAR(100),IN p_elenco VARCHAR(300) | `EventoDAOImpl.java` |
+| `insertar_evento_actividad_cultural` | IN p_evento_id INT,IN p_nombre VARCHAR(150),IN p_expositor VARCHAR(100),IN p_tipo_actividad VARCHAR(30) | `EventoDAOImpl.java` |
+| `modificar_evento_actividad_cultural` | IN p_evento_id INT,IN p_nombre VARCHAR(150),IN p_expositor VARCHAR(100),IN p_tipo_actividad VARCHAR(30) | `EventoDAOImpl.java` |
+| `listar_funciones` | Sin parámetros | `FuncionDAOImpl.java` |
+| `buscar_funcion_por_id` | IN p_id INT | `FuncionDAOImpl.java` |
+| `listar_funciones_por_evento` | IN p_evento_id INT | `FuncionDAOImpl.java` |
+| `listar_funciones_por_sala` | IN p_sala_id INT | `FuncionDAOImpl.java` |
+| `insertar_funcion` | IN p_evento_id INT,IN p_sala_id INT,IN p_fecha DATE,IN p_hora_inicio TIME,IN p_hora_fin TIME,IN p_idioma VARCHAR(30),IN p_estado VARCHAR(20),OUT p_id INT | `FuncionDAOImpl.java` |
+| `modificar_funcion` | IN p_id INT,IN p_sala_id INT,IN p_fecha DATE,IN p_hora_inicio TIME,IN p_hora_fin TIME,IN p_idioma VARCHAR(30),IN p_estado VARCHAR(20) | `FuncionDAOImpl.java` |
+| `cancelar_funcion` | IN p_id INT | `FuncionDAOImpl.java` |
+| `cancelar_funciones_por_evento` | IN p_evento_id INT | `FuncionDAOImpl.java` |
+| `listar_reservas` | Sin parámetros | `ReservaDAOImpl.java` |
+| `buscar_reserva_por_id` | IN p_id INT | `ReservaDAOImpl.java` |
+| `listar_reservas_por_cliente` | IN p_cliente_id INT | `ReservaDAOImpl.java` |
+| `listar_reservas_por_funcion` | IN p_funcion_id INT | `ReservaDAOImpl.java` |
+| `insertar_reserva` | IN p_funcion_id INT,IN p_cliente_id INT,IN p_fecha_creacion DATETIME,IN p_fecha_expiracion DATETIME,IN p_estado VARCHAR(20),IN p_cantidad INT,IN p_precio_unitario DECIMAL(8,2),OUT p_id INT | `ReservaDAOImpl.java` |
+| `insertar_reserva_butaca` | IN p_reserva_id INT,IN p_butaca_id INT | `ReservaDAOImpl.java` |
+| `modificar_reserva` | IN p_id INT,IN p_estado VARCHAR(20) | `ReservaDAOImpl.java` |
+| `eliminar_reserva` | IN p_id INT | `ReservaDAOImpl.java` |
+| `listar_pagos` | Sin parámetros | `PagoDAOImpl.java` |
+| `buscar_pago_por_id` | IN p_id INT | `PagoDAOImpl.java` |
+| `buscar_pago_por_reserva` | IN p_reserva_id INT | `PagoDAOImpl.java` |
+| `buscar_pago_por_codigo` | IN p_codigo_pago VARCHAR(50) | `PagoDAOImpl.java` |
+| `insertar_pago` | IN p_reserva_id INT,     IN p_codigo_pago VARCHAR(50),     IN p_monto DECIMAL(8,2),     IN p_fecha_pago DATETIME,     IN p_estado VARCHAR(20),     OUT p_id INT | `PagoDAOImpl.java` |
+| `modificar_pago` | IN p_id INT,     IN p_codigo_pago VARCHAR(50),     IN p_monto DECIMAL(8,2),     IN p_fecha_pago DATETIME,     IN p_estado VARCHAR(20) | `PagoDAOImpl.java` |
+| `eliminar_pago` | IN p_id INT | `PagoDAOImpl.java` |
+| `listar_entradas` | Sin parámetros | `EntradaDAOImpl.java` |
+| `buscar_entrada_por_id` | IN p_id INT | `EntradaDAOImpl.java` |
+| `buscar_entrada_por_reserva` | IN p_reserva_id INT | `EntradaDAOImpl.java` |
+| `buscar_entrada_por_qr` | IN p_codigo_qr VARCHAR(100) | `EntradaDAOImpl.java` |
+| `insertar_entrada` | IN p_reserva_id INT,     IN p_butaca_id INT,     IN p_fecha_emision DATETIME,     IN p_codigo_qr VARCHAR(100),     IN p_precio_final DECIMAL(8,2),     IN p_estado VARCHAR(20),     OUT p_id INT | `EntradaDAOImpl.java` |
+| `modificar_entrada` | IN p_id INT,     IN p_estado VARCHAR(20),     IN p_precio_final DECIMAL(8,2) | `EntradaDAOImpl.java` |
+| `eliminar_entrada` | IN p_id INT | `EntradaDAOImpl.java` |

@@ -4,15 +4,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import pe.edu.pucp.entrefunciones.bl.BLException;
-import pe.edu.pucp.entrefunciones.dao.espacios.BloqueoDAO;
 import pe.edu.pucp.entrefunciones.dao.espacios.ButacaDAO;
-import pe.edu.pucp.entrefunciones.dao.espacios.RecursoDAO;
 import pe.edu.pucp.entrefunciones.dao.espacios.SalaDAO;
 import pe.edu.pucp.entrefunciones.dao.espacios.SedeDAO;
 import pe.edu.pucp.entrefunciones.dao.transacciones.TransactionsManager;
-import pe.edu.pucp.entrefunciones.modelo.espacios.Bloqueo;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Butaca;
-import pe.edu.pucp.entrefunciones.modelo.espacios.Recurso;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Sala;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Sede;
 
@@ -139,80 +135,6 @@ class EspaciosBLImplTest {
     }
 
     @Test
-    void bloqueoRechazaSolapamientoSobreLaMismaSala() {
-        Contexto contexto = new Contexto();
-        Sala sala = sala(1, contexto.sede, "Principal", 20);
-        contexto.salaDAO.guardar(sala);
-        contexto.bloqueoDAO.guardar(bloqueoSala(1, sala, 10, 12));
-
-        BLException error = assertThrows(BLException.class,
-                () -> contexto.bloqueoBL().insert(bloqueoSala(0, sala, 11, 13)));
-
-        assertTrue(error.getMessage().contains("superpone"));
-    }
-
-    @Test
-    void bloqueoPermitePeriodosContiguos() {
-        Contexto contexto = new Contexto();
-        Sala sala = sala(1, contexto.sede, "Principal", 20);
-        contexto.salaDAO.guardar(sala);
-        contexto.bloqueoDAO.guardar(bloqueoSala(1, sala, 10, 12));
-
-        assertDoesNotThrow(() ->
-                contexto.bloqueoBL().insert(bloqueoSala(0, sala, 12, 14)));
-    }
-
-    @Test
-    void bloqueoActualizadoNoSeDetectaASiMismo() {
-        Contexto contexto = new Contexto();
-        Sala sala = sala(1, contexto.sede, "Principal", 20);
-        contexto.salaDAO.guardar(sala);
-        Bloqueo registrado = bloqueoSala(1, sala, 10, 12);
-        contexto.bloqueoDAO.guardar(registrado);
-
-        assertDoesNotThrow(() -> contexto.bloqueoBL().update(registrado));
-    }
-
-    @Test
-    void bloqueoExigeExactamenteUnObjetivo() {
-        Contexto contexto = new Contexto();
-        Bloqueo bloqueo = new Bloqueo();
-        bloqueo.setMotivo("Mantenimiento");
-        bloqueo.setFechaInicio(LocalDateTime.of(2026, 10, 1, 10, 0));
-        bloqueo.setFechaFin(LocalDateTime.of(2026, 10, 1, 12, 0));
-
-        BLException error = assertThrows(BLException.class,
-                () -> contexto.bloqueoBL().insert(bloqueo));
-
-        assertTrue(error.getMessage().contains("exclusivamente"));
-    }
-
-    @Test
-    void bloqueoNoSeEliminaFisicamenteSinSoporteDeEstado() {
-        Contexto contexto = new Contexto();
-        Sala sala = sala(1, contexto.sede, "Principal", 20);
-        contexto.salaDAO.guardar(sala);
-        contexto.bloqueoDAO.guardar(bloqueoSala(1, sala, 10, 12));
-
-        BLException error = assertThrows(BLException.class,
-                () -> contexto.bloqueoBL().delete(1));
-
-        assertTrue(error.getMessage().contains("baja lógica"));
-        assertEquals(0, contexto.bloqueoDAO.eliminaciones);
-    }
-
-    @Test
-    void bajaLogicaEsIdempotenteParaEntidadesYaInactivas() {
-        Contexto contexto = new Contexto();
-        Recurso recurso = new Recurso(1, "Proyector", "Video");
-        recurso.desactivar();
-        contexto.recursoDAO.guardar(recurso);
-
-        assertDoesNotThrow(() -> new RecursoBLImpl(contexto.recursoDAO).delete(1));
-        assertEquals(0, contexto.recursoDAO.eliminaciones);
-    }
-
-    @Test
     void fallaSqlConservaLaCausa() {
         SedeDAOConFalla dao = new SedeDAOConFalla();
         SedeBLImpl bl = new SedeBLImpl(dao);
@@ -233,16 +155,6 @@ class EspaciosBLImplTest {
 
     private static Butaca butaca(int id, Sala sala, String fila, int columna) {
         return new Butaca(id, sala, fila, columna, "General");
-    }
-
-    private static Bloqueo bloqueoSala(int id, Sala sala, int horaInicio, int horaFin) {
-        Bloqueo bloqueo = new Bloqueo();
-        bloqueo.setId(id);
-        bloqueo.setMotivo("Mantenimiento");
-        bloqueo.setFechaInicio(LocalDateTime.of(2026, 10, 1, horaInicio, 0));
-        bloqueo.setFechaFin(LocalDateTime.of(2026, 10, 1, horaFin, 0));
-        bloqueo.setSala(sala);
-        return bloqueo;
     }
 
     private static Connection conexionFalsa() {
@@ -277,8 +189,6 @@ class EspaciosBLImplTest {
         private final SedeDAOFalso sedeDAO = new SedeDAOFalso();
         private final SalaDAOFalso salaDAO = new SalaDAOFalso();
         private final ButacaDAOFalso butacaDAO = new ButacaDAOFalso();
-        private final RecursoDAOFalso recursoDAO = new RecursoDAOFalso();
-        private final BloqueoDAOFalso bloqueoDAO = new BloqueoDAOFalso();
 
         private Contexto() {
             sedeDAO.guardar(sede);
@@ -292,9 +202,7 @@ class EspaciosBLImplTest {
             return new ButacaBLImpl(butacaDAO, salaDAO);
         }
 
-        private BloqueoBLImpl bloqueoBL() {
-            return new BloqueoBLImpl(bloqueoDAO, salaDAO, recursoDAO);
-        }
+
     }
 
     private static class SedeDAOFalso implements SedeDAO {
@@ -360,60 +268,4 @@ class EspaciosBLImplTest {
         @Override public void delete(Integer id) { butacas.get(id).desactivar(); }
     }
 
-    private static final class RecursoDAOFalso implements RecursoDAO {
-        private final Map<Integer, Recurso> recursos = new LinkedHashMap<>();
-        private int secuencia = 1;
-        private int eliminaciones;
-
-        void guardar(Recurso recurso) {
-            recursos.put(recurso.getId(), recurso);
-            secuencia = Math.max(secuencia, recurso.getId() + 1);
-        }
-
-        @Override public List<Recurso> findAll() { return new ArrayList<>(recursos.values()); }
-        @Override public Recurso findById(Integer id) { return recursos.get(id); }
-        @Override public void insert(Recurso recurso) { recurso.setId(secuencia++); guardar(recurso); }
-        @Override public void update(Recurso recurso) { guardar(recurso); }
-        @Override public void delete(Integer id) { recursos.get(id).desactivar(); eliminaciones++; }
-    }
-
-    private static final class BloqueoDAOFalso implements BloqueoDAO {
-        private final Map<Integer, Bloqueo> bloqueos = new LinkedHashMap<>();
-        private int secuencia = 1;
-        private int eliminaciones;
-
-        void guardar(Bloqueo bloqueo) {
-            bloqueos.put(bloqueo.getId(), bloqueo);
-            secuencia = Math.max(secuencia, bloqueo.getId() + 1);
-        }
-
-        @Override public List<Bloqueo> findAll() { return new ArrayList<>(bloqueos.values()); }
-        @Override public List<Bloqueo> findBySalaId(int salaId) {
-            return bloqueos.values().stream()
-                    .filter(b -> b.getSala() != null && b.getSala().getId() == salaId).toList();
-        }
-        @Override public List<Bloqueo> findByRecursoId(int recursoId) {
-            return bloqueos.values().stream()
-                    .filter(b -> b.getRecurso() != null && b.getRecurso().getId() == recursoId).toList();
-        }
-        @Override public boolean existsOverlapBySalaId(int salaId, LocalDateTime inicio,
-                                                       LocalDateTime fin, Integer idExcluir) {
-            return findBySalaId(salaId).stream().anyMatch(b -> seCruza(b, inicio, fin, idExcluir));
-        }
-        @Override public boolean existsOverlapByRecursoId(int recursoId, LocalDateTime inicio,
-                                                          LocalDateTime fin, Integer idExcluir) {
-            return findByRecursoId(recursoId).stream().anyMatch(b -> seCruza(b, inicio, fin, idExcluir));
-        }
-        @Override public Bloqueo findById(Integer id) { return bloqueos.get(id); }
-        @Override public void insert(Bloqueo bloqueo) { bloqueo.setId(secuencia++); guardar(bloqueo); }
-        @Override public void update(Bloqueo bloqueo) { guardar(bloqueo); }
-        @Override public void delete(Integer id) { bloqueos.remove(id); eliminaciones++; }
-
-        private boolean seCruza(Bloqueo existente, LocalDateTime inicio,
-                                LocalDateTime fin, Integer idExcluir) {
-            return (idExcluir == null || existente.getId() != idExcluir)
-                    && inicio.isBefore(existente.getFechaFin())
-                    && fin.isAfter(existente.getFechaInicio());
-        }
-    }
 }

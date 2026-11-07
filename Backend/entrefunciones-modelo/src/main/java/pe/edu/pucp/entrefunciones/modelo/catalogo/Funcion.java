@@ -54,6 +54,7 @@ public class Funcion {
         }
 
         setId(funcion.getId());
+        setEvento(funcion.getEvento());
         setSala(funcion.getSala());
         setFecha(funcion.getFecha());
         setHoraInicio(funcion.getHoraInicio());
@@ -63,7 +64,7 @@ public class Funcion {
 
         this.entradas = new ArrayList<>(funcion.getEntradas());
 
-        // El evento se asigna después mediante Evento.agregarFuncion()
+        // Copia la misma referencia de contenido; no duplica el catálogo.
     }
 
     public int calcularDuracion() {

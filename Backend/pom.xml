@@ -14,6 +14,7 @@
         <module>entrefunciones-modelo</module>
         <module>entrefunciones-accesodatos</module>
         <module>entrefunciones-negocio</module>
+        <module>entrefunciones-rest</module>
     </modules>
 
     <properties>

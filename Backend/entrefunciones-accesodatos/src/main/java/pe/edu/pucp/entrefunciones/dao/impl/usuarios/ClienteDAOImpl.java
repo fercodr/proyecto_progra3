@@ -1,5 +1,6 @@
 package pe.edu.pucp.entrefunciones.dao.impl.usuarios;
 
+import pe.edu.pucp.entrefunciones.dao.transacciones.ConnectionScope;
 import pe.edu.pucp.entrefunciones.dao.usuarios.ClienteDAO;
 import pe.edu.pucp.entrefunciones.db.DBManager;
 import pe.edu.pucp.entrefunciones.modelo.usuarios.Cliente;
@@ -84,8 +85,8 @@ public class ClienteDAOImpl
                 "{call insertar_cliente(?, ?, ?, ?, ?, ?, ?, ?, ?)}";
 
         try (
-            Connection conn = DBManager.getInstance().getConnection();
-            CallableStatement cmd = conn.prepareCall(sql)
+            ConnectionScope scope = ConnectionScope.openForRead();
+            CallableStatement cmd = scope.connection().prepareCall(sql)
         ) {
 
             cmd.setString("p_nombres", cliente.getNombres());
@@ -125,8 +126,8 @@ public class ClienteDAOImpl
                 "{call modificar_cliente(?, ?, ?, ?, ?, ?, ?, ?, ?)}";
 
         try (
-            Connection conn = DBManager.getInstance().getConnection();
-            CallableStatement cmd = conn.prepareCall(sql)
+            ConnectionScope scope = ConnectionScope.openForRead();
+            CallableStatement cmd = scope.connection().prepareCall(sql)
         ) {
 
             cmd.setString("p_nombres", cliente.getNombres());

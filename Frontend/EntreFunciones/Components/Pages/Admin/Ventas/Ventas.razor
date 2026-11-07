@@ -1,6 +1,8 @@
 @page "/admin/ventas"
 @attribute [Authorize(Policy = "Ventas")]
 @rendermode InteractiveServer
+@inject EntreFunciones.Servicios.Rest.CompraRestService Api
+@using EntreFunciones.Servicios.Rest
 
 @using Microsoft.AspNetCore.Components.QuickGrid
 @using EntreFunciones.ViewModels
@@ -8,6 +10,7 @@
 
 <div class="mx-auto p-3" style="max-width: 1100px;">
 
+    @if (!string.IsNullOrEmpty(Error)) { <div class="alert alert-danger">@Error</div> }
     <!-- Encabezado -->
     <h1 class="fs-2 fw-bold mb-1">Ventas</h1>
     <p class="text-secondary mb-4">
@@ -44,7 +47,7 @@
                         <label for="funcion" class="form-label">Función</label>
                         <select id="funcion" class="form-select" @bind="FiltroFuncion">
                             <option value="">Todas</option>
-                            @foreach (string funcion in DatosVentasDemo.Funciones)
+                            @foreach (string funcion in Reservas.Select(r=>r.Funcion).Distinct())
                             {
                                 <option value="@funcion">@funcion</option>
                             }
@@ -60,7 +63,7 @@
                         <label for="estadoReserva" class="form-label">Estado</label>
                         <select id="estadoReserva" class="form-select" @bind="FiltroEstadoReserva">
                             <option value="">Todos</option>
-                            @foreach (string estado in DatosVentasDemo.EstadosReserva)
+                            @foreach (string estado in new[] { "Pendiente", "Confirmada", "Expirada", "Cancelada" })
                             {
                                 <option value="@estado">@estado</option>
                             }
@@ -215,7 +218,7 @@
                             <button type="button" class="btn btn-outline-secondary" @onclick="CancelarConfirmacion">
                                 Cancelar
                             </button>
-                            <button type="button" class="btn btn-primary" @onclick="ConfirmarOperacion">
+                            <button type="button" class="btn btn-primary" disabled="@Enviando" @onclick="ConfirmarOperacion">
                                 Confirmar
                             </button>
                         </div>
@@ -229,7 +232,7 @@
 </div>
 
 @code {
-    // RF-M5-02 / RF-M5-03 (Lab 9: solo interfaz, datos de ejemplo, sin logica de negocio real)
+    // RF-M5-02 / RF-M5-03: consumo REST; las reglas viven en Java.
     private string PestanaActiva = "reservas";
 
     // --- Reservas ---
@@ -251,20 +254,33 @@
     private string PagoAConfirmar = string.Empty;
     private string MensajeConfirmacion = string.Empty;
 
-    protected override void OnInitialized()
+    private List<ReservaVentaViewModel> Reservas=[];
+    private List<PagoVentaViewModel> Pagos=[];
+    private List<PagoDto> PagosApi=[];
+    private List<ReservaDto> ReservasApi=[];
+    private bool RechazarOperacion,Enviando;
+    private string Error="";
+    protected override async Task OnInitializedAsync() { await Cargar(); }
+    private async Task Cargar()
     {
-        ReservasFiltradas = DatosVentasDemo.Reservas.AsQueryable();
-        PagosFiltrados = DatosVentasDemo.Pagos.AsQueryable();
+        try {
+            ReservasApi=await Api.ListarReservas();PagosApi=await Api.ListarPagos();
+            Reservas=ReservasApi.Select(r=>new ReservaVentaViewModel {Codigo=r.CodigoOId,Cliente=r.Cliente,Dni=r.Dni,Funcion=r.FuncionNombre,FechaFuncion=r.FechaFuncion.ToString("dd/MM/yyyy HH:mm"),Cantidad=r.Cantidad,Expira=r.FechaExpiracion.ToString("dd/MM/yyyy HH:mm"),Estado=EstadoReserva(r.Estado)}).ToList();
+            Pagos=PagosApi.Select(p=>new PagoVentaViewModel {Codigo=p.CodigoPago,Reserva=$"RES-{p.ReservaId}",Cliente=p.Cliente,Monto=p.Monto,FechaPago=p.FechaPago,Estado=p.Estado=="PENDIENTE"?"Pendiente":p.Estado=="VALIDADO"?"Validado":"Rechazado"}).ToList();
+            FiltrarReservas();FiltrarPagos();
+        } catch(Exception e) when(e is HttpRequestException or InvalidOperationException or TaskCanceledException) {Error=e.Message;}
     }
+    private static string EstadoReserva(string e)=>e switch {"ACTIVA"=>"Pendiente","CONFIRMADA"=>"Confirmada","EXPIRADA"=>"Expirada",_=>"Cancelada"};
 
     private void FiltrarReservas()
     {
-        ReservasFiltradas = DatosVentasDemo.Reservas
-            .Where(r => string.IsNullOrEmpty(FiltroFuncion) || r.Funcion == FiltroFuncion.Split(" ·")[0])
+        ReservasFiltradas = Reservas
+            .Where(r => string.IsNullOrEmpty(FiltroFuncion) || r.Funcion == FiltroFuncion)
             .Where(r => string.IsNullOrEmpty(FiltroCliente)
                 || r.Cliente.Contains(FiltroCliente, StringComparison.OrdinalIgnoreCase)
                 || r.Dni.Contains(FiltroCliente, StringComparison.OrdinalIgnoreCase))
             .Where(r => string.IsNullOrEmpty(FiltroEstadoReserva) || r.Estado == FiltroEstadoReserva)
+            .Where(r => string.IsNullOrEmpty(FiltroExpiracion) || ReservasApi.Any(a=>a.CodigoOId==r.Codigo && (FiltroExpiracion=="Vencido"?a.FechaExpiracion<=a.FechaServidor:a.FechaExpiracion>a.FechaServidor)))
             .AsQueryable();
     }
 
@@ -274,12 +290,12 @@
         FiltroCliente = string.Empty;
         FiltroEstadoReserva = string.Empty;
         FiltroExpiracion = string.Empty;
-        ReservasFiltradas = DatosVentasDemo.Reservas.AsQueryable();
+        ReservasFiltradas = Reservas.AsQueryable();
     }
 
     private void FiltrarPagos()
     {
-        PagosFiltrados = DatosVentasDemo.Pagos
+        PagosFiltrados = Pagos
             .Where(p => string.IsNullOrEmpty(FiltroCodigoPago) || p.Codigo.Contains(FiltroCodigoPago, StringComparison.OrdinalIgnoreCase))
             .Where(p => !SoloPendientes || p.Estado == "Pendiente")
             .AsQueryable();
@@ -289,7 +305,7 @@
     {
         FiltroCodigoPago = string.Empty;
         SoloPendientes = false;
-        PagosFiltrados = DatosVentasDemo.Pagos.AsQueryable();
+        PagosFiltrados = Pagos.AsQueryable();
     }
 
     private string ClaseBadgeReserva(string estado) => estado switch
@@ -311,8 +327,9 @@
 
     private void ValidarPago(string codigo)
     {
+        RechazarOperacion=false;
         PagoAConfirmar = codigo;
-        PagoVentaViewModel? pago = DatosVentasDemo.Pagos.FirstOrDefault(p => p.Codigo == codigo);
+        PagoVentaViewModel? pago = Pagos.FirstOrDefault(p => p.Codigo == codigo);
         MensajeConfirmacion = pago == null
             ? string.Empty
             : $"¿Deseas validar el pago {pago.Codigo} de {pago.Cliente} por S/ {pago.Monto:F2}?";
@@ -320,8 +337,9 @@
 
     private void RechazarPago(string codigo)
     {
+        RechazarOperacion=true;
         PagoAConfirmar = codigo;
-        PagoVentaViewModel? pago = DatosVentasDemo.Pagos.FirstOrDefault(p => p.Codigo == codigo);
+        PagoVentaViewModel? pago = Pagos.FirstOrDefault(p => p.Codigo == codigo);
         MensajeConfirmacion = pago == null
             ? string.Empty
             : $"¿Deseas rechazar el pago {pago.Codigo} de {pago.Cliente} por S/ {pago.Monto:F2}?";
@@ -333,10 +351,14 @@
         MensajeConfirmacion = string.Empty;
     }
 
-    private void ConfirmarOperacion()
+    private async Task ConfirmarOperacion()
     {
-        // Lab 9: solo interfaz. Aqui se llamara al servicio de pagos (validar/rechazar) al integrar el backend.
-        PagoAConfirmar = string.Empty;
-        MensajeConfirmacion = string.Empty;
+        if(Enviando)return;Enviando=true;Error="";
+        try {
+            var pago=PagosApi.Single(p=>p.CodigoPago==PagoAConfirmar);
+            if(RechazarOperacion)await Api.Rechazar(pago.Id);else await Api.Validar(pago.Id);
+            CancelarConfirmacion();await Cargar();
+        }catch(Exception e) when(e is HttpRequestException or InvalidOperationException or TaskCanceledException) {Error=e.Message;}
+        finally {Enviando=false;}
     }
 }

@@ -76,23 +76,14 @@
             </div>
             
 
-            <h5 class="mb-3">Venta y requerimientos</h5>
+            <h5 class="mb-3">Venta</h5>
             <div class="row g-3 mb-3">
                 <div class="col-md-6">
                     <label class="form-label">Precio (S/)</label>
                     <InputNumber class="form-control" @bind-Value="Formulario.Precio" />
                 </div>
              
-                <div class="col-12">
-                    <label class="form-label d-block">Recursos requeridos</label>
-                    @foreach (string recurso in Recursos)
-                    {
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="checkbox" id="@recurso" />
-                            <label class="form-check-label" for="@recurso">@recurso</label>
-                        </div>
-                    }
-                </div>
+
             </div>
 
             <button type="submit" class="btn btn-primary">Guardar</button>
@@ -125,7 +116,6 @@
     private string[] Idiomas = { "Español", "Subtitulada", "Doblada" };
     private string[] Sedes = { "Sede Miraflores", "Sede Barranco" };
     private string[] Salas = { "Sala 1", "Sala 2", "Sala 3" };
-    private string[] Recursos = { "Proyector 4K", "Sistema de sonido", "Micrófono inalámbrico" };
 
     protected override void OnParametersSet()
     {

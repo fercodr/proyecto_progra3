@@ -15,6 +15,18 @@ public class FuncionBLImpl implements FuncionBL {
 
     private final FuncionDAO funcionDAO = new FuncionDAOImpl();
     private final EventoDAO eventoDAO = new EventoDAOImpl();
+    private final pe.edu.pucp.entrefunciones.dao.impl.ControlOperacionesDAO control = new pe.edu.pucp.entrefunciones.dao.impl.ControlOperacionesDAO();
+    private void validarDisponibilidad(Funcion funcion) throws SQLException, BLException {
+        control.bloquearSala(funcion.getSala().getId());
+        var sala = new pe.edu.pucp.entrefunciones.dao.impl.espacios.SalaDAOImpl().findById(funcion.getSala().getId());
+        if(sala==null || !sala.estaActivo() || !sala.getSede().estaActivo()) throw new BLException("La sala o sede no está activa");
+        if(funcion.getEstado()!=pe.edu.pucp.entrefunciones.modelo.funciones.EstadoFuncion.CANCELADA)
+            for(Funcion otra:funcionDAO.findBySalaId(sala.getId()))
+                if(otra.getId()!=funcion.getId() && otra.getEstado()!=pe.edu.pucp.entrefunciones.modelo.funciones.EstadoFuncion.CANCELADA
+                    && otra.getFecha().equals(funcion.getFecha())
+                    && funcion.getHoraInicio().isBefore(otra.getHoraFin()) && funcion.getHoraFin().isAfter(otra.getHoraInicio()))
+                    throw new BLException("El horario se cruza con otra función de la misma sala");
+    }
 
     @Override
     public List<Funcion> findAll() throws BLException {
@@ -38,46 +50,23 @@ public class FuncionBLImpl implements FuncionBL {
         }
     }
 
-    @Override
-    public void insert(Funcion funcion) throws BLException {
+    @Override public void insert(Funcion funcion) throws BLException {
         validar(funcion);
-        validarEvento(funcion);
-
-        try {
-            funcionDAO.insert(funcion);
-
-        } catch (SQLException e) {
-            throw new BLException(
-                    "No se pudo registrar la función", e);
-        }
+        pe.edu.pucp.entrefunciones.bl.Transacciones.ejecutar("No se pudo programar la función",()-> {
+            validarEvento(funcion);validarDisponibilidad(funcion);funcionDAO.insert(funcion);return null;
+        });
     }
-
-    @Override
-    public void update(Funcion funcion) throws BLException {
-        validarExiste(funcion.getId());
+    @Override public void update(Funcion funcion) throws BLException {
         validar(funcion);
-        validarEvento(funcion);
-
-        try {
-            funcionDAO.update(funcion);
-
-        } catch (SQLException e) {
-            throw new BLException(
-                    "No se pudo actualizar la función", e);
-        }
+        pe.edu.pucp.entrefunciones.bl.Transacciones.ejecutar("No se pudo actualizar la función",()-> {
+            validarExiste(funcion.getId());validarEvento(funcion);validarDisponibilidad(funcion);
+            funcionDAO.update(funcion);return null;
+        });
     }
-
-    @Override
-    public void delete(Integer id) throws BLException {
-        validarExiste(id);
-
-        try {
-            funcionDAO.delete(id);
-
-        } catch (SQLException e) {
-            throw new BLException(
-                    "No se pudo cancelar la función", e);
-        }
+    @Override public void delete(Integer id) throws BLException {
+        pe.edu.pucp.entrefunciones.bl.Transacciones.ejecutar("No se pudo cancelar la función",()-> {
+            validarExiste(id);funcionDAO.delete(id);return null;
+        });
     }
 
     private void validar(Funcion funcion) throws BLException {
@@ -115,7 +104,7 @@ public class FuncionBLImpl implements FuncionBL {
         if (!funcion.getHoraFin()
                 .isAfter(funcion.getHoraInicio())) {
             throw new BLException(
-                    "La hora de fin debe ser posterior a la hora de inicio");
+                    "La hora de fin debe ser posterior al inicio en el mismo día; divida los horarios que cruzan medianoche");
         }
 
         if (funcion.getIdioma() == null
@@ -134,8 +123,8 @@ public class FuncionBLImpl implements FuncionBL {
             throws BLException {
 
         try {
-            if (eventoDAO.findById(
-                    funcion.getEvento().getId()) == null) {
+            var evento = eventoDAO.findById(funcion.getEvento().getId());
+            if (evento == null || !evento.estaActivo()) {
 
                 throw new BLException(
                         "No existe el evento asociado a la función");

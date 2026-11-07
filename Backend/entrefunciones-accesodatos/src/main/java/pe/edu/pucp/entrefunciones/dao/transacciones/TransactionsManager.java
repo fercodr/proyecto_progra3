@@ -40,6 +40,7 @@ public final class TransactionsManager {
         }
 
         try {
+            connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
             connection.setAutoCommit(false);
             ESTADO.set(new EstadoTransaccion(connection));
         } catch (SQLException e) {
