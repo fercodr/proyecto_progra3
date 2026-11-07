@@ -1,37 +1,44 @@
 ﻿@page "/perfil"
 
-<PageTitle>Mi Perfil</PageTitle>
+<PageTitle>Mi perfil</PageTitle>
 
-<div class="col-md-6 mx-auto">
-    <h3 class="mb-4">Mi Perfil</h3>
+<div class="page-shell page-shell-narrow">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Mi perfil</h1>
+            <p class="page-description">Actualiza tus datos personales y contraseña.</p>
+        </div>
+    </div>
+    <div class="card card-body shadow-sm">
     <form method="post" @onsubmit="GuardarPerfil">
         <AntiforgeryToken />
         
         <div class="mb-3">
-            <label class="form-label">Nombre completo</label>
-            <input tabindex="1" @bind="Nombre" type="text" class="form-control" placeholder="Tu nombre" required />
+            <label for="nombrePerfil" class="form-label">Nombre completo</label>
+            <input id="nombrePerfil" @bind="Nombre" type="text" class="form-control" placeholder="Tu nombre" autocomplete="name" required />
         </div>
 
         <div class="mb-3">
-            <label class="form-label">Correo electrónico</label>
-            <input tabindex="2" @bind="Correo" type="email" class="form-control" placeholder="correo@ejemplo.com" required />
+            <label for="correoPerfil" class="form-label">Correo electrónico</label>
+            <input id="correoPerfil" @bind="Correo" type="email" class="form-control" placeholder="correo@ejemplo.com" autocomplete="email" required />
         </div>
 
         <hr class="my-4" />
 
         <h5 class="mb-3">Cambiar contraseña</h5>
         <div class="mb-3">
-            <label class="form-label">Contraseña actual</label>
-            <input tabindex="3" @bind="PasswordActual" type="password" class="form-control" />
+            <label for="passwordActual" class="form-label">Contraseña actual</label>
+            <input id="passwordActual" @bind="PasswordActual" type="password" class="form-control" autocomplete="current-password" />
         </div>
 
         <div class="mb-3">
-            <label class="form-label">Nueva contraseña</label>
-            <input tabindex="4" @bind="PasswordNuevo" type="password" class="form-control" />
+            <label for="passwordNuevo" class="form-label">Nueva contraseña</label>
+            <input id="passwordNuevo" @bind="PasswordNuevo" type="password" class="form-control" autocomplete="new-password" />
         </div>
 
-        <button tabindex="5" type="submit" class="btn btn-primary w-100">Guardar cambios</button>
+        <button type="submit" class="btn btn-primary w-100">Guardar cambios</button>
     </form>
+    </div>
 </div>
 
 @code {

@@ -1,6 +1,6 @@
 @page "/admin/salas/{IdSala:int}/butacas"
 @attribute [Authorize(Policy = "Espacios")]
-@inject NavigationManager Nav;
+@inject NavigationManager Nav
 
 @using EntreFunciones.ViewModels
 
@@ -9,14 +9,15 @@
 
 <PageTitle>Butacas</PageTitle>
 
-<div class="d-flex justify-content-between mb-3">
+<div class="page-shell">
+<div class="page-header">
     <div>
-        <h3 class="mb-0">Butacas · @Sala.Nombre</h3>
-        <small class="text-muted">@Sala.NombreSede · @Sala.TipoSala · Aforo @Sala.Aforo · @Butacas.Count(b => b.IsActivo) butacas activas</small>
+        <h1 class="page-title">Butacas · @Sala.Nombre</h1>
+        <p class="page-description">@Sala.NombreSede · @Sala.TipoSala · Aforo @Sala.Aforo · @Butacas.Count(b => b.IsActivo) butacas activas</p>
     </div>
-    <div class="d-flex gap-2 align-items-start">
+    <div class="d-flex flex-wrap gap-2 align-items-start">
         <a class="btn btn-outline-secondary" href="admin/salas">Volver</a>
-        <button class="btn btn-success" @onclick="() => NuevaButaca()">Nueva butaca</button>
+        <button type="button" class="btn btn-primary" @onclick="NuevaButaca">Nueva butaca</button>
     </div>
 </div>
 
@@ -31,6 +32,7 @@
                             <span class="etiqueta-fila">@fila</span>
                             @foreach (ButacaViewModel butaca in Butacas.Where(b => b.Fila == fila).OrderBy(b => b.Columna)) {
                                 <button type="button" class="@ClaseButaca(butaca)" title="@butaca.Codigo"
+                                        aria-label="@DescripcionButaca(butaca)" aria-pressed="@(butaca.Id == IdSeleccionada)"
                                         @onclick="() => SeleccionarButaca(butaca)">
                                     @butaca.Columna
                                 </button>
@@ -55,10 +57,10 @@
 
     <div class="col-lg-4">
         @if (ViewModel == null) {
-            <div class="alert alert-info">Haga clic en una butaca del mapa para editarla o presione <b>Nueva butaca</b>.</div>
+            <div class="alert alert-info" role="status">Selecciona una butaca del mapa para editarla o presiona <strong>Nueva butaca</strong>.</div>
         }
         else {
-            <h5 class="mb-3">@(EsNueva ? "Nueva butaca" : $"Editar butaca {ViewModel.Codigo}")</h5>
+            <h2 class="h5 mb-3">@(EsNueva ? "Nueva butaca" : $"Editar butaca {ViewModel.Codigo}")</h2>
 
             <EditForm Model="ViewModel" OnValidSubmit="Guardar">
                 <DataAnnotationsValidator />
@@ -66,19 +68,19 @@
 
                 <div class="row">
                     <div class="col-6 mb-3">
-                        <label class="form-label">Fila</label>
-                        <InputText tabindex="1" class="form-control" @bind-Value="ViewModel.Fila" />
+                        <label for="filaButaca" class="form-label">Fila</label>
+                        <InputText id="filaButaca" class="form-control" @bind-Value="ViewModel.Fila" />
                         <ValidationMessage For="() => ViewModel.Fila" />
                     </div>
                     <div class="col-6 mb-3">
-                        <label class="form-label">Columna</label>
-                        <InputNumber tabindex="2" class="form-control" @bind-Value="ViewModel.Columna" />
+                        <label for="columnaButaca" class="form-label">Columna</label>
+                        <InputNumber id="columnaButaca" class="form-control" @bind-Value="ViewModel.Columna" />
                         <ValidationMessage For="() => ViewModel.Columna" />
                     </div>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Tipo de butaca</label>
-                    <InputSelect tabindex="3" class="form-select" @bind-Value="ViewModel.TipoButaca">
+                    <label for="tipoButaca" class="form-label">Tipo de butaca</label>
+                    <InputSelect id="tipoButaca" class="form-select" @bind-Value="ViewModel.TipoButaca">
                         @foreach (string tipo in DatosEspaciosDemo.TiposButaca) {
                             <option value="@tipo">@tipo</option>
                         }
@@ -86,15 +88,16 @@
                     <ValidationMessage For="() => ViewModel.TipoButaca" />
                 </div>
                 <div class="form-check mb-3">
-                    <InputCheckbox tabindex="4" class="form-check-input" @bind-Value="ViewModel.IsActivo" />
-                    <label class="form-check-label">Activo</label>
+                    <InputCheckbox id="butacaActiva" class="form-check-input" @bind-Value="ViewModel.IsActivo" />
+                    <label for="butacaActiva" class="form-check-label">Activo</label>
                 </div>
 
-                <button tabindex="5" type="submit" class="btn btn-primary">Guardar</button>
-                <button tabindex="6" type="button" class="btn btn-outline-secondary" @onclick="() => Cancelar()">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Guardar</button>
+                <button type="button" class="btn btn-outline-secondary" @onclick="Cancelar">Cancelar</button>
             </EditForm>
         }
     </div>
+</div>
 </div>
 
 @code {
@@ -157,4 +160,7 @@
             _ => "butaca general"
         };
     }
+
+    private string DescripcionButaca(ButacaViewModel butaca) =>
+        $"Butaca {butaca.Codigo}: {(!butaca.IsActivo ? "inactiva" : butaca.TipoButaca.ToLowerInvariant())}";
 }

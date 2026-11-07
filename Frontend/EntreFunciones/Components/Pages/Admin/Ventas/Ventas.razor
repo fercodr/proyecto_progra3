@@ -8,24 +8,43 @@
 @using EntreFunciones.ViewModels
 @using EntreFunciones.Seguridad
 
-<div class="mx-auto p-3" style="max-width: 1100px;">
+<PageTitle>Ventas</PageTitle>
 
-    @if (!string.IsNullOrEmpty(Error)) { <div class="alert alert-danger">@Error</div> }
+<div class="page-shell">
+    @if (Cargando)
+    {
+        <div class="d-flex align-items-center gap-2 text-secondary" role="status" aria-live="polite">
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+            Cargando reservas y pagos...
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(Error))
+    {
+        <div class="alert alert-danger" role="alert" aria-live="assertive">
+            <h1 class="h5 alert-heading">No pudimos cargar Ventas</h1>
+            <p>@Error</p>
+            <button type="button" class="btn btn-danger btn-sm" @onclick="Cargar">Reintentar</button>
+        </div>
+    }
+    else
+    {
     <!-- Encabezado -->
-    <h1 class="fs-2 fw-bold mb-1">Ventas</h1>
-    <p class="text-secondary mb-4">
-        Consulta las reservas y gestiona los pagos de las funciones.
-    </p>
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Ventas</h1>
+            <p class="page-description">Consulta las reservas y gestiona los pagos de las funciones.</p>
+        </div>
+    </div>
 
     <!-- Pestañas -->
-    <ul class="nav nav-tabs mb-4">
+    <ul class="nav nav-tabs mb-4" role="tablist" aria-label="Secciones de Ventas">
         <li class="nav-item">
-            <button type="button" class="nav-link @(PestanaActiva == "reservas" ? "active" : "")" @onclick='() => PestanaActiva = "reservas"'>
+            <button type="button" class="nav-link @(PestanaActiva == "reservas" ? "active" : "")" role="tab" aria-selected="@(PestanaActiva == "reservas")" @onclick='() => PestanaActiva = "reservas"'>
                 Reservas
             </button>
         </li>
         <li class="nav-item">
-            <button type="button" class="nav-link @(PestanaActiva == "pagos" ? "active" : "")" @onclick='() => PestanaActiva = "pagos"'>
+            <button type="button" class="nav-link @(PestanaActiva == "pagos" ? "active" : "")" role="tab" aria-selected="@(PestanaActiva == "pagos")" @onclick='() => PestanaActiva = "pagos"'>
                 Pagos
             </button>
         </li>
@@ -39,7 +58,7 @@
             <h2 class="fs-5 mb-3">Reservas</h2>
 
             <!-- Filtros -->
-            <div class="border rounded p-3 mb-4" style="background-color: #f3f8ff;">
+            <div class="filter-panel">
 
                 <div class="row g-3">
 
@@ -94,13 +113,13 @@
 
             @if (!ReservasFiltradas.Any())
             {
-                <p class="text-secondary text-center">
+                <p class="empty-state">
                     No se encontraron reservas con los filtros seleccionados.
                 </p>
             }
             else
             {
-                <div class="table-responsive">
+                <div class="data-table-wrapper">
                     <QuickGrid Items="ReservasFiltradas" Pagination="PaginacionReservas" Class="table table-bordered align-middle">
                         <PropertyColumn Title="Reserva" Property="r => r.Codigo" Sortable="true" />
                         <TemplateColumn Title="Cliente">
@@ -132,7 +151,7 @@
             <h2 class="fs-5 mb-3">Pagos</h2>
 
             <!-- Filtros -->
-            <div class="border rounded p-3 mb-4" style="background-color: #f3f8ff;">
+            <div class="filter-panel">
 
                 <div class="row g-3 align-items-end">
 
@@ -164,13 +183,13 @@
 
             @if (!PagosFiltrados.Any())
             {
-                <p class="text-secondary text-center">
+                <p class="empty-state">
                     No se encontraron pagos con los filtros seleccionados.
                 </p>
             }
             else
             {
-                <div class="table-responsive">
+                <div class="data-table-wrapper">
                     <QuickGrid Items="PagosFiltrados" Pagination="PaginacionPagos" Class="table table-bordered align-middle">
                         <PropertyColumn Title="Código de pago" Property="p => p.Codigo" Sortable="true" />
                         <TemplateColumn Title="Reserva / Cliente">
@@ -228,6 +247,7 @@
 
         </section>
     }
+    }
 
 </div>
 
@@ -258,17 +278,19 @@
     private List<PagoVentaViewModel> Pagos=[];
     private List<PagoDto> PagosApi=[];
     private List<ReservaDto> ReservasApi=[];
-    private bool RechazarOperacion,Enviando;
+    private bool RechazarOperacion,Enviando,Cargando;
     private string Error="";
     protected override async Task OnInitializedAsync() { await Cargar(); }
     private async Task Cargar()
     {
+        Cargando=true;Error="";
         try {
             ReservasApi=await Api.ListarReservas();PagosApi=await Api.ListarPagos();
             Reservas=ReservasApi.Select(r=>new ReservaVentaViewModel {Codigo=r.CodigoOId,Cliente=r.Cliente,Dni=r.Dni,Funcion=r.FuncionNombre,FechaFuncion=r.FechaFuncion.ToString("dd/MM/yyyy HH:mm"),Cantidad=r.Cantidad,Expira=r.FechaExpiracion.ToString("dd/MM/yyyy HH:mm"),Estado=EstadoReserva(r.Estado)}).ToList();
             Pagos=PagosApi.Select(p=>new PagoVentaViewModel {Codigo=p.CodigoPago,Reserva=$"RES-{p.ReservaId}",Cliente=p.Cliente,Monto=p.Monto,FechaPago=p.FechaPago,Estado=p.Estado=="PENDIENTE"?"Pendiente":p.Estado=="VALIDADO"?"Validado":"Rechazado"}).ToList();
             FiltrarReservas();FiltrarPagos();
         } catch(Exception e) when(e is HttpRequestException or InvalidOperationException or TaskCanceledException) {Error=e.Message;}
+        finally { Cargando=false; }
     }
     private static string EstadoReserva(string e)=>e switch {"ACTIVA"=>"Pendiente","CONFIRMADA"=>"Confirmada","EXPIRADA"=>"Expirada",_=>"Cancelada"};
 

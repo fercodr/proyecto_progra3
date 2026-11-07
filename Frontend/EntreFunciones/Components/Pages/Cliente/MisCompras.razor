@@ -1,16 +1,21 @@
 ﻿@page "/mis-compras"
-<PageTitle>Mis Compras</PageTitle>
+<PageTitle>Mis compras</PageTitle>
 
-<div class="container py-4">
-    <h3 class="mb-4">Mis Compras</h3>
+<div class="page-shell">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Mis compras</h1>
+            <p class="page-description">Consulta el estado y los datos de tus entradas.</p>
+        </div>
+    </div>
 
     @if (Entradas == null || !Entradas.Any())
     {
-        <div class="alert alert-info">No tienes entradas registradas.</div>
+        <div class="empty-state" role="status">No tienes entradas registradas.</div>
     }
     else
     {
-        <div class="table-responsive bg-white rounded shadow-sm p-3">
+        <div class="data-table-wrapper shadow-sm">
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-light">
                     <tr>

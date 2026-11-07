@@ -1,47 +1,58 @@
 ﻿@page "/admin/usuarios"
 @attribute [Authorize(Policy = "UsuariosRoles")]
-@inject NavigationManager Nav;
+@inject NavigationManager Nav
 
 @using Microsoft.AspNetCore.Components.QuickGrid
 
 <PageTitle>Usuarios y roles</PageTitle>
 
-<div class="d-flex justify-content-between mb-3">
-    <h3 class="mb-3">Usuarios y roles</h3>
+<div class="page-shell">
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Usuarios y roles</h1>
+        <p class="page-description">Consulta clientes y administra las cuentas del equipo.</p>
+    </div>
     @if (PestanaActiva == "administradores") {
-        <button tabindex="4" class="btn btn-success" @onclick="() => NuevoAdministrador()">
+        <button type="button" class="btn btn-primary" @onclick="NuevoAdministrador">
             Nuevo administrador
         </button>
     }
 </div>
 
-<ul class="nav nav-tabs mb-3">
+<ul class="nav nav-tabs mb-3" role="tablist" aria-label="Tipos de usuario">
     <li class="nav-item">
-        <button class="nav-link @(PestanaActiva == "clientes" ? "active" : "")"
+        <button type="button" class="nav-link @(PestanaActiva == "clientes" ? "active" : "")" role="tab" aria-selected="@(PestanaActiva == "clientes")"
                 @onclick='() => CambiarPestana("clientes")'>Clientes</button>
     </li>
     <li class="nav-item">
-        <button class="nav-link @(PestanaActiva == "administradores" ? "active" : "")"
+        <button type="button" class="nav-link @(PestanaActiva == "administradores" ? "active" : "")" role="tab" aria-selected="@(PestanaActiva == "administradores")"
                 @onclick='() => CambiarPestana("administradores")'>Administradores</button>
     </li>
 </ul>
 
 @if (MensajeExito != null) {
-    <div class="alert alert-success">@MensajeExito</div>
+    <div class="alert alert-success" role="status" aria-live="polite">@MensajeExito</div>
 }
 
-<div class="d-flex align-items-center gap-2 mb-3">
-    <label class="text-nowrap">Nombre:</label>
-    <input tabindex="1" class="form-control" placeholder="Ingrese el nombre..." @bind="Filtro" />
-    <button tabindex="2" class="btn btn-primary" @onclick="() => Filtrar()">Filtrar</button>
-    <button tabindex="3" class="btn btn-secondary" @onclick="() => LimpiarFiltro()">Limpiar</button>
+<div class="filter-panel">
+    <div class="row g-3 align-items-end">
+        <div class="col-12 col-md">
+            <label for="filtroUsuario" class="form-label">Nombre</label>
+            <input id="filtroUsuario" class="form-control" placeholder="Ingrese nombres o apellidos" @bind="Filtro" />
+        </div>
+        <div class="col-12 col-md-auto d-flex gap-2">
+            <button type="button" class="btn btn-primary" @onclick="Filtrar">Filtrar</button>
+            <button type="button" class="btn btn-outline-secondary" @onclick="LimpiarFiltro">Limpiar</button>
+        </div>
+    </div>
 </div>
 
 @if (PestanaActiva == "clientes") {
     @if (!Clientes.Any()) {
-        <div class="alert alert-info">No hay clientes registrados.</div>
+        <div class="empty-state" role="status">No hay clientes registrados.</div>
     }
     else {
+        <div class="data-table-wrapper">
         <QuickGrid Items="Clientes" Pagination="PaginacionClientes" Class="table table-striped table-hover">
             <PropertyColumn Title="Id" Property="c => c.Id" Sortable="true" />
             <PropertyColumn Title="DNI" Property="c => c.Dni" Sortable="true" />
@@ -53,20 +64,22 @@
                 <input type="checkbox" checked="@context.IsActivo" disabled />
             </TemplateColumn>
             <TemplateColumn Title="Acciones">
-                <button class="btn btn-sm @(context.IsActivo ? "btn-warning" : "btn-success")"
+                <button type="button" class="btn btn-sm @(context.IsActivo ? "btn-warning" : "btn-success")"
                         @onclick="() => CambiarEstadoCliente(context)">
                     @(context.IsActivo ? "Desactivar" : "Activar")
                 </button>
             </TemplateColumn>
         </QuickGrid>
+        </div>
         <Paginator State="PaginacionClientes"></Paginator>
     }
 }
 else {
     @if (!Administradores.Any()) {
-        <div class="alert alert-info">No hay administradores registrados.</div>
+        <div class="empty-state" role="status">No hay administradores registrados.</div>
     }
     else {
+        <div class="data-table-wrapper">
         <QuickGrid Items="Administradores" Pagination="PaginacionAdministradores" Class="table table-striped table-hover">
             <PropertyColumn Title="Id" Property="a => a.Id" Sortable="true" />
             <PropertyColumn Title="Cód. empleado" Property="a => a.CodigoEmpleado" Sortable="true" />
@@ -77,15 +90,17 @@ else {
                 <input type="checkbox" checked="@context.IsActivo" disabled />
             </TemplateColumn>
             <TemplateColumn Title="Acciones">
-                <button class="btn btn-sm @(context.IsActivo ? "btn-warning" : "btn-success")"
+                <button type="button" class="btn btn-sm @(context.IsActivo ? "btn-warning" : "btn-success")"
                         @onclick="() => CambiarEstadoAdministrador(context)">
                     @(context.IsActivo ? "Desactivar" : "Activar")
                 </button>
             </TemplateColumn>
         </QuickGrid>
+        </div>
         <Paginator State="PaginacionAdministradores"></Paginator>
     }
 }
+</div>
 
 @code {
     [SupplyParameterFromQuery(Name = "pestana")]

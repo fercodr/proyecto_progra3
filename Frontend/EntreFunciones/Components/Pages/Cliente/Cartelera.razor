@@ -4,16 +4,22 @@
 
 <PageTitle>Cartelera</PageTitle>
 
-<h1 class="mb-3">Cartelera</h1>
+<div class="page-shell">
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Cartelera</h1>
+        <p class="page-description">Explora los eventos y funciones disponibles.</p>
+    </div>
+</div>
 
-<div class="row g-2 align-items-end mb-4">
+<div class="filter-panel row g-3 align-items-end mx-0">
     <div class="col-6 col-md-2">
-        <label class="form-label">Fecha</label>
-        <input type="date" class="form-control" @bind="FiltroFecha" />
+        <label for="filtroFecha" class="form-label">Fecha</label>
+        <input id="filtroFecha" type="date" class="form-control" @bind="FiltroFecha" />
     </div>
     <div class="col-6 col-md-2">
-        <label class="form-label">Sede</label>
-        <select class="form-select" @bind="FiltroSede">
+        <label for="filtroSede" class="form-label">Sede</label>
+        <select id="filtroSede" class="form-select" @bind="FiltroSede">
             <option value="">Todas</option>
             @foreach (string sede in Sedes)
             {
@@ -22,8 +28,8 @@
         </select>
     </div>
     <div class="col-6 col-md-2">
-        <label class="form-label">Distrito</label>
-        <select class="form-select" @bind="FiltroDistrito">
+        <label for="filtroDistrito" class="form-label">Distrito</label>
+        <select id="filtroDistrito" class="form-select" @bind="FiltroDistrito">
             <option value="">Todos</option>
             @foreach (string distrito in Distritos)
             {
@@ -32,8 +38,8 @@
         </select>
     </div>
     <div class="col-6 col-md-2">
-        <label class="form-label">Tipo</label>
-        <select class="form-select" @bind="FiltroTipo">
+        <label for="filtroTipo" class="form-label">Tipo</label>
+        <select id="filtroTipo" class="form-select" @bind="FiltroTipo">
             <option value="">Todos</option>
             <option value="Pelicula">Película</option>
             <option value="ObraTeatro">Obra de teatro</option>
@@ -41,8 +47,8 @@
         </select>
     </div>
     <div class="col-6 col-md-2">
-        <label class="form-label">Precio máx. (S/)</label>
-        <input type="number" min="0" class="form-control" @bind="FiltroPrecioMax" />
+        <label for="filtroPrecio" class="form-label">Precio máx. (S/)</label>
+        <input id="filtroPrecio" type="number" min="0" class="form-control" @bind="FiltroPrecioMax" />
     </div>
     <div class="col-6 col-md-2 form-check ms-1">
         <input type="checkbox" class="form-check-input" id="chkAccesible" @bind="FiltroAccesible" />
@@ -52,7 +58,7 @@
 
 @if (!EventosFiltrados.Any())
 {
-    <div class="alert alert-info">No hay funciones que coincidan con los filtros.</div>
+    <div class="empty-state" role="status">No hay funciones que coincidan con los filtros.</div>
 }
 else
 {
@@ -63,7 +69,7 @@ else
                 <div class="card h-100 shadow-sm">
                     <div class="card-body d-flex flex-column">
                         <span class="badge text-bg-secondary align-self-start mb-2">@TextoTipo(evento.Tipo)</span>
-                        <h5 class="card-title">@evento.Titulo</h5>
+                        <h2 class="card-title h5">@evento.Titulo</h2>
                         <p class="card-text text-muted mb-1">@evento.Sede &middot; @evento.Distrito</p>
                         <p class="card-text text-muted mb-2">@evento.Tematica</p>
                         <p class="card-text mb-3">
@@ -73,7 +79,7 @@ else
                                 <span class="badge text-bg-success ms-2">Accesible</span>
                             }
                         </p>
-                        <button class="btn btn-primary mt-auto" @onclick="() => VerDetalle(evento.Id)">
+                        <button type="button" class="btn btn-primary mt-auto" @onclick="() => VerDetalle(evento.Id)">
                             Ver detalle
                         </button>
                     </div>
@@ -82,6 +88,7 @@ else
         }
     </div>
 }
+</div>
 
 @code {
     private DateTime? FiltroFecha;

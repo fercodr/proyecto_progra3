@@ -2,6 +2,76 @@ h1:focus {
     outline: none;
 }
 
+body {
+    background-color: #f8f9fa;
+}
+
+.page-shell {
+    width: 100%;
+    max-width: 1140px;
+    margin-inline: auto;
+}
+
+.page-shell-narrow {
+    max-width: 760px;
+}
+
+.page-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.page-title {
+    margin: 0;
+    font-size: clamp(1.75rem, 3vw, 2.25rem);
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.page-description {
+    max-width: 70ch;
+    margin: 0.35rem 0 0;
+    color: var(--bs-secondary-color);
+}
+
+.filter-panel {
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    background: var(--bs-body-bg);
+    border: var(--bs-border-width) solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius-lg);
+}
+
+.data-table-wrapper {
+    overflow-x: auto;
+    border: var(--bs-border-width) solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius-lg);
+    background: var(--bs-body-bg);
+}
+
+.data-table-wrapper table,
+.data-table-wrapper .quickgrid {
+    min-width: 720px;
+    margin-bottom: 0;
+}
+
+.empty-state {
+    padding: 2rem 1rem;
+    text-align: center;
+    color: var(--bs-secondary-color);
+    background: var(--bs-body-bg);
+    border: var(--bs-border-width) dashed var(--bs-border-color);
+    border-radius: var(--bs-border-radius-lg);
+}
+
+.status-region[aria-live] {
+    min-height: 1px;
+}
+
 .valid.modified:not([type=checkbox]) {
     outline: 1px solid #26b050;
 }
@@ -21,7 +91,7 @@ h1:focus {
 }
 
     .blazor-error-boundary::after {
-        content: "An error has occurred."
+        content: "Ocurrió un error inesperado."
     }
 
 .darker-border-checkbox.form-check-input {

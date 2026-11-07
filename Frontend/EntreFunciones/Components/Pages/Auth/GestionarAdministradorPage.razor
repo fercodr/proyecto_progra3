@@ -1,52 +1,61 @@
 ﻿@page "/admin/usuarios/administradores/nuevo"
 @attribute [Authorize(Policy = "UsuariosRoles")]
 @using System.Text.RegularExpressions
-@inject NavigationManager Nav;
+@inject NavigationManager Nav
 
-<PageTitle>Usuarios y roles</PageTitle>
+<PageTitle>Nuevo administrador</PageTitle>
 
-<h3 class="mb-3">Nuevo administrador</h3>
+<div class="page-shell page-shell-narrow">
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Nuevo administrador</h1>
+        <p class="page-description">Registra los datos de acceso de un integrante del equipo.</p>
+    </div>
+</div>
+<div class="card card-body shadow-sm">
 
 @if (Errores.Any())
 {
-    <div class="alert alert-danger">Revise los campos marcados en rojo.</div>
+    <div class="alert alert-danger" role="alert" aria-live="assertive">Revisa los campos marcados en rojo.</div>
 }
 
 <form @onsubmit="Guardar">
     <div class="mb-3">
-        <label class="form-label">Código de empleado</label>
-        <input tabindex="1" class="form-control @Clase("CodigoEmpleado")" placeholder="EMP-0000"
+        <label for="codigoEmpleado" class="form-label">Código de empleado</label>
+        <input id="codigoEmpleado" class="form-control @Clase("CodigoEmpleado")" placeholder="EMP-0000"
                @bind="CodigoEmpleado" @bind:event="oninput" />
         <div class="invalid-feedback">@Errores.GetValueOrDefault("CodigoEmpleado")</div>
     </div>
     <div class="mb-3">
-        <label class="form-label">Nombres</label>
-        <input tabindex="2" class="form-control @Clase("Nombres")" @bind="Nombres" @bind:event="oninput" />
+        <label for="nombresAdministrador" class="form-label">Nombres</label>
+        <input id="nombresAdministrador" autocomplete="given-name" class="form-control @Clase("Nombres")" @bind="Nombres" @bind:event="oninput" />
         <div class="invalid-feedback">@Errores.GetValueOrDefault("Nombres")</div>
     </div>
     <div class="mb-3">
-        <label class="form-label">Apellidos</label>
-        <input tabindex="3" class="form-control @Clase("Apellidos")" @bind="Apellidos" @bind:event="oninput" />
+        <label for="apellidosAdministrador" class="form-label">Apellidos</label>
+        <input id="apellidosAdministrador" autocomplete="family-name" class="form-control @Clase("Apellidos")" @bind="Apellidos" @bind:event="oninput" />
         <div class="invalid-feedback">@Errores.GetValueOrDefault("Apellidos")</div>
     </div>
     <div class="mb-3">
-        <label class="form-label">Correo electrónico</label>
-        <input tabindex="4" class="form-control @Clase("Correo")" @bind="Correo" @bind:event="oninput" />
+        <label for="correoAdministrador" class="form-label">Correo electrónico</label>
+        <input id="correoAdministrador" type="email" autocomplete="email" class="form-control @Clase("Correo")" @bind="Correo" @bind:event="oninput" />
         <div class="invalid-feedback">@Errores.GetValueOrDefault("Correo")</div>
     </div>
     <div class="mb-3">
-        <label class="form-label">Contraseña</label>
-        <input tabindex="5" type="password" class="form-control @Clase("Password")" @bind="Password" @bind:event="oninput" />
+        <label for="passwordAdministrador" class="form-label">Contraseña</label>
+        <input id="passwordAdministrador" type="password" autocomplete="new-password" class="form-control @Clase("Password")" @bind="Password" @bind:event="oninput" />
         <div class="invalid-feedback">@Errores.GetValueOrDefault("Password")</div>
     </div>
     <div class="form-check mb-3">
-        <input tabindex="6" type="checkbox" class="form-check-input" @bind="IsActivo" />
-        <label class="form-check-label">Activo</label>
+        <input id="administradorActivo" type="checkbox" class="form-check-input" @bind="IsActivo" />
+        <label for="administradorActivo" class="form-check-label">Activo</label>
     </div>
 
-    <button tabindex="7" type="submit" class="btn btn-primary">Guardar</button>
-    <a tabindex="8" class="btn btn-outline-secondary" href="admin/usuarios?pestana=administradores">Cancelar</a>
+    <button type="submit" class="btn btn-primary">Guardar</button>
+    <a class="btn btn-outline-secondary" href="admin/usuarios?pestana=administradores">Cancelar</a>
 </form>
+</div>
+</div>
 
 @code {
     private string CodigoEmpleado { get; set; } = string.Empty;

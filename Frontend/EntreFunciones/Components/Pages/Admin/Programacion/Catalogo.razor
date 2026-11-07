@@ -1,53 +1,47 @@
 ﻿@page "/admin/catalogo"
-@inject NavigationManager Nav;
+@inject NavigationManager Nav
 @attribute [Authorize(Policy = "Programacion")]
-<PageTitle>Catalogo</PageTitle> @*ES LO QUE APARECE ARRIBA EN LA PESTAÑA*@
+<PageTitle>Catálogo</PageTitle>
 
-<div class="d-flex justify-content-between mb-3">
-
-    <h3 class="mb-3">Catálogo</h3>
-
-    <button class="btn btn-success" @onclick='() => Nav.NavigateTo("admin/catalogo/nuevo")'>
-
+<div class="page-shell">
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Catálogo</h1>
+        <p class="page-description">Administra los eventos que se mostrarán en la programación.</p>
+    </div>
+    <button type="button" class="btn btn-primary" @onclick='() => Nav.NavigateTo("admin/catalogo/nuevo")'>
         Nuevo evento
-
     </button>
 </div>
-@*TITULO EN EL LAYOUT*@
-@*@code {@*codigo C# que se va a compilar
-	protected override void OnInitialized()
-	{
-		base.OnInitialized();@*OBJETO DONDE SE INICIA
-	}
-}*@
 
 <div class="row g-3">
-    <div class="md:col-6 lg:col-3">
+    <div class="col-12 col-md-6 col-xl-3">
         <TarjetaResumen Titulo="Coco"
                        Tipo="Película"
                        Imagen="img/eventos/coco.jpg"
                        Detalle="Dir. Lee Unkrich · Animación · 105 min"
                        Enlace="admin/catalogo/editar/1" />
     </div>
-    <div class="md:col-6 lg:col-3">
+    <div class="col-12 col-md-6 col-xl-3">
         <TarjetaResumen Titulo="Interestelar"
                        Tipo="Película"
                        Imagen="img/eventos/interestelar.jpg"
                        Detalle="Dir. Christopher Nolan · Drama · 169 min"
                        Enlace="admin/catalogo/editar/2" />
     </div>
-    <div class="md:col-6 lg:col-3">
+    <div class="col-12 col-md-6 col-xl-3">
         <TarjetaResumen Titulo="La casa de Bernarda Alba"
                        Tipo="Obra de teatro"
                        Imagen="img/eventos/bernarda-alba.jpg"
                        Detalle="Dir. Lucía Ramos · Elenco: Ana Torres, Rosa Díaz"
                        Enlace="admin/catalogo/editar/3" />
     </div>
-    <div class="md:col-6 lg:col-3">
+    <div class="col-12 col-md-6 col-xl-3">
         <TarjetaResumen Titulo="Taller de fotografía urbana"
                        Tipo="Actividad cultural"
                        Imagen="img/eventos/taller-foto.jpg"
                        Detalle="Taller · Expositora: Mario Quispe"
                        Enlace="admin/catalogo/editar/4" />
     </div>
+</div>
 </div>
