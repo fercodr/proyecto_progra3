@@ -5,11 +5,12 @@
 - `Diagrama_Fisico_BD.png`
 - Este `README.md`
 
-El codigo relacionado se conserva en [`Codigo/`](../../../Codigo/).
+El código relacionado se conserva en [`Backend/`](../../../Backend/) y
+[`Frontend/`](../../../Frontend/); no se duplica en esta carpeta histórica.
 
 ## Originales locales
 
 El informe, el reporte firmado y la rubrica permanecen en esta carpeta local,
 pero Git los excluye hasta que el equipo autorice su publicacion interna.
-Cuando estan presentes, `entrega.bat` los incorpora al ZIP junto con el
-diagrama y el codigo fuente.
+En esa entrega, `entrega.bat` los incorporaba al ZIP junto con el diagrama y
+el código fuente.
