@@ -18,12 +18,16 @@ public class CompraRestService(HttpClient http, IConfiguration config, Authentic
         peticion.Headers.Add("X-Usuario-Id",id);
         if(metodo==HttpMethod.Post)peticion.Content=JsonContent.Create(datos ?? new {});
         using var respuesta=await http.SendAsync(peticion);
+       
+        
         if(!respuesta.IsSuccessStatusCode)
         {
             string mensaje=$"No se pudo completar la operación ({(int)respuesta.StatusCode}).";
             try {var error=await respuesta.Content.ReadFromJsonAsync<ErrorDto>();if(!string.IsNullOrWhiteSpace(error?.Mensaje))mensaje=error.Mensaje;} catch(JsonException) { }
             throw new InvalidOperationException(mensaje);
         }
+        
+        
         if(respuesta.StatusCode==System.Net.HttpStatusCode.NoContent)return default!;
         return (await respuesta.Content.ReadFromJsonAsync<T>())!;
     }
