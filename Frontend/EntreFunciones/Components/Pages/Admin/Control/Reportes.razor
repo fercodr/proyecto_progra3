@@ -3,22 +3,16 @@
  
 @rendermode InteractiveServer
 
-<PageTitle> Reportes | Entre Funciones </PageTitle>
+<PageTitle>Reportes</PageTitle>
 
-
-<h1 class="fs-2 fw-bold mb-1">Reportes</h1>
-
-<div class="mx-auto" style="max-width: 1100px">
-   
-    <div class="d-flex justify-content-between align-items-center ">
-        <p class="small text-secondary">
-            Resumen @fechaDesde.ToString("dd/MM/yyyy") - @fechaHasta.ToString("dd/MM/yyyy")
-        </p>
-     </div>
-
-<p class="text-secondary  mb-4">
-	Consulta la ocupacion los ingresos y la asistencia de las funciones.
-</p>
+<div class="page-shell">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Reportes</h1>
+            <p class="page-description">Consulta la ocupación, los ingresos y la asistencia de las funciones.</p>
+            <p class="small text-secondary mt-2 mb-0">Resumen del @fechaDesde.ToString("dd/MM/yyyy") al @fechaHasta.ToString("dd/MM/yyyy")</p>
+        </div>
+    </div>
 
 
 
@@ -29,7 +23,7 @@
                          Amount="100" />
         </div>
         <div class="col" style="min-width: 220px">
-            <SummeryCard Atribute="Ingresos Validos"
+            <SummeryCard Atribute="Ingresos válidos"
                          Amount="3000" />
 
         </div>
@@ -40,48 +34,40 @@
     </div>
 </div>
 
-    <div class="overflow-auto mb-4 border rounded p-3" style="background-color: #f3f8ff;">
-        <div class="row flex-nowrap g-3 mx-0">
-            <div class="col" style="min-width: 220px">
-                <div class="card-body">
-                    <h5 class="card-title">Sede</h5>
-                    <select class="form-select form-select-sm" aria-label="Small select example">
+    <div class="filter-panel">
+        <div class="row g-3 align-items-end">
+            <div class="col-12 col-sm-6 col-lg-3">
+                    <label for="sedeReporte" class="form-label">Sede</label>
+                    <select id="sedeReporte" class="form-select form-select-sm">
                         <option selected>Todas</option>
                         <option value="1">Norte</option>
                         <option value="2">Centro</option>
                         <option value="3">Sur</option>
                     </select>
-                </div>
             </div>
-            <div class="col" style="min-width: 220px">
-                <div class="card-body">
-                    <h5 class="card-title">Sala</h5>
-                    <select class="form-select form-select-sm" aria-label="Small select example">
+            <div class="col-12 col-sm-6 col-lg-3">
+                    <label for="salaReporte" class="form-label">Sala</label>
+                    <select id="salaReporte" class="form-select form-select-sm">
                         <option selected>Todas</option>
                         <option value="1">Sala1</option>
                         <option value="2">Sala2</option>
                         <option value="3">Sala3</option>
                     </select>
-                </div>
             </div>
 
-            <div class="col" style="min-width: 220px">
-                <div class="card-body">
-                    <label class="form-label">Desde</label>
+            <div class="col-12 col-sm-6 col-lg-3">
+                    <label for="desde" class="form-label">Desde</label>
                     <input type="date" id="desde" class="form-control form-control-sm" 
                      
                      @bind="fechaDesde"/>
                     
-                </div>
             </div>
 
-            <div class="col" style="min-width: 220px">
-                <div class="card-body">
-                    <label class="form-label">Hasta</label>
+            <div class="col-12 col-sm-6 col-lg-3">
+                    <label for="hasta" class="form-label">Hasta</label>
                     <input type="date" id="hasta" class="form-control form-control-sm"
                     
                     @bind="fechaHasta"/>
-                </div>
             </div>
 
 
@@ -90,21 +76,19 @@
     
 
 
-    <ul class="nav nav-tabs">
+    <ul class="nav nav-tabs" role="tablist" aria-label="Tipos de reporte">
         <li class="nav-item">
-            <a class="nav-link @(mostrarOcupacion ? "active" : "")"
-               href="admin" @onclick="() => mostrarOcupacion = true"
-               @onclick:preventDefault>
-                Ocupacion
-            </a>
+            <button type="button" class="nav-link @(mostrarOcupacion ? "active" : "")" role="tab"
+                    aria-selected="@mostrarOcupacion" @onclick="() => mostrarOcupacion = true">
+                Ocupación
+            </button>
         </li>
 
         <li class="nav-item">
-        <a class="nav-link @(!mostrarOcupacion ? "active" : "")"
-               href="admin" @onclick="() => mostrarOcupacion = false"
-                    @onclick:preventDefault>
-            Ingresos y Entradas
-        </a>
+            <button type="button" class="nav-link @(!mostrarOcupacion ? "active" : "")" role="tab"
+                    aria-selected="@(!mostrarOcupacion)" @onclick="() => mostrarOcupacion = false">
+                Ingresos y entradas
+            </button>
          
         </li>
 
@@ -112,15 +96,15 @@
 
     @if (mostrarOcupacion)
     {
-        <label class="form-label"></label>
+        <div class="data-table-wrapper mt-3">
         <table class="table table-bordered">
             <thead class="table-light">
                 <tr>
-                    <th scope="col">Evento/Funcion</th>
+                    <th scope="col">Evento / Función</th>
                     <th scope="col">Sede/Sala</th>
                     <th scope="col">Aforo</th>
                     <th scope="col">Entradas</th>
-                    <th scope="col">Ocupacion</th>
+                    <th scope="col">Ocupación</th>
                 </tr>
             </thead>
 
@@ -149,13 +133,14 @@
                 </tr>
             </tbody>
         </table>
+        </div>
     }else
     {
-        <label class="form-label"></label>
+        <div class="data-table-wrapper mt-3">
         <table class="table table-bordered">
             <thead class="table-light">
                 <tr>
-                    <th scope="col">Evento/fech</th>
+                    <th scope="col">Evento / fecha</th>
                     <th scope="col">Sede/tipo</th>
                     <th scope="col">Ingresos</th>
                     <th scope="col">Asistentes</th>
@@ -166,7 +151,7 @@
             <tbody>
                 <tr>
                     <th scope="row" class="fw-normal">Evento A / 20-10 </th>
-                    <td>Centro / Pelicula</td>
+                    <td>Centro / Película</td>
                     <td>S/1200</td>
                     <td>50</td>
                     <td>0</td>
@@ -191,6 +176,7 @@
 
             </tbody>
         </table>
+        </div>
     }
 
 

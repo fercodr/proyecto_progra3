@@ -1,60 +1,67 @@
 ﻿@page "/registro"
 @using System.Text.RegularExpressions
-@inject NavigationManager Nav;
+@inject NavigationManager Nav
 
 <PageTitle>Registro</PageTitle>
 
-<div class="col-md-6 mx-auto">
-    <h3 class="mb-3">Registro de cliente</h3>
+<div class="page-shell page-shell-narrow">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Registro de cliente</h1>
+            <p class="page-description">Crea una cuenta para reservar y administrar tus compras.</p>
+        </div>
+    </div>
+    <div class="card card-body shadow-sm">
 
     @if (Errores.Any())
     {
-        <div class="alert alert-danger">Revise los campos marcados en rojo.</div>
+        <div class="alert alert-danger" role="alert" aria-live="assertive">Revisa los campos marcados en rojo.</div>
     }
 
     <form @onsubmit="Registrar">
         <h5>Cuenta de usuario</h5>
         <div class="mb-3">
-            <label class="form-label">Correo electrónico</label>
-            <input tabindex="1" class="form-control @Clase("Correo")" @bind="Correo" @bind:event="oninput" />
+            <label for="correoRegistro" class="form-label">Correo electrónico</label>
+            <input id="correoRegistro" type="email" autocomplete="email" class="form-control @Clase("Correo")" @bind="Correo" @bind:event="oninput" />
             <div class="invalid-feedback">@Errores.GetValueOrDefault("Correo")</div>
         </div>
         <div class="mb-3">
-            <label class="form-label">Contraseña</label>
-            <input tabindex="2" type="password" class="form-control @Clase("Password")" @bind="Password" @bind:event="oninput" />
+            <label for="passwordRegistro" class="form-label">Contraseña</label>
+            <input id="passwordRegistro" type="password" autocomplete="new-password" class="form-control @Clase("Password")" @bind="Password" @bind:event="oninput" />
             <div class="invalid-feedback">@Errores.GetValueOrDefault("Password")</div>
         </div>
         <div class="mb-3">
-            <label class="form-label">Confirmar contraseña</label>
-            <input tabindex="3" type="password" class="form-control @Clase("ConfirmarPassword")" @bind="ConfirmarPassword" @bind:event="oninput" />
+            <label for="confirmarPassword" class="form-label">Confirmar contraseña</label>
+            <input id="confirmarPassword" type="password" autocomplete="new-password" class="form-control @Clase("ConfirmarPassword")" @bind="ConfirmarPassword" @bind:event="oninput" />
             <div class="invalid-feedback">@Errores.GetValueOrDefault("ConfirmarPassword")</div>
         </div>
 
         <h5 class="mt-4">Datos personales</h5>
         <div class="mb-3">
-            <label class="form-label">DNI</label>
-            <input tabindex="4" class="form-control @Clase("Dni")" maxlength="8" @bind="Dni" @bind:event="oninput" />
+            <label for="dniRegistro" class="form-label">DNI</label>
+            <input id="dniRegistro" inputmode="numeric" class="form-control @Clase("Dni")" maxlength="8" @bind="Dni" @bind:event="oninput" />
             <div class="invalid-feedback">@Errores.GetValueOrDefault("Dni")</div>
         </div>
         <div class="mb-3">
-            <label class="form-label">Nombres</label>
-            <input tabindex="5" class="form-control @Clase("Nombres")" @bind="Nombres" @bind:event="oninput" />
+            <label for="nombresRegistro" class="form-label">Nombres</label>
+            <input id="nombresRegistro" autocomplete="given-name" class="form-control @Clase("Nombres")" @bind="Nombres" @bind:event="oninput" />
             <div class="invalid-feedback">@Errores.GetValueOrDefault("Nombres")</div>
         </div>
         <div class="mb-3">
-            <label class="form-label">Apellidos</label>
-            <input tabindex="6" class="form-control @Clase("Apellidos")" @bind="Apellidos" @bind:event="oninput" />
+            <label for="apellidosRegistro" class="form-label">Apellidos</label>
+            <input id="apellidosRegistro" autocomplete="family-name" class="form-control @Clase("Apellidos")" @bind="Apellidos" @bind:event="oninput" />
             <div class="invalid-feedback">@Errores.GetValueOrDefault("Apellidos")</div>
         </div>
         <div class="mb-3">
-            <label class="form-label">Teléfono</label>
-            <input tabindex="7" class="form-control @Clase("Telefono")" maxlength="9" @bind="Telefono" @bind:event="oninput" />
+            <label for="telefonoRegistro" class="form-label">Teléfono</label>
+            <input id="telefonoRegistro" type="tel" inputmode="numeric" autocomplete="tel" class="form-control @Clase("Telefono")" maxlength="9" @bind="Telefono" @bind:event="oninput" />
             <div class="invalid-feedback">@Errores.GetValueOrDefault("Telefono")</div>
         </div>
 
-        <button tabindex="8" type="submit" class="btn btn-primary">Registrarse</button>
-        <a tabindex="9" class="btn btn-outline-secondary" href="login">Cancelar</a>
+        <button type="submit" class="btn btn-primary">Registrarse</button>
+        <a class="btn btn-outline-secondary" href="login">Cancelar</a>
     </form>
+    </div>
 </div>
 
 @code {

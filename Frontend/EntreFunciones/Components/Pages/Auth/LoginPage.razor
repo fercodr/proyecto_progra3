@@ -2,41 +2,48 @@
 
 <PageTitle>Iniciar sesión</PageTitle>
 
-<div class="col-md-4 mx-auto">
-    <h3 class="mb-3">Iniciar sesión</h3>
+<div class="page-shell page-shell-narrow">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Iniciar sesión</h1>
+            <p class="page-description">Ingresa con tu cuenta para continuar.</p>
+        </div>
+    </div>
+    <div class="card card-body shadow-sm">
 
     @if (Error)
     {
-        <div class="alert alert-danger">Credenciales incorrectas</div>
+        <div class="alert alert-danger" role="alert" aria-live="assertive">Credenciales incorrectas.</div>
     }
     @if (Registrado)
     {
-        <div class="alert alert-success">Registro exitoso. Ya puede iniciar sesión.</div>
+        <div class="alert alert-success" role="status" aria-live="polite">Registro exitoso. Ya puedes iniciar sesión.</div>
     }
 
     @* Este formulario es un POST normal a /cuenta/login: así el servidor puede crear la cookie de sesión. *@
     <form method="post" action="cuenta/login">
         <AntiforgeryToken />
         <div class="mb-3">
-            <label class="form-label">Correo</label>
-            <input tabindex="1" name="userName" type="email" class="form-control" placeholder="correo@ejemplo.com" required />
+            <label for="correoLogin" class="form-label">Correo</label>
+            <input id="correoLogin" name="userName" type="email" class="form-control" placeholder="correo@ejemplo.com" autocomplete="username" required />
         </div>
         <div class="mb-3">
-            <label class="form-label">Contraseña</label>
-            <input tabindex="2" name="password" type="password" class="form-control" required />
+            <label for="passwordLogin" class="form-label">Contraseña</label>
+            <input id="passwordLogin" name="password" type="password" class="form-control" autocomplete="current-password" required />
         </div>
-        <button tabindex="3" type="submit" class="btn btn-primary w-100">Ingresar</button>
+        <button type="submit" class="btn btn-primary w-100">Ingresar</button>
     </form>
 
     <div class="d-flex justify-content-between mt-3">
-        <a tabindex="4" href="recuperar">¿Olvidaste tu contraseña?</a>
-        <a tabindex="5" href="registro">Registrarse</a>
+        <a href="recuperar">¿Olvidaste tu contraseña?</a>
+        <a href="registro">Registrarse</a>
     </div>
 
     <div class="alert alert-secondary mt-4 small">
         <strong>Datos de prueba (contraseña 123456):</strong><br />
         Administrador: admin@entrefunciones.com<br />
         Cliente: cliente@entrefunciones.com
+    </div>
     </div>
 </div>
 

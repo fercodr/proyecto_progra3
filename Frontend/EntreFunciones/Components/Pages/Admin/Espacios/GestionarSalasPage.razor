@@ -1,18 +1,25 @@
 @page "/admin/salas/nuevo"
 @page "/admin/salas/editar/{Id:int}"
 @attribute [Authorize(Policy = "Espacios")]
-@inject NavigationManager Nav;
+@inject NavigationManager Nav
 
 @using EntreFunciones.ViewModels
 
 @* 11. Salas · RF-M2-01 (Lab 9: solo interfaz, Guardar no registra nada) *@
 
-<PageTitle>Salas</PageTitle>
+<PageTitle>@(Id == null ? "Nueva sala" : "Editar sala")</PageTitle>
 
-<h3 class="mb-3">@(Id == null ? "Nueva sala" : "Editar sala")</h3>
+<div class="page-shell page-shell-narrow">
+<div class="page-header">
+    <div>
+        <h1 class="page-title">@(Id == null ? "Nueva sala" : "Editar sala")</h1>
+        <p class="page-description">Define la sede, el aforo y el tipo de sala.</p>
+    </div>
+</div>
+<div class="card card-body shadow-sm">
 
 @if (MensajeError != null) {
-    <div class="alert alert-danger">@MensajeError</div>
+    <div class="alert alert-danger" role="alert" aria-live="assertive">@MensajeError</div>
 }
 
 <EditForm Model="ViewModel" OnValidSubmit="Guardar">
@@ -20,8 +27,8 @@
     <ValidationSummary />
 
     <div class="mb-3">
-        <label class="form-label">Sede</label>
-        <InputSelect tabindex="1" class="form-select" @bind-Value="ViewModel.IdSede">
+        <label for="sedeSala" class="form-label">Sede</label>
+        <InputSelect id="sedeSala" class="form-select" @bind-Value="ViewModel.IdSede">
             <option value="0">-- Seleccione --</option>
             @foreach (SedeViewModel sede in DatosEspaciosDemo.Sedes) {
                 <option value="@sede.Id">@sede.RazonSocial</option>
@@ -30,19 +37,19 @@
         <ValidationMessage For="() => ViewModel.IdSede" />
     </div>
     <div class="mb-3">
-        <label class="form-label">Nombre</label>
-        <InputText tabindex="2" class="form-control" @bind-Value="ViewModel.Nombre" />
+        <label for="nombreSala" class="form-label">Nombre</label>
+        <InputText id="nombreSala" class="form-control" @bind-Value="ViewModel.Nombre" />
         <ValidationMessage For="() => ViewModel.Nombre" />
     </div>
     <div class="row">
         <div class="col-md-6 mb-3">
-            <label class="form-label">Aforo</label>
-            <InputNumber tabindex="3" class="form-control" @bind-Value="ViewModel.Aforo" />
+            <label for="aforoSala" class="form-label">Aforo</label>
+            <InputNumber id="aforoSala" class="form-control" @bind-Value="ViewModel.Aforo" />
             <ValidationMessage For="() => ViewModel.Aforo" />
         </div>
         <div class="col-md-6 mb-3">
-            <label class="form-label">Tipo de sala</label>
-            <InputSelect tabindex="4" class="form-select" @bind-Value="ViewModel.TipoSala">
+            <label for="tipoSala" class="form-label">Tipo de sala</label>
+            <InputSelect id="tipoSala" class="form-select" @bind-Value="ViewModel.TipoSala">
                 <option value="">-- Seleccione --</option>
                 @foreach (string tipo in DatosEspaciosDemo.TiposSala) {
                     <option value="@tipo">@tipo</option>
@@ -52,13 +59,15 @@
         </div>
     </div>
     <div class="form-check mb-3">
-        <InputCheckbox tabindex="5" class="form-check-input" @bind-Value="ViewModel.IsActivo" />
-        <label class="form-check-label">Activo</label>
+        <InputCheckbox id="salaActiva" class="form-check-input" @bind-Value="ViewModel.IsActivo" />
+        <label for="salaActiva" class="form-check-label">Activo</label>
     </div>
 
-    <button tabindex="6" type="submit" class="btn btn-primary">Guardar</button>
-    <a tabindex="7" class="btn btn-outline-secondary" href="admin/salas">Cancelar</a>
+    <button type="submit" class="btn btn-primary">Guardar</button>
+    <a class="btn btn-outline-secondary" href="admin/salas">Cancelar</a>
 </EditForm>
+</div>
+</div>
 
 @code {
     [Parameter]

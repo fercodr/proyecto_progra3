@@ -2,13 +2,14 @@
 @using System.Globalization
 @inject NavigationManager Nav
 
-<PageTitle>Detalle del evento</PageTitle>
+<PageTitle>@(Evento?.Titulo ?? "Detalle del evento")</PageTitle>
 
+<div class="page-shell">
 @if (Evento == null)
 {
-    <div class="alert alert-warning">
+    <div class="alert alert-warning" role="status">
         No se encontró el evento solicitado.
-        <a href="/cartelera">Volver a la cartelera</a>
+        <a class="alert-link" href="/cartelera">Volver a la cartelera</a>
     </div>
 }
 else
@@ -23,7 +24,7 @@ else
     <div class="row g-4">
         <div class="col-12 col-md-7">
             <span class="badge text-bg-secondary mb-2">@TextoTipo(Evento.Tipo)</span>
-            <h1>@Evento.Titulo</h1>
+            <h1 class="page-title mb-2">@Evento.Titulo</h1>
             <p class="text-muted mb-1">@Evento.Duracion min &middot; @Evento.Clasificacion</p>
             <p class="mb-1"><strong>@CampoSecundario</strong>: @Evento.ValorSecundario</p>
             <p class="mb-3">@Evento.Descripcion</p>
@@ -32,7 +33,7 @@ else
         <div class="col-12 col-md-5">
             <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title">Funciones disponibles</h5>
+                    <h2 class="card-title h5">Funciones disponibles</h2>
                     @if (!Funciones.Any())
                     {
                         <p class="text-muted mb-0">No hay funciones programadas por el momento.</p>
@@ -47,7 +48,7 @@ else
                                         <div><strong>@funcion.Fecha.ToString("dd/MM/yyyy")</strong> &middot; @funcion.HoraInicio.ToString("hh\\:mm")</div>
                                         <div class="text-muted small">@funcion.Sede &middot; Sala @funcion.Sala &middot; @funcion.Idioma</div>
                                     </div>
-                                    <button class="btn btn-sm btn-primary" @onclick="() => ElegirFuncion(funcion.Id)">
+                                    <button type="button" class="btn btn-sm btn-primary" @onclick="() => ElegirFuncion(funcion.Id)">
                                         Elegir
                                     </button>
                                 </div>
@@ -59,6 +60,7 @@ else
         </div>
     </div>
 }
+</div>
 
 @code {
     [Parameter]

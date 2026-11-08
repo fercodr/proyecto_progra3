@@ -1,6 +1,6 @@
 @page "/admin/sedes"
 @attribute [Authorize(Policy = "Espacios")]
-@inject NavigationManager Nav;
+@inject NavigationManager Nav
 
 @using Microsoft.AspNetCore.Components.QuickGrid
 @using EntreFunciones.ViewModels
@@ -9,24 +9,35 @@
 
 <PageTitle>Sedes</PageTitle>
 
-<div class="d-flex justify-content-between mb-3">
-    <h3 class="mb-3">Sedes</h3>
-    <button tabindex="4" class="btn btn-success" @onclick="() => NuevaSede()">
+<div class="page-shell">
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Sedes</h1>
+        <p class="page-description">Consulta y administra las sedes disponibles.</p>
+    </div>
+    <button type="button" class="btn btn-primary" @onclick="NuevaSede">
         Nueva sede
     </button>
 </div>
 
-<div class="d-flex align-items-center gap-2 mb-3">
-    <label class="text-nowrap">Razón social:</label>
-    <input tabindex="1" class="form-control" placeholder="Ingrese la razón social o ciudad..." @bind="Filtro" />
-    <button tabindex="2" class="btn btn-primary" @onclick="() => FiltrarSedes()">Filtrar</button>
-    <button tabindex="3" class="btn btn-secondary" @onclick="() => LimpiarFiltro()">Limpiar</button>
+<div class="filter-panel">
+    <div class="row g-3 align-items-end">
+        <div class="col-12 col-md">
+            <label for="filtroSede" class="form-label">Razón social o ciudad</label>
+            <input id="filtroSede" class="form-control" placeholder="Ej.: Miraflores" @bind="Filtro" />
+        </div>
+        <div class="col-12 col-md-auto d-flex gap-2">
+            <button type="button" class="btn btn-primary" @onclick="FiltrarSedes">Filtrar</button>
+            <button type="button" class="btn btn-outline-secondary" @onclick="LimpiarFiltro">Limpiar</button>
+        </div>
+    </div>
 </div>
 
 @if (!Sedes.Any()) {
-    <div class="alert alert-info">No hay sedes registradas.</div>
+    <div class="empty-state" role="status">No hay sedes registradas.</div>
 }
 else {
+    <div class="data-table-wrapper">
     <QuickGrid Items="Sedes" Pagination="Paginacion" Class="table table-striped table-hover">
         <PropertyColumn Title="Id" Property="s => s.Id" Sortable="true" />
         <PropertyColumn Title="Razón social" Property="s => s.RazonSocial" Sortable="true" />
@@ -37,19 +48,21 @@ else {
             <input type="checkbox" checked="@context.IsActivo" disabled />
         </TemplateColumn>
         <TemplateColumn Title="Acciones">
-            <button class="btn btn-outline-primary btn-sm" @onclick="() => VerSalas(context.Id)">
+            <button type="button" class="btn btn-outline-primary btn-sm" @onclick="() => VerSalas(context.Id)">
                 Salas
             </button>
-            <button class="btn btn-primary btn-sm" @onclick="() => EditarSede(context.Id)">
+            <button type="button" class="btn btn-primary btn-sm" @onclick="() => EditarSede(context.Id)">
                 Editar
             </button>
-            <button class="btn btn-danger btn-sm" @onclick="() => DesactivarSede(context.Id)">
+            <button type="button" class="btn btn-danger btn-sm" @onclick="() => DesactivarSede(context.Id)">
                 Desactivar
             </button>
         </TemplateColumn>
     </QuickGrid>
+    </div>
     <Paginator State="Paginacion"></Paginator>
 }
+</div>
 
 @code {
     private IQueryable<SedeViewModel> Sedes { get; set; } = Enumerable.Empty<SedeViewModel>().AsQueryable();

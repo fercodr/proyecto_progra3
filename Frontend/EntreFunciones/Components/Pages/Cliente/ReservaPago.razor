@@ -4,19 +4,43 @@
 @implements IDisposable
 @inject CompraRestService Api
 @inject NavigationManager Nav
-<PageTitle>Reserva y Pago</PageTitle>
-@if (!string.IsNullOrEmpty(Mensaje)) { <div class="alert alert-info">@Mensaje</div> }
+<PageTitle>Reserva y pago</PageTitle>
 
-<div class="container py-4">
-    <div class="col-md-8 mx-auto">
-        <h3 class="mb-4">Detalle de Reserva y Pago</h3>
+<div class="page-shell page-shell-narrow">
+    @if (Cargando)
+    {
+        <div class="d-flex align-items-center gap-2 text-secondary" role="status" aria-live="polite">
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+            Cargando detalles de la reserva...
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(Error))
+    {
+        <div class="alert alert-danger" role="alert" aria-live="assertive">
+            <h1 class="h5 alert-heading">No pudimos cargar la reserva</h1>
+            <p>@Error</p>
+            <button type="button" class="btn btn-danger btn-sm me-2" @onclick="CargarAsync">Reintentar</button>
+            <a class="btn btn-outline-danger btn-sm" href="/cartelera">Volver a la cartelera</a>
+        </div>
+    }
+    else if (Reserva == null)
+    {
+        <div class="alert alert-warning" role="status" aria-live="polite">No se encontró la reserva solicitada.</div>
+    }
+    else
+    {
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Reserva y pago</h1>
+                <p class="page-description">Revisa el detalle de tu reserva antes de registrar el pago.</p>
+            </div>
+        </div>
 
-        @if (Reserva == null)
+        @if (!string.IsNullOrEmpty(Mensaje))
         {
-            <div class="alert alert-warning">Cargando detalles de la reserva...</div>
+            <div class="alert alert-info" role="status" aria-live="polite">@Mensaje</div>
         }
-        else
-        {
+
             <div class="card shadow-sm mb-4">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -27,7 +51,7 @@
                     <p class="mb-1 text-muted"><strong>Función:</strong> @Reserva.FuncionNombre</p>
                     <p class="mb-1 text-muted"><strong>Fecha de Reserva:</strong> @Reserva.FechaCreacion.ToString("dd/MM/yyyy HH:mm")</p>
                     <p class="mb-3 text-muted"><strong>Monto Total:</strong> S/ @Reserva.MontoTotal.ToString("F2")</p>
-                    <div class="alert alert-danger py-2 mb-0 text-center">
+                    <div class="alert alert-danger py-2 mb-0 text-center" role="status" aria-live="polite">
                         <small><i class="bi bi-clock me-1"></i> Tiempo restante para realizar el pago: <strong>@TiempoRestante</strong></small>
                     </div>
                 </div>
@@ -45,28 +69,28 @@
                         <AntiforgeryToken />
                         
                         <div class="mb-3">
-                            <label class="form-label">Nombre del titular</label>
-                            <input @bind="NombreTitular" type="text" class="form-control" placeholder="Como figura en la tarjeta" required />
+                            <label for="nombreTitular" class="form-label">Nombre del titular</label>
+                            <input id="nombreTitular" @bind="NombreTitular" type="text" class="form-control" placeholder="Como figura en la tarjeta" autocomplete="cc-name" required />
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label">Número de tarjeta</label>
-                            <input @bind="NumeroTarjeta" type="text" class="form-control" placeholder="0000 0000 0000 0000" maxlength="19" required />
+                            <label for="numeroTarjeta" class="form-label">Número de tarjeta</label>
+                            <input id="numeroTarjeta" @bind="NumeroTarjeta" type="text" inputmode="numeric" class="form-control" placeholder="0000 0000 0000 0000" maxlength="19" autocomplete="cc-number" required />
                         </div>
 
                         <div class="row">
                             <div class="col-6 mb-3">
-                                <label class="form-label">Expiración (MM/AA)</label>
-                                <input @bind="FechaExpiracion" type="text" class="form-control" placeholder="MM/AA" maxlength="5" required />
+                                <label for="fechaExpiracion" class="form-label">Expiración (MM/AA)</label>
+                                <input id="fechaExpiracion" @bind="FechaExpiracion" type="text" inputmode="numeric" class="form-control" placeholder="MM/AA" maxlength="5" autocomplete="cc-exp" required />
                             </div>
                             <div class="col-6 mb-3">
-                                <label class="form-label">Código CVC / CVV</label>
-                                <input @bind="Cvc" type="password" class="form-control" placeholder="123" maxlength="4" required />
+                                <label for="cvc" class="form-label">Código CVC / CVV</label>
+                                <input id="cvc" @bind="Cvc" type="password" inputmode="numeric" class="form-control" placeholder="123" maxlength="4" autocomplete="cc-csc" required />
                             </div>
                         </div>
 
                         <button type="submit" class="btn btn-success w-100 mt-2" disabled="@(Enviando || !PuedePagar)">
-                            Pagar S/ @Reserva.MontoTotal.ToString("F2")
+                            @(Enviando ? "Procesando..." : $"Pagar S/ {Reserva.MontoTotal:F2}")
                         </button>
                     </form>
                 </div>
@@ -74,12 +98,11 @@
 
             <!-- Botón Cancelar reserva -->
             <div class="text-center">
-                <button class="btn btn-outline-danger btn-sm" disabled="@(Enviando || Reserva.Estado != "ACTIVA")" @onclick="CancelarReserva">
+                <button type="button" class="btn btn-outline-danger btn-sm" disabled="@(Enviando || Reserva.Estado != "ACTIVA")" @onclick="CancelarReserva">
                     Cancelar reserva
                 </button>
             </div>
-        }
-    </div>
+    }
 </div>
 
 @code {
@@ -87,6 +110,8 @@
     private ReservaDto? Reserva;
     private PagoDto? Pago;
     private string Mensaje="";
+    private string Error="";
+    private bool Cargando;
     private bool Enviando;
     private double SegundosIniciales;
     private readonly System.Diagnostics.Stopwatch Reloj=new();
@@ -96,9 +121,10 @@
     private bool PuedePagar=>Reserva?.Estado=="ACTIVA" && Segundos>0 && Pago?.Estado=="PENDIENTE" && string.IsNullOrEmpty(Pago.FechaPago);
     private string TiempoRestante=>TimeSpan.FromSeconds(Segundos).ToString(@"mm\:ss");
     private string NombreTitular="",NumeroTarjeta="",FechaExpiracion="",Cvc="";
-    protected override async Task OnParametersSetAsync()
+    protected override Task OnParametersSetAsync() => CargarAsync();
+    private async Task CargarAsync()
     {
-        Reserva=null;Pago=null;Mensaje="";
+        Cargando=true;Reserva=null;Pago=null;Mensaje="";Error="";
         try {
             Reserva=await Api.Obtener(Id);
             SegundosIniciales=Math.Max(0,(Reserva.FechaExpiracion-Reserva.FechaServidor).TotalSeconds);Reloj.Restart();
@@ -107,7 +133,8 @@
                 if(!string.IsNullOrEmpty(Pago.FechaPago))Mensaje="Pago registrado, pendiente de validación administrativa.";
             }
             Temporizador ??= ActualizarTiempo();
-        }catch(Exception e) when(e is HttpRequestException or InvalidOperationException or TaskCanceledException) { Mensaje=e.Message; }
+        }catch(Exception e) when(e is HttpRequestException or InvalidOperationException or TaskCanceledException) { Error=e.Message; }
+        finally { Cargando=false; }
     }
     private async Task ActualizarTiempo()
     {
@@ -118,19 +145,19 @@
     private async Task RegistrarPago()
     {
         if(Enviando || !PuedePagar || Pago==null)return;
-        Enviando=true;
+        Enviando=true;Error="";
         try {
             // Pago simulado: nunca se envían ni almacenan tarjeta o CVC.
             await Api.RegistrarPago(Pago.Id);Pago.FechaPago="Registrado";
             Mensaje="Pago registrado, pendiente de validación administrativa.";
-        }catch(Exception e) when(e is HttpRequestException or InvalidOperationException or TaskCanceledException) { Mensaje=e.Message; }
+        }catch(Exception e) when(e is HttpRequestException or InvalidOperationException or TaskCanceledException) { Error=e.Message; }
         finally { NombreTitular=NumeroTarjeta=FechaExpiracion=Cvc="";Enviando=false; }
     }
     private async Task CancelarReserva()
     {
-        if(Enviando)return;Enviando=true;
+        if(Enviando)return;Enviando=true;Error="";
         try {await Api.Cancelar(Id);Nav.NavigateTo("/cartelera");}
-        catch(Exception e) when(e is HttpRequestException or InvalidOperationException or TaskCanceledException) { Mensaje=e.Message; }
+        catch(Exception e) when(e is HttpRequestException or InvalidOperationException or TaskCanceledException) { Error=e.Message; }
         finally {Enviando=false;}
     }
     public void Dispose(){Cierre.Cancel();Cierre.Dispose();}

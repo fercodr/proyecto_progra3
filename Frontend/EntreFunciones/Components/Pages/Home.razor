@@ -3,15 +3,16 @@
 
 <PageTitle>Inicio</PageTitle>
 
+<div class="page-shell page-shell-narrow py-4">
 <AuthorizeView>
     <Authorized>
-        <h3 class="mb-3">Bienvenido, @context.User.Identity?.Name</h3>
+        <h1 class="page-title mb-3">Bienvenido, @context.User.Identity?.Name</h1>
         <AuthorizeView Roles="Administrador" Context="admin">
             <p>Use el menú <strong>Seguridad</strong> para gestionar usuarios y roles.</p>
         </AuthorizeView>
     </Authorized>
     <NotAuthorized>
-        <h3 class="mb-3">Bienvenido a EntreFunciones</h3>
+        <h1 class="page-title mb-3">Bienvenido a EntreFunciones</h1>
         <p>Inicie sesión para continuar o regístrese como cliente.</p>
         <div class="d-flex gap-2">
             <a class="btn btn-primary" href="login">Iniciar sesión</a>
@@ -19,3 +20,4 @@
         </div>
     </NotAuthorized>
 </AuthorizeView>
+</div>

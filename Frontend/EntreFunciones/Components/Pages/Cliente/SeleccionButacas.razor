@@ -6,31 +6,52 @@
 @attribute [Authorize(Policy = "Compras")]
 
 <PageTitle>Selección de butacas</PageTitle>
-@if (!string.IsNullOrEmpty(Error)) { <div class="alert alert-danger">@Error</div> }
 
-@if (Funcion == null)
+<div class="page-shell">
+@if (Cargando)
 {
-    <div class="alert alert-warning">
+    <div class="d-flex align-items-center gap-2 text-secondary" role="status" aria-live="polite">
+        <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+        Cargando disponibilidad de butacas...
+    </div>
+}
+else if (!string.IsNullOrEmpty(Error))
+{
+    <div class="alert alert-danger" role="alert" aria-live="assertive">
+        <h1 class="h5 alert-heading">No pudimos cargar la selección</h1>
+        <p>@Error</p>
+        <button type="button" class="btn btn-danger btn-sm me-2" @onclick="CargarAsync">Reintentar</button>
+        <a class="btn btn-outline-danger btn-sm" href="/cartelera">Volver a la cartelera</a>
+    </div>
+}
+else if (Funcion == null)
+{
+    <div class="alert alert-warning" role="status" aria-live="polite">
         No se encontró la función solicitada.
-        <a href="/cartelera">Volver a la cartelera</a>
+        <a class="alert-link" href="/cartelera">Volver a la cartelera</a>
     </div>
 }
 else
 {
-    <h1 class="mb-1">@Funcion.Titulo</h1>
-    <p class="text-muted mb-4">@Funcion.Sede &middot; Sala @Funcion.Sala &middot; @Funcion.Fecha.ToString("dd/MM/yyyy") &middot; @Funcion.HoraInicio</p>
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">@Funcion.Titulo</h1>
+            <p class="page-description">@Funcion.Sede &middot; Sala @Funcion.Sala &middot; @Funcion.Fecha.ToString("dd/MM/yyyy") &middot; @Funcion.HoraInicio</p>
+        </div>
+    </div>
 
     @if (!Funcion.AforoNumerado)
     {
         @* RF-M4-02: funcion de aforo general (ActividadCultural) -> se indica cantidad, no butacas. *@
-        <div class="card mb-3" style="max-width: 420px;">
+        <div class="card mb-3 quantity-card">
             <div class="card-body">
-                <h5 class="card-title">Cantidad de cupos</h5>
+                <h2 class="card-title h5">Cantidad de cupos</h2>
                 <p class="text-muted">Esta función no tiene butacas numeradas; indica cuántos cupos deseas reservar.</p>
-                <div class="input-group mb-3" style="max-width: 200px;">
-                    <button class="btn btn-outline-secondary" @onclick="DecrementarCantidad">-</button>
-                    <input type="number" class="form-control text-center" min="1" max="@Funcion.CuposDisponibles" @bind="Cantidad" @bind:event="oninput" />
-                    <button class="btn btn-outline-secondary" @onclick="IncrementarCantidad">+</button>
+                <label class="form-label" for="cantidadCupos">Número de cupos</label>
+                <div class="input-group mb-3 quantity-input">
+                    <button type="button" class="btn btn-outline-secondary" aria-label="Disminuir cantidad" @onclick="DecrementarCantidad">−</button>
+                    <input id="cantidadCupos" type="number" class="form-control text-center" min="1" max="@Funcion.CuposDisponibles" @bind="Cantidad" @bind:event="oninput" />
+                    <button type="button" class="btn btn-outline-secondary" aria-label="Aumentar cantidad" @onclick="IncrementarCantidad">+</button>
                 </div>
                 <p class="text-muted small mb-0">Cupos disponibles: @Funcion.CuposDisponibles</p>
             </div>
@@ -38,26 +59,32 @@ else
     }
     else
     {
-        <div class="seat-map card mb-3" style="max-width: 560px;">
+        <div class="seat-map card mb-3">
             <div class="card-body">
                 <div class="screen mb-3">PANTALLA / ESCENARIO</div>
 
-                @foreach (string fila in Filas)
-                {
-                    <div class="d-flex align-items-center mb-1">
-                        <span class="fila-letra">@fila</span>
-                        @foreach (ButacaDto butaca in Butacas.Where(b => b.Fila == fila).OrderBy(b => b.Columna))
+                <div class="seat-map-scroll">
+                    <div class="seat-rows">
+                        @foreach (string fila in Filas)
                         {
-                            <button type="button" class="butaca @ClaseButaca(butaca)"
-                                    disabled="@(!butaca.Activo || butaca.Ocupada || Enviando)"
-                                    @onclick="() => ToggleButaca(butaca)">
-                                @butaca.Columna
-                            </button>
+                            <div class="seat-row">
+                                <span class="fila-letra" aria-hidden="true">@fila</span>
+                                @foreach (ButacaDto butaca in Butacas.Where(b => b.Fila == fila).OrderBy(b => b.Columna))
+                                {
+                                    <button type="button" class="butaca @ClaseButaca(butaca)"
+                                            aria-label="@DescripcionButaca(butaca)"
+                                            aria-pressed="@butaca.Elegida"
+                                            disabled="@(!butaca.Activo || butaca.Ocupada || Enviando)"
+                                            @onclick="() => ToggleButaca(butaca)">
+                                        @butaca.Columna
+                                    </button>
+                                }
+                            </div>
                         }
                     </div>
-                }
+                </div>
 
-                <div class="d-flex gap-3 mt-3 small text-muted leyenda">
+                <div class="d-flex flex-wrap gap-3 mt-3 small text-muted leyenda" aria-label="Leyenda de butacas">
                     <span class="leyenda-item"><span class="muestra libre"></span>Libre</span>
                     <span class="leyenda-item"><span class="muestra ocupada"></span>Ocupada</span>
                     <span class="leyenda-item"><span class="muestra bloqueada"></span>Inactiva</span>
@@ -67,58 +94,18 @@ else
         </div>
     }
 
-    <div class="card" style="max-width: 420px;">
+    <div class="card summary-card">
         <div class="card-body">
-            <h5 class="card-title">Resumen</h5>
+            <h2 class="card-title h5">Resumen</h2>
             <p class="mb-1">Cantidad: <strong>@CantidadElegida</strong></p>
             <p class="mb-3">Total: <strong>S/ @((CantidadElegida * Funcion.Precio).ToString("N2", CultureInfo.InvariantCulture))</strong></p>
-            <button class="btn btn-primary w-100" disabled="@(CantidadElegida <= 0 || Enviando)" @onclick="ContinuarAReserva">
-                Reservar
+            <button type="button" class="btn btn-primary w-100" disabled="@(CantidadElegida <= 0 || Enviando)" @onclick="ContinuarAReserva">
+                @(Enviando ? "Reservando..." : "Reservar")
             </button>
         </div>
     </div>
 }
-
-<style>
-    .seat-map .screen {
-        text-align: center;
-        font-size: 11px;
-        letter-spacing: .14em;
-        color: #6c757d;
-        border-bottom: 3px solid #adb5bd;
-        padding-bottom: 6px;
-    }
-    .fila-letra {
-        width: 18px;
-        font-size: 12px;
-        color: #6c757d;
-        flex-shrink: 0;
-    }
-    .butaca {
-        width: 28px;
-        height: 26px;
-        margin: 2px;
-        border: 1px solid #adb5bd;
-        border-radius: 4px 4px 7px 7px;
-        background: #e9ecef;
-        font-size: 10px;
-        line-height: 1;
-        padding: 0;
-    }
-    .butaca.libre { background: #e9ecef; }
-    .butaca.ocupada { background: #adb5bd; color: #fff; cursor: not-allowed; }
-    .butaca.bloqueada {
-        background: repeating-linear-gradient(45deg, #ced4da 0 3px, transparent 3px 6px);
-        cursor: not-allowed;
-    }
-    .butaca.elegida { background: #7a1f4b; color: #fff; border-color: #7a1f4b; }
-    .leyenda-item { display: flex; align-items: center; gap: 4px; }
-    .muestra { display: inline-block; width: 12px; height: 12px; border-radius: 3px; }
-    .muestra.libre { background: #e9ecef; border: 1px solid #adb5bd; }
-    .muestra.ocupada { background: #adb5bd; }
-    .muestra.bloqueada { background: repeating-linear-gradient(45deg, #ced4da 0 2px, transparent 2px 4px); border: 1px solid #adb5bd; }
-    .muestra.elegida { background: #7a1f4b; }
-</style>
+</div>
 
 @code {
     [Parameter] public int Id { get; set; }
@@ -126,16 +113,21 @@ else
     private List<ButacaDto> Butacas = [];
     private IEnumerable<string> Filas => Butacas.Select(b=>b.Fila).Distinct().OrderBy(f=>f);
     private int Cantidad = 1;
+    private bool Cargando;
     private bool Enviando;
     private string Error = "";
-    protected override async Task OnParametersSetAsync()
+    protected override Task OnParametersSetAsync() => CargarAsync();
+    private async Task CargarAsync()
     {
+        Cargando=true;
         Error="";Funcion=null;Butacas=[];
         try { Funcion=await Api.Disponibilidad(Id);Butacas=Funcion.Butacas;Cantidad=Math.Min(1,Funcion.CuposDisponibles); }
         catch(Exception e) when(e is HttpRequestException or InvalidOperationException or TaskCanceledException) { Error=e.Message; }
+        finally { Cargando=false; }
     }
     private int CantidadElegida => Funcion?.AforoNumerado==true?Butacas.Count(b=>b.Elegida):Cantidad;
     private string ClaseButaca(ButacaDto b)=>!b.Activo?"bloqueada":b.Ocupada?"ocupada":b.Elegida?"elegida":"libre";
+    private string DescripcionButaca(ButacaDto b)=>$"Butaca {b.Fila}{b.Columna}: {(!b.Activo?"inactiva":b.Ocupada?"ocupada":b.Elegida?"seleccionada":"libre")}";
     private void ToggleButaca(ButacaDto b) { if(b.Activo && !b.Ocupada && !Enviando)b.Elegida=!b.Elegida; }
     private void IncrementarCantidad() { if(Funcion!=null && Cantidad<Funcion.CuposDisponibles)Cantidad++; }
     private void DecrementarCantidad() { if(Cantidad>1)Cantidad--; }

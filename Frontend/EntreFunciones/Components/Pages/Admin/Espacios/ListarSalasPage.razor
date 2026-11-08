@@ -1,6 +1,6 @@
 @page "/admin/salas"
 @attribute [Authorize(Policy = "Espacios")]
-@inject NavigationManager Nav;
+@inject NavigationManager Nav
 
 @using Microsoft.AspNetCore.Components.QuickGrid
 @using EntreFunciones.ViewModels
@@ -10,31 +10,44 @@
 
 <PageTitle>Salas</PageTitle>
 
-<div class="d-flex justify-content-between mb-3">
-    <h3 class="mb-3">Salas</h3>
-    <button tabindex="5" class="btn btn-success" @onclick="() => NuevaSala()">
+<div class="page-shell">
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Salas</h1>
+        <p class="page-description">Consulta las salas, su aforo y la sede a la que pertenecen.</p>
+    </div>
+    <button type="button" class="btn btn-primary" @onclick="NuevaSala">
         Nueva sala
     </button>
 </div>
 
-<div class="d-flex align-items-center gap-2 mb-3">
-    <label class="text-nowrap">Sede:</label>
-    <select tabindex="1" class="form-select" @bind="FiltroSede">
-        <option value="0">Todas las sedes</option>
-        @foreach (SedeViewModel sede in DatosEspaciosDemo.Sedes) {
-            <option value="@sede.Id">@sede.RazonSocial</option>
-        }
-    </select>
-    <label class="text-nowrap">Nombre:</label>
-    <input tabindex="2" class="form-control" placeholder="Ingrese el nombre..." @bind="Filtro" />
-    <button tabindex="3" class="btn btn-primary" @onclick="() => FiltrarSalas()">Filtrar</button>
-    <button tabindex="4" class="btn btn-secondary" @onclick="() => LimpiarFiltro()">Limpiar</button>
+<div class="filter-panel">
+    <div class="row g-3 align-items-end">
+        <div class="col-12 col-md-5">
+            <label for="filtroSede" class="form-label">Sede</label>
+            <select id="filtroSede" class="form-select" @bind="FiltroSede">
+                <option value="0">Todas las sedes</option>
+                @foreach (SedeViewModel sede in DatosEspaciosDemo.Sedes) {
+                    <option value="@sede.Id">@sede.RazonSocial</option>
+                }
+            </select>
+        </div>
+        <div class="col-12 col-md">
+            <label for="filtroNombreSala" class="form-label">Nombre</label>
+            <input id="filtroNombreSala" class="form-control" placeholder="Ej.: Sala 1" @bind="Filtro" />
+        </div>
+        <div class="col-12 col-md-auto d-flex gap-2">
+            <button type="button" class="btn btn-primary" @onclick="FiltrarSalas">Filtrar</button>
+            <button type="button" class="btn btn-outline-secondary" @onclick="LimpiarFiltro">Limpiar</button>
+        </div>
+    </div>
 </div>
 
 @if (!Salas.Any()) {
-    <div class="alert alert-info">No hay salas registradas.</div>
+    <div class="empty-state" role="status">No hay salas registradas.</div>
 }
 else {
+    <div class="data-table-wrapper">
     <QuickGrid Items="Salas" Pagination="Paginacion" Class="table table-striped table-hover">
         <PropertyColumn Title="Id" Property="s => s.Id" Sortable="true" />
         <PropertyColumn Title="Sede" Property="s => s.NombreSede" Sortable="true" />
@@ -45,19 +58,21 @@ else {
             <input type="checkbox" checked="@context.IsActivo" disabled />
         </TemplateColumn>
         <TemplateColumn Title="Acciones">
-            <button class="btn btn-outline-primary btn-sm" @onclick="() => VerButacas(context.Id)">
+            <button type="button" class="btn btn-outline-primary btn-sm" @onclick="() => VerButacas(context.Id)">
                 Butacas
             </button>
-            <button class="btn btn-primary btn-sm" @onclick="() => EditarSala(context.Id)">
+            <button type="button" class="btn btn-primary btn-sm" @onclick="() => EditarSala(context.Id)">
                 Editar
             </button>
-            <button class="btn btn-danger btn-sm" @onclick="() => DesactivarSala(context.Id)">
+            <button type="button" class="btn btn-danger btn-sm" @onclick="() => DesactivarSala(context.Id)">
                 Desactivar
             </button>
         </TemplateColumn>
     </QuickGrid>
+    </div>
     <Paginator State="Paginacion"></Paginator>
 }
+</div>
 
 @code {
     [SupplyParameterFromQuery(Name = "sede")]

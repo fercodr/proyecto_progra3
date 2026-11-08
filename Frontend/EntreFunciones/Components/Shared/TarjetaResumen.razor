@@ -1,15 +1,14 @@
 ﻿<div class="card h-100 shadow-sm">
-    <img src="@Imagen" class="card-img-top" alt="@Titulo"
-         style="height: 260px; object-fit: cover;" />
+    <img src="@Imagen" class="card-img-top event-summary-image" alt="Portada de @Titulo" />
 
     <div class="card-body">
-        <span class="badge theme-primary align-self-start">@Tipo</span>
-        <h5 class="card-title">@Titulo</h5>
-        <p class="card-text small fg-3">@Detalle</p>
+        <span class="badge text-bg-secondary mb-2">@Tipo</span>
+        <h2 class="card-title h5">@Titulo</h2>
+        <p class="card-text small text-secondary mb-0">@Detalle</p>
     </div>
 
     <div class="card-footer bg-transparent">
-        <a class="btn-solid theme-primary btn-sm" href="@Enlace">Editar</a>
+        <a class="btn btn-outline-primary btn-sm" href="@Enlace" aria-label="Editar @Titulo">Editar</a>
     </div>
 </div>
 
