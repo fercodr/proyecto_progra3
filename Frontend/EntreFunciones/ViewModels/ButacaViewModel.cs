@@ -1,9 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 
 namespace EntreFunciones.ViewModels {
-    public class ButacaViewModel {
-        public int Id { get; set; }
-
+    public class ButacaViewModel : ViewModel
+    {
         public int IdSala { get; set; }
 
         [Required(ErrorMessage = "La fila es obligatoria")]
@@ -15,8 +14,6 @@ namespace EntreFunciones.ViewModels {
 
         [Required(ErrorMessage = "Seleccione el tipo de butaca")]
         public string TipoButaca { get; set; } = "General";
-
-        public bool IsActivo { get; set; } = true;
 
         public string Codigo => $"{Fila}{Columna}";
 
