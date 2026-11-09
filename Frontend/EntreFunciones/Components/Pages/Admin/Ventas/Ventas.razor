@@ -1,7 +1,8 @@
 @page "/admin/ventas"
 @attribute [Authorize(Policy = "Ventas")]
 @rendermode InteractiveServer
-@inject EntreFunciones.Servicios.Rest.CompraRestService Api
+@inject ICompraService Api
+@using EntreFunciones.DTOSS
 @using EntreFunciones.Servicios.Rest
 
 @using Microsoft.AspNetCore.Components.QuickGrid
@@ -289,7 +290,7 @@
             Reservas=ReservasApi.Select(r=>new ReservaVentaViewModel {Codigo=r.CodigoOId,Cliente=r.Cliente,Dni=r.Dni,Funcion=r.FuncionNombre,FechaFuncion=r.FechaFuncion.ToString("dd/MM/yyyy HH:mm"),Cantidad=r.Cantidad,Expira=r.FechaExpiracion.ToString("dd/MM/yyyy HH:mm"),Estado=EstadoReserva(r.Estado)}).ToList();
             Pagos=PagosApi.Select(p=>new PagoVentaViewModel {Codigo=p.CodigoPago,Reserva=$"RES-{p.ReservaId}",Cliente=p.Cliente,Monto=p.Monto,FechaPago=p.FechaPago,Estado=p.Estado=="PENDIENTE"?"Pendiente":p.Estado=="VALIDADO"?"Validado":"Rechazado"}).ToList();
             FiltrarReservas();FiltrarPagos();
-        } catch(Exception e) when(e is HttpRequestException or InvalidOperationException or TaskCanceledException) {Error=e.Message;}
+        } catch(Exception e) when(e is HttpRequestException or InvalidOperationException or ServiceException or TaskCanceledException) {Error=e.Message;}
         finally { Cargando=false; }
     }
     private static string EstadoReserva(string e)=>e switch {"ACTIVA"=>"Pendiente","CONFIRMADA"=>"Confirmada","EXPIRADA"=>"Expirada",_=>"Cancelada"};
@@ -380,7 +381,7 @@
             var pago=PagosApi.Single(p=>p.CodigoPago==PagoAConfirmar);
             if(RechazarOperacion)await Api.Rechazar(pago.Id);else await Api.Validar(pago.Id);
             CancelarConfirmacion();await Cargar();
-        }catch(Exception e) when(e is HttpRequestException or InvalidOperationException or TaskCanceledException) {Error=e.Message;}
+        }catch(Exception e) when(e is HttpRequestException or InvalidOperationException or ServiceException or TaskCanceledException) {Error=e.Message;}
         finally {Enviando=false;}
     }
 }

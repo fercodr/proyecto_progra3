@@ -1,8 +1,9 @@
 @page "/funcion/{Id:int}/butacas"
 @using System.Globalization
-@inject NavigationManager Nav
-@inject EntreFunciones.Servicios.Rest.CompraRestService Api
+@using EntreFunciones.DTOSS
 @using EntreFunciones.Servicios.Rest
+@inject NavigationManager Nav
+@inject ICompraService Api
 @attribute [Authorize(Policy = "Compras")]
 
 <PageTitle>Selección de butacas</PageTitle>
@@ -122,7 +123,7 @@ else
         Cargando=true;
         Error="";Funcion=null;Butacas=[];
         try { Funcion=await Api.Disponibilidad(Id);Butacas=Funcion.Butacas;Cantidad=Math.Min(1,Funcion.CuposDisponibles); }
-        catch(Exception e) when(e is HttpRequestException or InvalidOperationException or TaskCanceledException) { Error=e.Message; }
+        catch(Exception e) when(e is HttpRequestException or InvalidOperationException or ServiceException or TaskCanceledException) { Error=e.Message; }
         finally { Cargando=false; }
     }
     private int CantidadElegida => Funcion?.AforoNumerado==true?Butacas.Count(b=>b.Elegida):Cantidad;
@@ -138,7 +139,7 @@ else
         try {
             var reserva=await Api.Crear(Id,Butacas.Where(b=>b.Elegida).Select(b=>b.Id).ToArray(),CantidadElegida);
             Nav.NavigateTo($"/reserva/{reserva.Id}/pago");
-        } catch(Exception e) when(e is HttpRequestException or InvalidOperationException or TaskCanceledException) { Error=e.Message; }
+        } catch(Exception e) when(e is HttpRequestException or InvalidOperationException or ServiceException or TaskCanceledException) { Error=e.Message; }
         finally { Enviando=false; }
     }
 }
