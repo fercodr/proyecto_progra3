@@ -1,4 +1,4 @@
-package pe.edu.pucp.entrefunciones.bl;
+package pe.edu.pucp.entrefunciones.bl.error;
 
 public class BLException extends Exception {
 

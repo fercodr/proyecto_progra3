@@ -1,8 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 
 namespace EntreFunciones.ViewModels {
-    public class SedeViewModel {
-        public int Id { get; set; }
+    public class SedeViewModel :ViewModel{
+       
 
         [Required(ErrorMessage = "La razón social es obligatoria")]
         [StringLength(100, ErrorMessage = "Máximo 100 caracteres")]
@@ -19,8 +19,6 @@ namespace EntreFunciones.ViewModels {
         [Required(ErrorMessage = "El teléfono es obligatorio")]
         [RegularExpression(@"^[0-9 ]{6,15}$", ErrorMessage = "Solo números (6 a 15 dígitos)")]
         public string TelefonoContacto { get; set; } = "";
-
-        public bool IsActivo { get; set; } = true;
 
         public SedeViewModel Clonar() => (SedeViewModel)MemberwiseClone();
     }

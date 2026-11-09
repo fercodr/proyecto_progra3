@@ -1,17 +1,14 @@
 using EntreFunciones.Components;
 using EntreFunciones.Seguridad;
+using EntreFunciones.Servicios.Rest;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddSeguridad();
-builder.Services.AddHttpClient<EntreFunciones.Servicios.Rest.CompraRestService>((sp, client) =>
-{
-    string url=sp.GetRequiredService<IConfiguration>()["Rest:BaseUrl"] ?? "http://localhost:8080/entrefunciones-rest/v1/api/";
-    client.BaseAddress=new Uri(url.TrimEnd('/')+"/");
-    client.Timeout=TimeSpan.FromSeconds(20);
-});
+builder.Services.AddScoped<ICompraService, CompraService>();
+builder.Services.AddScoped<IAuditoriaService, AuditoriaService>();
 
 var app = builder.Build();
 

@@ -2,6 +2,8 @@ package pe.edu.pucp.entrefunciones.bl;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import static org.junit.jupiter.api.Assertions.*;
+
+import pe.edu.pucp.entrefunciones.bl.error.BLException;
 import pe.edu.pucp.entrefunciones.db.DBManager;
 import pe.edu.pucp.entrefunciones.bl.impl.ventas.*;
 import pe.edu.pucp.entrefunciones.bl.impl.eventos.FuncionBLImpl;

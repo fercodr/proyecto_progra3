@@ -2,7 +2,7 @@ package pe.edu.pucp.entrefunciones.rest;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
 import jakarta.ws.rs.ext.*;
-import pe.edu.pucp.entrefunciones.bl.BLException;
+import pe.edu.pucp.entrefunciones.bl.error.BLException;
 @Provider public class ErroresRest implements ExceptionMapper<Exception> {
     private static final java.util.logging.Logger LOG=java.util.logging.Logger.getLogger(ErroresRest.class.getName());
     @Override public Response toResponse(Exception e) {

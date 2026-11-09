@@ -1,5 +1,6 @@
 namespace EntreFunciones.ViewModels {
-    public class PagoVentaViewModel {
+    public class PagoVentaViewModel : ViewModel
+    {
         public string Codigo { get; set; } = "";
         public string Reserva { get; set; } = "";
         public string Cliente { get; set; } = "";

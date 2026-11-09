@@ -1,8 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 
 namespace EntreFunciones.ViewModels {
-    public class SalaViewModel {
-        public int Id { get; set; }
+    public class SalaViewModel : ViewModel
+    {
 
         [Range(1, int.MaxValue, ErrorMessage = "Seleccione una sede")]
         public int IdSede { get; set; }
@@ -20,7 +20,6 @@ namespace EntreFunciones.ViewModels {
         [Required(ErrorMessage = "Seleccione el tipo de sala")]
         public string TipoSala { get; set; } = "";
 
-        public bool IsActivo { get; set; } = true;
 
         public SalaViewModel Clonar() => (SalaViewModel)MemberwiseClone();
     }
