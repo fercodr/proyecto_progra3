@@ -3,7 +3,7 @@ import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import pe.edu.pucp.entrefunciones.bl.BLException;
+import pe.edu.pucp.entrefunciones.bl.error.BLException;
 import pe.edu.pucp.entrefunciones.bl.ventas.PagoBL;
 import pe.edu.pucp.entrefunciones.dao.ventas.EntradaDAO;
 import pe.edu.pucp.entrefunciones.dao.ventas.PagoDAO;

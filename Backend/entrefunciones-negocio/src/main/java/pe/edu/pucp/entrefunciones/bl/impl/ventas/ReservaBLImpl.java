@@ -1,5 +1,6 @@
 package pe.edu.pucp.entrefunciones.bl.impl.ventas;
 import pe.edu.pucp.entrefunciones.bl.*;
+import pe.edu.pucp.entrefunciones.bl.error.BLException;
 import pe.edu.pucp.entrefunciones.bl.ventas.ReservaBL;
 import pe.edu.pucp.entrefunciones.dao.impl.ControlOperacionesDAO;
 import pe.edu.pucp.entrefunciones.dao.impl.ventas.ReservaDAOImpl;

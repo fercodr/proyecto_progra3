@@ -1,6 +1,6 @@
 package pe.edu.pucp.entrefunciones.bl.impl.catalogo;
 
-import pe.edu.pucp.entrefunciones.bl.BLException;
+import pe.edu.pucp.entrefunciones.bl.error.BLException;
 import pe.edu.pucp.entrefunciones.bl.catalogo.ObraTeatroBL;
 import pe.edu.pucp.entrefunciones.dao.catalogo.ObraTeatroDAO;
 import pe.edu.pucp.entrefunciones.dao.impl.catalogo.ObraTeatroDAOImpl;

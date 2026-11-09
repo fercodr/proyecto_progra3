@@ -1,6 +1,6 @@
 package pe.edu.pucp.entrefunciones.bl.impl.catalogo;
 
-import pe.edu.pucp.entrefunciones.bl.BLException;
+import pe.edu.pucp.entrefunciones.bl.error.BLException;
 import pe.edu.pucp.entrefunciones.bl.catalogo.ActividadCulturalBL;
 import pe.edu.pucp.entrefunciones.dao.impl.eventos.EventoDAO;
 import pe.edu.pucp.entrefunciones.dao.impl.eventos.EventoDAOImpl;

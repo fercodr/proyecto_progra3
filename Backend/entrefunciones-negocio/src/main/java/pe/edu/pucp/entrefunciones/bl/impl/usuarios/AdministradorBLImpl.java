@@ -2,7 +2,7 @@ package pe.edu.pucp.entrefunciones.bl.impl.usuarios;
 
 import pe.edu.pucp.entrefunciones.dao.impl.usuarios.AdministradorDAOImpl;
 import pe.edu.pucp.entrefunciones.modelo.usuarios.Administrador;
-import pe.edu.pucp.entrefunciones.bl.BLException;
+import pe.edu.pucp.entrefunciones.bl.error.BLException;
 import pe.edu.pucp.entrefunciones.bl.usuarios.AdministradorBL;
 
 import java.sql.SQLException;
