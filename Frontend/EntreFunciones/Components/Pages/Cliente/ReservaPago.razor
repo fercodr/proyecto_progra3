@@ -1,8 +1,9 @@
 @page "/reserva/{Id:int}/pago"
 @attribute [Authorize(Policy = "Compras")]
+@using EntreFunciones.DTOSS
 @using EntreFunciones.Servicios.Rest
 @implements IDisposable
-@inject CompraRestService Api
+@inject ICompraService Api
 @inject NavigationManager Nav
 <PageTitle>Reserva y pago</PageTitle>
 
@@ -133,7 +134,7 @@
                 if(!string.IsNullOrEmpty(Pago.FechaPago))Mensaje="Pago registrado, pendiente de validación administrativa.";
             }
             Temporizador ??= ActualizarTiempo();
-        }catch(Exception e) when(e is HttpRequestException or InvalidOperationException or TaskCanceledException) { Error=e.Message; }
+        }catch(Exception e) when(e is HttpRequestException or InvalidOperationException or ServiceException or TaskCanceledException) { Error=e.Message; }
         finally { Cargando=false; }
     }
     private async Task ActualizarTiempo()
@@ -150,14 +151,14 @@
             // Pago simulado: nunca se envían ni almacenan tarjeta o CVC.
             await Api.RegistrarPago(Pago.Id);Pago.FechaPago="Registrado";
             Mensaje="Pago registrado, pendiente de validación administrativa.";
-        }catch(Exception e) when(e is HttpRequestException or InvalidOperationException or TaskCanceledException) { Error=e.Message; }
+        }catch(Exception e) when(e is HttpRequestException or InvalidOperationException or ServiceException or TaskCanceledException) { Error=e.Message; }
         finally { NombreTitular=NumeroTarjeta=FechaExpiracion=Cvc="";Enviando=false; }
     }
     private async Task CancelarReserva()
     {
         if(Enviando)return;Enviando=true;Error="";
         try {await Api.Cancelar(Id);Nav.NavigateTo("/cartelera");}
-        catch(Exception e) when(e is HttpRequestException or InvalidOperationException or TaskCanceledException) { Error=e.Message; }
+        catch(Exception e) when(e is HttpRequestException or InvalidOperationException or ServiceException or TaskCanceledException) { Error=e.Message; }
         finally {Enviando=false;}
     }
     public void Dispose(){Cierre.Cancel();Cierre.Dispose();}
