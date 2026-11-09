@@ -8,10 +8,22 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Components\Pages\Espacios\" />
-    <Folder Include="Components\Pages\CarteleraSeleccion\" />
-    <Folder Include="Components\Pages\IngresoSeguimiento\" />
-    <Folder Include="Components\Pages\Ventas\" />
+    <Compile Remove="Components\Pages\CarteleraSeleccion\**" />
+    <Compile Remove="Components\Pages\Espacios\**" />
+    <Compile Remove="Components\Pages\IngresoSeguimiento\**" />
+    <Compile Remove="Components\Pages\Ventas\**" />
+    <Content Remove="Components\Pages\CarteleraSeleccion\**" />
+    <Content Remove="Components\Pages\Espacios\**" />
+    <Content Remove="Components\Pages\IngresoSeguimiento\**" />
+    <Content Remove="Components\Pages\Ventas\**" />
+    <EmbeddedResource Remove="Components\Pages\CarteleraSeleccion\**" />
+    <EmbeddedResource Remove="Components\Pages\Espacios\**" />
+    <EmbeddedResource Remove="Components\Pages\IngresoSeguimiento\**" />
+    <EmbeddedResource Remove="Components\Pages\Ventas\**" />
+    <None Remove="Components\Pages\CarteleraSeleccion\**" />
+    <None Remove="Components\Pages\Espacios\**" />
+    <None Remove="Components\Pages\IngresoSeguimiento\**" />
+    <None Remove="Components\Pages\Ventas\**" />
   </ItemGroup>
 
   <ItemGroup>

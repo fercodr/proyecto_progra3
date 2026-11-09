@@ -190,7 +190,7 @@ public class Main {
         // ---------- 6. Auditoria ----------
         System.out.println("\n--- Auditoria ---");
         Auditoria incidencia = new Auditoria(1, LocalDateTime.of(2026, 9, 14, 10, 6),
-                "Marco Reyes", "Cliente reporto butaca A2 con reposabrazos suelto durante la funcion.", funcion15h);
+                admin, "Cliente reporto butaca A2 con reposabrazos suelto durante la funcion.", funcion15h);
         System.out.println("Incidencia registrada para la funcion " + incidencia.getFuncion().getId()
                 + ", estado: " + incidencia.getEstado());
         boolean incidenciaEnProceso = incidencia.atender();
@@ -198,7 +198,7 @@ public class Main {
         System.out.println("Incidencia atendida y resuelta, estado final: " + incidencia.getEstado());
 
         Auditoria trazabilidad = new Auditoria(2, LocalDateTime.of(2026, 9, 14, 9, 58),
-                "valeria.suarez@gmail.com", "Inicio de sesion exitoso desde nueva ubicacion.");
+                admin, "Inicio de sesion exitoso desde nueva ubicacion.");
         System.out.println("Registro de trazabilidad general (sin funcion asociada)? "
                 + (trazabilidad.getFuncion() == null));
 
