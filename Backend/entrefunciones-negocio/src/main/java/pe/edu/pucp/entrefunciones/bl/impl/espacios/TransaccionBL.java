@@ -1,6 +1,6 @@
 package pe.edu.pucp.entrefunciones.bl.impl.espacios;
 
-import pe.edu.pucp.entrefunciones.bl.BLException;
+import pe.edu.pucp.entrefunciones.bl.error.BLException;
 import pe.edu.pucp.entrefunciones.dao.transacciones.TransactionsManager;
 
 import java.sql.SQLException;

@@ -3,7 +3,7 @@ package pe.edu.pucp.entrefunciones.bl.impl.espacios;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import pe.edu.pucp.entrefunciones.bl.BLException;
+import pe.edu.pucp.entrefunciones.bl.error.BLException;
 import pe.edu.pucp.entrefunciones.dao.impl.espacios.ButacaDAOImpl;
 import pe.edu.pucp.entrefunciones.dao.impl.espacios.SalaDAOImpl;
 import pe.edu.pucp.entrefunciones.dao.impl.espacios.SedeDAOImpl;
