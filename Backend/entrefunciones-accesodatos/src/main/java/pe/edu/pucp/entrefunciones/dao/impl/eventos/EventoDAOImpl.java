@@ -140,10 +140,11 @@ public class EventoDAOImpl implements EventoDAO {
     private void insertarBase(Evento evento) throws SQLException {
         Connection connection = TransactionsManager.getConnection();
 
-        String sql = "{call insertar_evento(?, ?, ?)}";
+        String sql = "{call insertar_evento(?, ?, ?, ?)}";
         try (CallableStatement cmd = connection.prepareCall(sql)) {
             cmd.setDouble("p_precio", evento.getPrecio());
             cmd.setBoolean("p_activo", evento.estaActivo());
+            cmd.setString("p_imagen_url", evento.getImagenUrl());
             cmd.registerOutParameter("p_id", Types.INTEGER);
 
             if (cmd.executeUpdate() == 0) {
@@ -157,11 +158,12 @@ public class EventoDAOImpl implements EventoDAO {
     private void modificarBase(Evento evento) throws SQLException {
         Connection connection = TransactionsManager.getConnection();
 
-        String sql = "{call modificar_evento(?, ?, ?)}";
+        String sql = "{call modificar_evento(?, ?, ?, ?)}";
         try (CallableStatement cmd = connection.prepareCall(sql)) {
             cmd.setInt("p_id", evento.getId());
             cmd.setDouble("p_precio", evento.getPrecio());
             cmd.setBoolean("p_activo", evento.estaActivo());
+            cmd.setString("p_imagen_url", evento.getImagenUrl());
 
             if (cmd.executeUpdate() == 0) {
                 throw new SQLException("No se pudo actualizar el evento");
@@ -283,6 +285,7 @@ public class EventoDAOImpl implements EventoDAO {
                     Enum.valueOf(TipoActividad.class, rs.getString("tipo_actividad")));
             default -> throw new SQLException("Tipo de evento desconocido: " + tipo);
         };
+        evento.setImagenUrl(rs.getString("imagen_url"));
 
         if (!rs.getBoolean("activo")) {
             evento.desactivar();
