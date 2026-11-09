@@ -1,133 +1,171 @@
 ﻿@page "/admin/catalogo/nuevo"
 @page "/admin/catalogo/editar/{Id:int}"
 @inject NavigationManager Nav
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Components.Forms
 @attribute [Authorize(Policy = "Programacion")]
 <PageTitle>@(Id == null ? "Nuevo evento" : "Editar evento")</PageTitle>
 
 <div class="page-shell page-shell-narrow">
-<div class="page-header">
-    <div>
-        <h1 class="page-title">@(Id == null ? "Nuevo evento" : "Editar evento")</h1>
-        <p class="page-description">Selecciona el tipo de evento y completa sus datos.</p>
-    </div>
-</div>
-
-@if (MensajeError != null)
-{
-    <div class="alert alert-danger" role="alert" aria-live="assertive">@MensajeError</div>
-}
-<form>
-<div class="mb-3">
-    <label for="tipoEvento" class="form-label">Tipo de evento</label>
-    <select id="tipoEvento" class="form-select" @bind="TipoEvento">
-        <option value="">-- Seleccione un tipo --</option>
-        <option value="PELICULA">Película</option>
-        <option value="ACTIVIDAD_CULTURAL">Actividad cultural</option>
-        <option value="OBRA_TEATRO">Obra de teatro</option>
-    </select>
-</div>
-@if (TipoEvento != ""){
-    <div class="card mb-3">
-        <div class="card-header">Datos generales</div>
-        <div class="card-body">
-            <div class="mb-3">
-                <label for="precioEvento" class="form-label">Precio (S/)</label>
-                <input id="precioEvento" type="number" step="0.01" class="form-control" value="25.00" />
-            </div>
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="chkActivo" checked />
-                <label class="form-check-label" for="chkActivo">Activo</label>
-            </div>
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">@(Id == null ? "Nuevo evento" : "Editar evento")</h1>
+            <p class="page-description">Selecciona el tipo de evento y completa sus datos.</p>
         </div>
     </div>
 
-    <div class="card mb-3">
-        <div class="card-header">Datos específicos</div>
-        <div class="card-body">
-
-            @if (TipoEvento == "PELICULA")
-            {
-                <div class="mb-3">
-                    <label for="nombrePelicula" class="form-label">Nombre de la película</label>
-                    <input id="nombrePelicula" type="text" class="form-control" value="Interestelar" />
-                </div>
-                <div class="mb-3">
-                    <label for="duracionPelicula" class="form-label">Duración (minutos)</label>
-                    <input id="duracionPelicula" type="number" class="form-control" value="169" />
-                </div>
-                <div class="mb-3">
-                    <label for="generoPelicula" class="form-label">Género</label>
-                    <select id="generoPelicula" class="form-select">
-                        <option>ACCION</option>
-                        <option>COMEDIA</option>
-                        <option>DRAMA</option>
-                        <option selected>CIENCIA_FICCION</option>
-                        <option>TERROR</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label for="clasificacionPelicula" class="form-label">Clasificación por edad</label>
-                    <select id="clasificacionPelicula" class="form-select">
-                        <option>APT</option>
-                        <option selected>MAYORES_14</option>
-                        <option>MAYORES_18</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label for="directorPelicula" class="form-label">Director</label>
-                    <input id="directorPelicula" type="text" class="form-control" value="Christopher Nolan" />
-                </div>
-            }
-            else if (TipoEvento == "ACTIVIDAD_CULTURAL")
-            {
-                <div class="mb-3">
-                    <label for="nombreActividad" class="form-label">Nombre</label>
-                    <input id="nombreActividad" type="text" class="form-control" value="Conversatorio de literatura peruana" />
-                </div>
-                <div class="mb-3">
-                    <label for="expositorActividad" class="form-label">Expositor</label>
-                    <input id="expositorActividad" type="text" class="form-control" value="María Fernández" />
-                </div>
-                <div class="mb-3">
-                    <label for="tipoActividad" class="form-label">Tipo de actividad</label>
-                    <select id="tipoActividad" class="form-select">
-                        <option selected>CONVERSATORIO</option>
-                        <option>TALLER</option>
-                        <option>EXPOSICION</option>
-                        <option>CONCIERTO</option>
-                    </select>
-                </div>
-            }
-            else if (TipoEvento == "OBRA_TEATRO")
-            {
-                <div class="mb-3">
-                    <label for="tituloObra" class="form-label">Título</label>
-                    <input id="tituloObra" type="text" class="form-control" value="La casa de Bernarda Alba" />
-                </div>
-                <div class="mb-3">
-                    <label for="directorObra" class="form-label">Nombre del director</label>
-                    <input id="directorObra" type="text" class="form-control" value="Carlos Gutiérrez" />
-                </div>
-                <div class="mb-3">
-                    <label for="elencoObra" class="form-label">Elenco</label>
-                    <textarea id="elencoObra" class="form-control" rows="3">Ana Torres, Lucía Ramos, Sofía Vargas</textarea>
-                </div>
-            }
-
+    @if (MensajeError != null)
+    {
+        <div class="alert alert-danger" role="alert" aria-live="assertive">@MensajeError</div>
+    }
+    <form>
+        <div class="mb-3">
+            <label for="tipoEvento" class="form-label">Tipo de evento</label>
+            <select id="tipoEvento" class="form-select" @bind="TipoEvento">
+                <option value="">-- Seleccione un tipo --</option>
+                <option value="PELICULA">Película</option>
+                <option value="ACTIVIDAD_CULTURAL">Actividad cultural</option>
+                <option value="OBRA_TEATRO">Obra de teatro</option>
+            </select>
         </div>
-    </div>
-        <button type="button" class="btn btn-primary">Guardar</button>
-        <button type="button" class="btn btn-outline-secondary">Cancelar</button>
-}
+        @if (TipoEvento != "")
+        {
+            <div class="card mb-3">
+                <div class="card-header">Datos generales</div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="precioEvento" class="form-label">Precio (S/)</label>
+                        <input id="precioEvento" type="number" step="0.01" class="form-control" value="25.00" />
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="chkActivo" checked />
+                        <label class="form-check-label" for="chkActivo">Activo</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header">Imagen del evento</div>
+                <div class="card-body">
+                    <label for="imagenEvento" class="form-label">Seleccione una imagen</label>
+                    <InputFile id="imagenEvento" class="form-control" accept="image/*" OnChange="CargarImagen" />
+                    <div class="form-text">Formatos: JPG o PNG. Máximo 2 MB.</div>
+
+                    @if (ImagenPreview != null)
+                    {
+                        <img src="@ImagenPreview" alt="Vista previa de la imagen" class="img-thumbnail mt-3" style="max-height: 200px;" />
+                    }
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header">Datos específicos</div>
+                <div class="card-body">
+
+                    @if (TipoEvento == "PELICULA")
+                    {
+                        <div class="mb-3">
+                            <label for="nombrePelicula" class="form-label">Nombre de la película</label>
+                            <input id="nombrePelicula" type="text" class="form-control" value="Interestelar" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="duracionPelicula" class="form-label">Duración (minutos)</label>
+                            <input id="duracionPelicula" type="number" class="form-control" value="169" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="generoPelicula" class="form-label">Género</label>
+                            <select id="generoPelicula" class="form-select">
+                                <option>ACCION</option>
+                                <option>COMEDIA</option>
+                                <option>DRAMA</option>
+                                <option selected>CIENCIA_FICCION</option>
+                                <option>TERROR</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="clasificacionPelicula" class="form-label">Clasificación por edad</label>
+                            <select id="clasificacionPelicula" class="form-select">
+                                <option>APT</option>
+                                <option selected>MAYORES_14</option>
+                                <option>MAYORES_18</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="directorPelicula" class="form-label">Director</label>
+                            <input id="directorPelicula" type="text" class="form-control" value="Christopher Nolan" />
+                        </div>
+                    }
+                    else if (TipoEvento == "ACTIVIDAD_CULTURAL")
+                    {
+                        <div class="mb-3">
+                            <label for="nombreActividad" class="form-label">Nombre</label>
+                            <input id="nombreActividad" type="text" class="form-control" value="Conversatorio de literatura peruana" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="expositorActividad" class="form-label">Expositor</label>
+                            <input id="expositorActividad" type="text" class="form-control" value="María Fernández" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="tipoActividad" class="form-label">Tipo de actividad</label>
+                            <select id="tipoActividad" class="form-select">
+                                <option selected>CONVERSATORIO</option>
+                                <option>TALLER</option>
+                                <option>EXPOSICION</option>
+                                <option>CONCIERTO</option>
+                            </select>
+                        </div>
+                    }
+                    else if (TipoEvento == "OBRA_TEATRO")
+                    {
+                        <div class="mb-3">
+                            <label for="tituloObra" class="form-label">Título</label>
+                            <input id="tituloObra" type="text" class="form-control" value="La casa de Bernarda Alba" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="directorObra" class="form-label">Nombre del director</label>
+                            <input id="directorObra" type="text" class="form-control" value="Carlos Gutiérrez" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="elencoObra" class="form-label">Elenco</label>
+                            <textarea id="elencoObra" class="form-control" rows="3">Ana Torres, Lucía Ramos, Sofía Vargas</textarea>
+                        </div>
+                    }
+
+                </div>
+            </div>
+            <button type="button" class="btn btn-primary">Guardar</button>
+            <button type="button" class="btn btn-outline-secondary">Cancelar</button>
+        }
 
 
 
-</form>
+    </form>
 </div>
 
 @code {
     [Parameter]
-    public int? Id { get; set; } 
-    private string TipoEvento { get; set; } = ""; @*le da un valor inicial, inicialmente es un texto vacio, sin "", la variable empezaría en null, y el @if fallaría*@
+    public int? Id { get; set; }
+    private string TipoEvento { get; set; } = "";
     private string? MensajeError { get; set; }
+    private string? ImagenPreview { get; set; }
+
+    private async Task CargarImagen(InputFileChangeEventArgs e)
+    {
+        IBrowserFile archivo = e.File;
+        long maximo = 2 * 1024 * 1024; // 2 MB
+
+        if (archivo.Size > maximo)
+        {
+            MensajeError = "La imagen no puede pesar más de 2 MB.";
+            return;
+        }
+
+        // Sin maxAllowedSize el límite por defecto es 500 KB
+        using var stream = archivo.OpenReadStream(maxAllowedSize: maximo);
+        using var memoria = new MemoryStream();
+        await stream.CopyToAsync(memoria);
+
+        ImagenPreview = $"data:{archivo.ContentType};base64,{Convert.ToBase64String(memoria.ToArray())}";
+        MensajeError = null;
+    }
 }
