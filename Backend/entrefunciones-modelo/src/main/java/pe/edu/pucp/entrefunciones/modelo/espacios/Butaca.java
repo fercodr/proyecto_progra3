@@ -8,7 +8,8 @@ public class Butaca implements IEliminable {
     private int columna;
     private String tipoButaca;
     private boolean activo;
-
+    public Butaca() {
+    }
     public Butaca (int id, Sala sala, String fila, int columna, String tipoButaca){
         setId(id);
         setSala(sala);
