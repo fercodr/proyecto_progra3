@@ -18,7 +18,7 @@ public final class PasswordUtil {
 
     private PasswordUtil() { }
 
-    /** Convierte la contraseña escrita en el texto que se guarda en la BD. */
+    //Convierte la contraseña escrita en el texto que se guarda en la BD.
     public static String hashear(String contrasena) {
         byte[] sal = new byte[BYTES_SAL];
         new SecureRandom().nextBytes(sal);
@@ -27,7 +27,7 @@ public final class PasswordUtil {
         return PREFIJO + "$" + ITERACIONES + "$" + b64.encodeToString(sal) + "$" + b64.encodeToString(hash);
     }
 
-    /** ¿La contraseña escrita corresponde a la guardada? */
+    // verifica si la contraseña escrita corresponde a la guardada
     public static boolean verificar(String contrasena, String guardada) {
         if (contrasena == null || guardada == null) {
             return false;
@@ -47,7 +47,7 @@ public final class PasswordUtil {
         return MessageDigest.isEqual(esperado, calculado);
     }
 
-    /** Sirve para no volver a hashear algo que ya está hasheado. */
+    // Sirve para no volver a hashear algo que ya está hasheado.
     public static boolean estaHasheada(String valor) {
         return valor != null && valor.startsWith(PREFIJO + "$");
     }

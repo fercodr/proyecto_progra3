@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using EntreFunciones.Servicios;
 using EntreFunciones.Servicios.Impl;
+using EntreFunciones.Servicios.Rest;
 namespace EntreFunciones.Seguridad
 {
     public static class SeguridadExtensions
@@ -23,9 +24,9 @@ namespace EntreFunciones.Seguridad
                 }
             });
 
-            // Esta línea es la que hace que <AuthorizeView> y "context.User" funcionen en las páginas.
             services.AddCascadingAuthenticationState();
             services.AddHttpContextAccessor();
+            services.AddScoped<ICuentaService, CuentaService>();
             services.AddScoped<ISesionService, SesionServiceImpl>();
         }
 

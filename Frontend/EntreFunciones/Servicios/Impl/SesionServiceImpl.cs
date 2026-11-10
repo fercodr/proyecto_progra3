@@ -1,12 +1,11 @@
-﻿using Microsoft.AspNetCore.Authentication;
+﻿using EntreFunciones.DTOSS.Usuarios;
+using EntreFunciones.Servicios.Rest;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using System.Security.Claims;
 
 namespace EntreFunciones.Servicios.Impl
 {
-    // VERSIÓN DEMO: no usa BL ni BD. Dos usuarios fijos, contraseña "123456".
-    // Cuando se conecte al BL real, se reemplaza el cuerpo de IniciarSesion por la validación real.
-
     public class SesionServiceImpl : ISesionService
     {
         // Según el documento: el login lleva a "/" (cliente) o a "/admin" (administrador, pantalla Reportes).
@@ -15,33 +14,36 @@ namespace EntreFunciones.Servicios.Impl
         private const string RutaInicioAdmin = "/admin";
 
         private readonly IHttpContextAccessor httpContextAccessor;
+        private readonly ICuentaService cuentaService;
 
-        public SesionServiceImpl(IHttpContextAccessor httpContextAccessor)
+        public SesionServiceImpl(IHttpContextAccessor httpContextAccessor, ICuentaService cuentaService)
         {
             this.httpContextAccessor = httpContextAccessor;
+            this.cuentaService = cuentaService;
         }
 
         public async Task<string> IniciarSesion(HttpContext context, string userName, string password)
         {
-            if (password != "123456")
+            // Credenciales correctas
+            bool autenticado = await cuentaService.Autenticar(userName, password);
+            if (!autenticado)
             {
                 return "/login?error=true";
             }
 
-            string? rol = userName switch
-            {
-                "admin@entrefunciones.com" => "Administrador",
-                "cliente@entrefunciones.com" => "Cliente",
-                _ => null
-            };
+            // Datos de la cuenta (para el id)
+            CuentaUsuarioDTO cuenta = await cuentaService.FindByCorreo(userName);
+
+            // Qué rol tiene?
+            string? rol = await cuentaService.ObtenerRol(userName);
             if (rol == null)
             {
                 return "/login?error=true";
             }
 
             List<Claim> claims = [
-                new Claim(ClaimTypes.NameIdentifier, rol == "Administrador" ? "1" : "2"),
-                new Claim(ClaimTypes.Name, userName),
+                new Claim(ClaimTypes.NameIdentifier, cuenta.Id.ToString()),
+                new Claim(ClaimTypes.Name, cuenta.Correo),
                 new Claim(ClaimTypes.Role, rol)
             ];
             ClaimsIdentity identidad = new(claims, CookieAuthenticationDefaults.AuthenticationScheme);
