@@ -55,7 +55,8 @@ public class DBManager {
         try { Class.forName("com.mysql.cj.jdbc.Driver"); }
         catch (ClassNotFoundException e) { throw new SQLException("No se encontró el driver MySQL", e); }
         return DriverManager.getConnection(
-                "jdbc:mysql://" + servidor + ":" + puerto + "/" + esquema + "?connectionTimeZone=-05:00&forceConnectionTimeZoneToSession=true&useInformationSchema=true",
+                "jdbc:mysql://" + servidor + ":" + puerto + "/" + esquema
+                        + "?useSSL=false&allowPublicKeyRetrieval=true",
                 usuario,
                 password
         );

@@ -43,6 +43,9 @@ public class AdministradorBLImpl
     public void insert(Administrador administrador) throws BLException {
         validarFormato(administrador);
 
+        // Se guarda el hash, nunca la contraseña real
+        administrador.setContrasena(PasswordUtil.hashear(administrador.getContrasena()));
+
         try {
             administradorDAO.insert(administrador);
         } catch (SQLException e) {
@@ -119,4 +122,5 @@ public class AdministradorBLImpl
                     "El código de empleado es obligatorio");
         }
     }
+
 }

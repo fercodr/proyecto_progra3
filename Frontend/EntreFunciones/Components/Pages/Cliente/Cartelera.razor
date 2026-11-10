@@ -1,6 +1,9 @@
 @page "/cartelera"
 @using System.Globalization
+@using EntreFunciones.DTOSS
+@using EntreFunciones.Servicios.Rest
 @inject NavigationManager Nav
+@inject ICatalogoService Catalogo
 
 <PageTitle>Cartelera</PageTitle>
 
@@ -12,125 +15,205 @@
     </div>
 </div>
 
-<div class="filter-panel row g-3 align-items-end mx-0">
-    <div class="col-6 col-md-2">
-        <label for="filtroFecha" class="form-label">Fecha</label>
-        <input id="filtroFecha" type="date" class="form-control" @bind="FiltroFecha" />
-    </div>
-    <div class="col-6 col-md-2">
-        <label for="filtroSede" class="form-label">Sede</label>
-        <select id="filtroSede" class="form-select" @bind="FiltroSede">
-            <option value="">Todas</option>
-            @foreach (string sede in Sedes)
-            {
-                <option value="@sede">@sede</option>
-            }
-        </select>
-    </div>
-    <div class="col-6 col-md-2">
-        <label for="filtroDistrito" class="form-label">Distrito</label>
-        <select id="filtroDistrito" class="form-select" @bind="FiltroDistrito">
-            <option value="">Todos</option>
-            @foreach (string distrito in Distritos)
-            {
-                <option value="@distrito">@distrito</option>
-            }
-        </select>
-    </div>
-    <div class="col-6 col-md-2">
-        <label for="filtroTipo" class="form-label">Tipo</label>
-        <select id="filtroTipo" class="form-select" @bind="FiltroTipo">
-            <option value="">Todos</option>
-            <option value="Pelicula">Película</option>
-            <option value="ObraTeatro">Obra de teatro</option>
-            <option value="ActividadCultural">Actividad cultural</option>
-        </select>
-    </div>
-    <div class="col-6 col-md-2">
-        <label for="filtroPrecio" class="form-label">Precio máx. (S/)</label>
-        <input id="filtroPrecio" type="number" min="0" class="form-control" @bind="FiltroPrecioMax" />
-    </div>
-    <div class="col-6 col-md-2 form-check ms-1">
-        <input type="checkbox" class="form-check-input" id="chkAccesible" @bind="FiltroAccesible" />
-        <label class="form-check-label" for="chkAccesible">Solo accesibles</label>
-    </div>
-</div>
-
-@if (!EventosFiltrados.Any())
+@if (Cargando)
 {
-    <div class="empty-state" role="status">No hay funciones que coincidan con los filtros.</div>
+    <div class="text-center my-5" role="status">
+        <div class="spinner-border" aria-hidden="true"></div>
+        <p class="text-muted mt-2">Cargando cartelera...</p>
+    </div>
+}
+else if (ErrorCarga is not null)
+{
+    <div class="alert alert-danger" role="alert">
+        No se pudo cargar la cartelera: @ErrorCarga
+        <button type="button" class="btn btn-sm btn-outline-danger ms-2" @onclick="Cargar">Reintentar</button>
+    </div>
 }
 else
 {
-    <div class="row g-3">
-        @foreach (EventoCartelera evento in EventosFiltrados)
+    <div class="filter-panel row g-3 align-items-end mx-0">
+        <div class="col-6 col-md-3">
+            <label for="filtroSede" class="form-label">Sede</label>
+            <select id="filtroSede" class="form-select" @bind="FiltroSede">
+                <option value="">Todas</option>
+                @foreach (string sede in Sedes)
+                {
+                    <option value="@sede">@sede</option>
+                }
+            </select>
+        </div>
+        <div class="col-6 col-md-3">
+            <label for="filtroCiudad" class="form-label">Ciudad</label>
+            <select id="filtroCiudad" class="form-select" @bind="FiltroCiudad">
+                <option value="">Todas</option>
+                @foreach (string ciudad in Ciudades)
+                {
+                    <option value="@ciudad">@ciudad</option>
+                }
+            </select>
+        </div>
+        <div class="col-6 col-md-3">
+            <label for="filtroTipo" class="form-label">Tipo</label>
+            <select id="filtroTipo" class="form-select" @bind="FiltroTipo">
+                <option value="">Todos</option>
+                <option value="PELICULA">Película</option>
+                <option value="OBRA_TEATRO">Obra de teatro</option>
+                <option value="ACTIVIDAD_CULTURAL">Actividad cultural</option>
+            </select>
+        </div>
+        <div class="col-6 col-md-3">
+            <label for="filtroPrecio" class="form-label">Precio máx. (S/)</label>
+            <input id="filtroPrecio" type="number" min="0" class="form-control" @bind="FiltroPrecioMax" />
+        </div>
+    </div>
+
+    @if (!EventosFiltrados.Any())
+    {
+        <div class="empty-state" role="status">No hay funciones que coincidan con los filtros.</div>
+    }
+    else
+    {
+        @foreach (string tipo in TiposPresentes)
         {
-            <div class="col-12 col-sm-6 col-lg-4">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-body d-flex flex-column">
-                        <span class="badge text-bg-secondary align-self-start mb-2">@TextoTipo(evento.Tipo)</span>
-                        <h2 class="card-title h5">@evento.Titulo</h2>
-                        <p class="card-text text-muted mb-1">@evento.Sede &middot; @evento.Distrito</p>
-                        <p class="card-text text-muted mb-2">@evento.Tematica</p>
-                        <p class="card-text mb-3">
-                            <strong>S/ @evento.Precio.ToString("N2", CultureInfo.InvariantCulture)</strong>
-                            @if (evento.Accesible)
-                            {
-                                <span class="badge text-bg-success ms-2">Accesible</span>
-                            }
-                        </p>
-                        <button type="button" class="btn btn-primary mt-auto" @onclick="() => VerDetalle(evento.Id)">
-                            Ver detalle
-                        </button>
+            <h2 class="h5 mt-4 mb-3">@TextoTipo(tipo)</h2>
+            <div class="row g-3">
+                @foreach (EventoDTO evento in EventosFiltrados.Where(e => e.Tipo == tipo))
+                {
+                    (string sede, string ciudad) proxima = ProximaSedeYCiudad(evento.Id);
+
+                    <div class="col-12 col-sm-6 col-lg-4">
+                        <div class="card h-100 shadow-sm">
+                            <div class="d-flex align-items-center justify-content-center bg-light" style="height:140px;">
+                                <i class="@IconoTipo(evento.Tipo) text-secondary" style="font-size:3rem;"></i>
+                            </div>
+                            <div class="card-body d-flex flex-column">
+                                <span class="badge text-bg-secondary align-self-start mb-2">@TextoTipo(evento.Tipo)</span>
+                                <h3 class="card-title h5">@evento.Titulo</h3>
+                                <p class="card-text text-muted mb-1">@(proxima.sede == "" ? "Sin funciones programadas" : $"{proxima.sede} · {proxima.ciudad}")</p>
+                                <p class="card-text text-muted mb-2">@Tematica(evento)</p>
+                                <p class="card-text mb-3">
+                                    <strong>S/ @evento.Precio.ToString("N2", CultureInfo.InvariantCulture)</strong>
+                                </p>
+                                <button type="button" class="btn btn-primary mt-auto" @onclick="() => VerDetalle(evento.Id)">
+                                    Ver detalle
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                </div>
+                }
             </div>
         }
-    </div>
+    }
 }
 </div>
 
 @code {
-    private DateTime? FiltroFecha;
     private string FiltroSede = string.Empty;
-    private string FiltroDistrito = string.Empty;
+    private string FiltroCiudad = string.Empty;
     private string FiltroTipo = string.Empty;
     private int? FiltroPrecioMax;
-    private bool FiltroAccesible;
 
-    // RF-M4-01: dato de ejemplo mientras no hay conexion al backend Java.
-    // Reemplazar por EventoBL.findAll() (solo eventos confirmados / publicados) cuando se integre.
-    private List<EventoCartelera> Eventos = new()
+    private bool Cargando = true;
+    private string? ErrorCarga;
+
+    private List<EventoDTO> Eventos = new();
+    private List<FuncionDTO> Funciones = new();
+
+    protected override async Task OnInitializedAsync()
     {
-        new EventoCartelera(1, "Pelicula", "Interestelar", "Cineplanet Jockey Plaza", "Surco", "Ciencia ficcion", 22.00, true),
-        new EventoCartelera(2, "Pelicula", "Spider-Man: Brand New Day", "Cineplanet Norte", "Independencia", "Accion", 18.50, false),
-        new EventoCartelera(3, "ObraTeatro", "La Muralla", "Teatro Municipal", "Lima", "Drama historico", 35.00, true),
-        new EventoCartelera(4, "ActividadCultural", "Charla: Arte Contemporaneo", "Sede Miraflores", "Miraflores", "Charla", 10.00, true),
-        new EventoCartelera(5, "ActividadCultural", "Taller de Ceramica", "Sede Barranco", "Barranco", "Taller", 25.00, false),
-    };
+        await Cargar();
+    }
 
-    private List<string> Sedes => Eventos.Select(e => e.Sede).Distinct().OrderBy(s => s).ToList();
-    private List<string> Distritos => Eventos.Select(e => e.Distrito).Distinct().OrderBy(s => s).ToList();
+    private async Task Cargar()
+    {
+        Cargando = true;
+        ErrorCarga = null;
+        try
+        {
+            // Solo eventos activos: el backend aun no distingue "publicado" de "activo" (RF-M4-01),
+            // asi que por ahora se muestra todo evento activo tal cual EventoBL.findAll() lo devuelve.
+            Eventos = (await Catalogo.ListarEventos()).Where(e => e.Activo).ToList();
+            Funciones = await Catalogo.ListarFunciones();
+        }
+        catch (Exception ex)
+        {
+            ErrorCarga = ex.Message;
+        }
+        finally
+        {
+            Cargando = false;
+        }
+    }
 
-    private IEnumerable<EventoCartelera> EventosFiltrados => Eventos.Where(e =>
-        (string.IsNullOrEmpty(FiltroSede) || e.Sede == FiltroSede) &&
-        (string.IsNullOrEmpty(FiltroDistrito) || e.Distrito == FiltroDistrito) &&
+    private List<string> Sedes => Funciones.Select(f => f.NombreSede ?? "").Where(s => s != "").Distinct().OrderBy(s => s).ToList();
+    private List<string> Ciudades => Funciones.Select(f => f.CiudadSede ?? "").Where(s => s != "").Distinct().OrderBy(s => s).ToList();
+    private List<string> TiposPresentes => EventosFiltrados.Select(e => e.Tipo).Distinct().OrderBy(t => t).ToList();
+
+    private IEnumerable<EventoDTO> EventosFiltrados => Eventos.Where(e =>
         (string.IsNullOrEmpty(FiltroTipo) || e.Tipo == FiltroTipo) &&
         (FiltroPrecioMax == null || e.Precio <= FiltroPrecioMax) &&
-        (!FiltroAccesible || e.Accesible));
+        (string.IsNullOrEmpty(FiltroSede) || Funciones.Any(f => f.IdEvento == e.Id && f.NombreSede == FiltroSede)) &&
+        (string.IsNullOrEmpty(FiltroCiudad) || Funciones.Any(f => f.IdEvento == e.Id && f.CiudadSede == FiltroCiudad)));
+
+    private (string sede, string ciudad) ProximaSedeYCiudad(int idEvento)
+    {
+        FuncionDTO? proxima = Funciones
+            .Where(f => f.IdEvento == idEvento && f.Estado != "CANCELADA")
+            .OrderBy(f => f.Fecha).ThenBy(f => f.HoraInicio)
+            .FirstOrDefault();
+
+        return proxima is null ? ("", "") : (proxima.NombreSede ?? "", proxima.CiudadSede ?? "");
+    }
+
+    private string Tematica(EventoDTO evento) => evento.Tipo switch
+    {
+        "PELICULA" => TextoGenero(evento.Genero),
+        "OBRA_TEATRO" => string.IsNullOrWhiteSpace(evento.NombreDirector) ? "" : $"Dirección: {evento.NombreDirector}",
+        "ACTIVIDAD_CULTURAL" => TextoTipoActividad(evento.TipoActividad),
+        _ => ""
+    };
+
+    // Icono generico por tipo mientras el equipo decide como se van a manejar las imagenes
+    // reales de cada evento (ver decisiones-diseno-catalogo-rest.md). No depende de esa decision:
+    // es un icono decorativo de Bootstrap Icons, no una imagen propia del evento.
+    private string IconoTipo(string tipo) => tipo switch
+    {
+        "PELICULA" => "bi bi-film",
+        "OBRA_TEATRO" => "bi bi-emoji-smile",
+        "ACTIVIDAD_CULTURAL" => "bi bi-people",
+        _ => "bi bi-calendar-event"
+    };
 
     private string TextoTipo(string tipo) => tipo switch
     {
-        "Pelicula" => "Película",
-        "ObraTeatro" => "Obra de teatro",
-        "ActividadCultural" => "Actividad cultural",
+        "PELICULA" => "Película",
+        "OBRA_TEATRO" => "Obra de teatro",
+        "ACTIVIDAD_CULTURAL" => "Actividad cultural",
         _ => tipo
+    };
+
+    private string TextoGenero(string? genero) => genero switch
+    {
+        "ACCION" => "Acción",
+        "COMEDIA" => "Comedia",
+        "DRAMA" => "Drama",
+        "TERROR" => "Terror",
+        "ANIMACION" => "Animación",
+        "DOCUMENTAL" => "Documental",
+        _ => genero ?? ""
+    };
+
+    private string TextoTipoActividad(string? tipo) => tipo switch
+    {
+        "CHARLA" => "Charla",
+        "TALLER" => "Taller",
+        "EXPOSICION" => "Exposición",
+        "CONVERSATORIO" => "Conversatorio",
+        _ => tipo ?? ""
     };
 
     private void VerDetalle(int id)
     {
         Nav.NavigateTo($"/evento/{id}");
     }
-
-    private record EventoCartelera(int Id, string Tipo, string Titulo, string Sede, string Distrito, string Tematica, double Precio, bool Accesible);
 }
