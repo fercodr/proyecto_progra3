@@ -11,6 +11,7 @@ import pe.edu.pucp.entrefunciones.modelo.usuarios.Administrador;
 import pe.edu.pucp.entrefunciones.modelo.usuarios.Cliente;
 import pe.edu.pucp.entrefunciones.modelo.usuarios.Usuario;
 import pe.edu.pucp.entrefunciones.rest.dto.usuarios.CredencialesDTO;
+import pe.edu.pucp.entrefunciones.rest.dto.usuarios.RecuperarContrasenaDTO;
 import pe.edu.pucp.entrefunciones.rest.mapper.usuarios.AdministradorMapper;
 import pe.edu.pucp.entrefunciones.rest.mapper.usuarios.ClienteMapper;
 import pe.edu.pucp.entrefunciones.rest.mapper.usuarios.CuentaUsuarioMapper;
@@ -102,6 +103,25 @@ public class CuentasResource {
         }
         catch (NoEncontradoException ex) {
             return error(Response.Status.NOT_FOUND, ex);
+        }
+        catch (BLException ex) {
+            return error(Response.Status.INTERNAL_SERVER_ERROR, ex);
+        }
+    }
+
+    // Recuperar contraseña
+    @POST
+    @Path("/recuperar")
+    public Response recuperarContrasena(RecuperarContrasenaDTO dto) {
+        try {
+            if (dto == null) {
+                throw new ValidacionException("Envíe correo, DNI y la nueva contraseña");
+            }
+            cuentaUsuarioBL.recuperarContrasena(dto.getCorreo(), dto.getDni(), dto.getContrasenaNueva());
+            return Response.noContent().build();
+        }
+        catch (ValidacionException ex) {
+            return error(Response.Status.BAD_REQUEST, ex);
         }
         catch (BLException ex) {
             return error(Response.Status.INTERNAL_SERVER_ERROR, ex);

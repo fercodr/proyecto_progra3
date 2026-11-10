@@ -137,7 +137,7 @@ public class AuditoriaBLImpl implements AuditoriaBL {
     }
 
     @Override
-    public void insert(Auditoria auditoria) throws BLException, SQLException {
+    public void insert(Auditoria auditoria) throws BLException {
         if (auditoria == null || auditoria.getFuncion() == null|| auditoria.getResponsable() == null) throw new BLException("La auditoria debe indicar funcion y responsable");
         try{
             auditoriaDAO.insert(auditoria);
