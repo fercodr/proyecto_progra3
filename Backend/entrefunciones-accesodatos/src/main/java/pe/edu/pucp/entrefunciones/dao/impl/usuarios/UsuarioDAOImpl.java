@@ -143,9 +143,7 @@ public abstract class UsuarioDAOImpl<T extends Usuario>
 
             cmd.registerOutParameter("p_id", Types.INTEGER);
 
-            if (cmd.executeUpdate() == 0) {
-                throw new SQLException("No se pudo insertar el usuario");
-            }
+            cmd.executeUpdate();
 
             usuario.setId(cmd.getInt("p_id"));
         }
@@ -174,9 +172,7 @@ public abstract class UsuarioDAOImpl<T extends Usuario>
             cmd.setBoolean("p_activo", usuario.estaActivo());
             cmd.setInt("p_id", usuario.getId());
 
-            if (cmd.executeUpdate() == 0) {
-                throw new SQLException("No se pudo actualizar el usuario");
-            }
+            cmd.executeUpdate();
         }
     }
 

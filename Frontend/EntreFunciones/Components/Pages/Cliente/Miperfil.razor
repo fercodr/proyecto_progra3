@@ -1,4 +1,13 @@
 ﻿@page "/perfil"
+@attribute [Authorize(Policy = "PerfilCliente")]
+@using System.Security.Claims
+@using System.Text.RegularExpressions
+@using EntreFunciones.DTOSS.Usuarios
+@using EntreFunciones.Servicios
+@using EntreFunciones.Servicios.Rest
+@using Microsoft.AspNetCore.Components.Authorization
+@inject IClienteService ClienteService
+@inject AuthenticationStateProvider Auth
 
 <PageTitle>Mi perfil</PageTitle>
 
@@ -9,47 +18,190 @@
             <p class="page-description">Actualiza tus datos personales y contraseña.</p>
         </div>
     </div>
-    <div class="card card-body shadow-sm">
-    <form method="post" @onsubmit="GuardarPerfil">
-        <AntiforgeryToken />
-        
-        <div class="mb-3">
-            <label for="nombrePerfil" class="form-label">Nombre completo</label>
-            <input id="nombrePerfil" @bind="Nombre" type="text" class="form-control" placeholder="Tu nombre" autocomplete="name" required />
-        </div>
 
-        <div class="mb-3">
-            <label for="correoPerfil" class="form-label">Correo electrónico</label>
-            <input id="correoPerfil" @bind="Correo" type="email" class="form-control" placeholder="correo@ejemplo.com" autocomplete="email" required />
-        </div>
+    @if (ErrorCarga != null)
+    {
+        <div class="alert alert-danger" role="alert">@ErrorCarga</div>
+    }
+    else if (Cargando)
+    {
+        <div class="empty-state" role="status">Cargando tus datos...</div>
+    }
+    else
+    {
+    <div class="card card-body shadow-sm mb-4">
+        <h5 class="mb-3">Datos personales</h5>
 
-        <hr class="my-4" />
+        @if (MensajeDatos != null)
+        {
+            <div class="alert alert-success" role="status" aria-live="polite">@MensajeDatos</div>
+        }
+        @if (ErrorDatos != null)
+        {
+            <div class="alert alert-danger" role="alert" aria-live="assertive">@ErrorDatos</div>
+        }
 
-        <h5 class="mb-3">Cambiar contraseña</h5>
-        <div class="mb-3">
-            <label for="passwordActual" class="form-label">Contraseña actual</label>
-            <input id="passwordActual" @bind="PasswordActual" type="password" class="form-control" autocomplete="current-password" />
-        </div>
-
-        <div class="mb-3">
-            <label for="passwordNuevo" class="form-label">Nueva contraseña</label>
-            <input id="passwordNuevo" @bind="PasswordNuevo" type="password" class="form-control" autocomplete="new-password" />
-        </div>
-
-        <button type="submit" class="btn btn-primary w-100">Guardar cambios</button>
-    </form>
+        <form @onsubmit="GuardarDatos">
+            <div class="mb-3">
+                <label for="dniPerfil" class="form-label">DNI</label>
+                <input id="dniPerfil" value="@Dni" class="form-control" disabled />
+            </div>
+            <div class="mb-3">
+                <label for="nombresPerfil" class="form-label">Nombres</label>
+                <input id="nombresPerfil" @bind="Nombres" class="form-control" autocomplete="given-name" />
+            </div>
+            <div class="mb-3">
+                <label for="apellidosPerfil" class="form-label">Apellidos</label>
+                <input id="apellidosPerfil" @bind="Apellidos" class="form-control" autocomplete="family-name" />
+            </div>
+            <div class="mb-3">
+                <label for="correoPerfil" class="form-label">Correo electrónico</label>
+                <input id="correoPerfil" @bind="Correo" type="email" class="form-control" autocomplete="email" />
+            </div>
+            <div class="mb-3">
+                <label for="telefonoPerfil" class="form-label">Teléfono</label>
+                <input id="telefonoPerfil" @bind="Telefono" type="tel" inputmode="numeric" maxlength="9" class="form-control" autocomplete="tel" />
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Guardar datos</button>
+        </form>
     </div>
+
+    <div class="card card-body shadow-sm">
+        <h5 class="mb-3">Cambiar contraseña</h5>
+
+        @if (MensajePassword != null)
+        {
+            <div class="alert alert-success" role="status" aria-live="polite">@MensajePassword</div>
+        }
+        @if (ErrorPassword != null)
+        {
+            <div class="alert alert-danger" role="alert" aria-live="assertive">@ErrorPassword</div>
+        }
+
+        <form @onsubmit="CambiarPassword">
+            <div class="mb-3">
+                <label for="passwordActual" class="form-label">Contraseña actual</label>
+                <input id="passwordActual" @bind="PasswordActual" type="password" class="form-control" autocomplete="current-password" />
+            </div>
+            <div class="mb-3">
+                <label for="passwordNuevo" class="form-label">Nueva contraseña</label>
+                <input id="passwordNuevo" @bind="PasswordNuevo" type="password" class="form-control" autocomplete="new-password" />
+            </div>
+            <button type="submit" class="btn btn-outline-primary w-100">Cambiar contraseña</button>
+        </form>
+    </div>
+    }
 </div>
 
 @code {
+    private int IdCliente { get; set; }
+    private bool Cargando { get; set; } = true;
+    private string? ErrorCarga { get; set; }
 
-    public string Nombre { get; set; } = "Pablo Backyardigan";
-    public string Correo { get; set; } = "PablitoBackyardigan@gmail.com";
-    public string PasswordActual { get; set; } = string.Empty;
-    public string PasswordNuevo { get; set; } = string.Empty;
+    private string Dni { get; set; } = string.Empty;
+    private string Nombres { get; set; } = string.Empty;
+    private string Apellidos { get; set; } = string.Empty;
+    private string Correo { get; set; } = string.Empty;
+    private string Telefono { get; set; } = string.Empty;
+    private string? MensajeDatos { get; set; }
+    private string? ErrorDatos { get; set; }
 
-    private void GuardarPerfil()
+    private string PasswordActual { get; set; } = string.Empty;
+    private string PasswordNuevo { get; set; } = string.Empty;
+    private string? MensajePassword { get; set; }
+    private string? ErrorPassword { get; set; }
+
+    protected override async Task OnInitializedAsync()
     {
-       
+        try
+        {
+            // El id del cliente sale de la cookie (claim NameIdentifier que pone el login)
+            AuthenticationState estado = await Auth.GetAuthenticationStateAsync();
+            IdCliente = int.Parse(estado.User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+            // GET /clientes/{id}
+            ClienteDTO cliente = await ClienteService.ObtenerPorId(IdCliente);
+            Dni = cliente.Dni;
+            Nombres = cliente.Nombres;
+            Apellidos = cliente.Apellidos;
+            Correo = cliente.Correo;
+            Telefono = cliente.Telefono;
+        }
+        catch (Exception ex) when (ex is ServiceException or HttpRequestException or InvalidOperationException)
+        {
+            ErrorCarga = "No se pudieron cargar tus datos: " + ex.Message;
+        }
+        Cargando = false;
+    }
+
+    private async Task GuardarDatos()
+    {
+        MensajeDatos = null;
+        ErrorDatos = null;
+
+        if (string.IsNullOrWhiteSpace(Nombres) || string.IsNullOrWhiteSpace(Apellidos))
+        {
+            ErrorDatos = "Nombres y apellidos son obligatorios.";
+            return;
+        }
+        if (!Regex.IsMatch(Correo ?? "", @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+        {
+            ErrorDatos = "El correo debe tener formato válido.";
+            return;
+        }
+        if (!Regex.IsMatch(Telefono ?? "", @"^9\d{8}$"))
+        {
+            ErrorDatos = "El teléfono debe tener 9 dígitos y empezar con 9.";
+            return;
+        }
+
+        ClienteDTO cambios = new()
+        {
+            Nombres = Nombres.Trim(),
+            Apellidos = Apellidos.Trim(),
+            Correo = Correo!.Trim(),
+            Telefono = Telefono!
+        };
+
+        try
+        {
+            // PUT /clientes/{id}
+            await ClienteService.Actualizar(IdCliente, cambios);
+            MensajeDatos = "Tus datos se guardaron correctamente.";
+        }
+        catch (ServiceException ex)
+        {
+            ErrorDatos = ex.Message;   // p. ej. "Ya existe una cuenta con ese correo"
+        }
+    }
+
+    private async Task CambiarPassword()
+    {
+        MensajePassword = null;
+        ErrorPassword = null;
+
+        if (string.IsNullOrWhiteSpace(PasswordActual))
+        {
+            ErrorPassword = "Ingresa tu contraseña actual.";
+            return;
+        }
+        if (PasswordNuevo.Length < 6)
+        {
+            ErrorPassword = "La nueva contraseña debe tener al menos 6 caracteres.";
+            return;
+        }
+
+        try
+        {
+            // PUT /clientes/{id}/password
+            await ClienteService.CambiarContrasena(IdCliente, PasswordActual, PasswordNuevo);
+            MensajePassword = "Tu contraseña se cambió correctamente.";
+            PasswordActual = string.Empty;
+            PasswordNuevo = string.Empty;
+        }
+        catch (ServiceException ex)
+        {
+            ErrorPassword = ex.Message;   // p. ej. "La contraseña actual es incorrecta"
+        }
     }
 }

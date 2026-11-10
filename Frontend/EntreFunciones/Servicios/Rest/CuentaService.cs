@@ -14,8 +14,6 @@ namespace EntreFunciones.Servicios.Rest
                 ?? throw new InvalidOperationException("Falta configurar Rest:BaseUrl.");
         }
 
-        // Autenticar: 200 -> true
-        // 401 -> false
         public async Task<bool> Autenticar(string correo, string contrasena)
         {
             CredencialesDTO credenciales = new()
@@ -54,7 +52,7 @@ namespace EntreFunciones.Servicios.Rest
             }
             catch (ServiceException)
             {
-             
+
             }
 
             try
@@ -65,11 +63,24 @@ namespace EntreFunciones.Servicios.Rest
             }
             catch (ServiceException)
             {
-                
+
             }
 
             return null;
         }
+
+        public async Task Recuperar(string correo, string dni, string contrasenaNueva)
+        {
+            RecuperarContrasenaDTO dto = new()
+            {
+                Correo = correo,
+                Dni = dni,
+                ContrasenaNueva = contrasenaNueva
+            };
+            await HttpUtils.DoPost<RecuperarContrasenaDTO>(
+                _baseUrl + "cuentas/recuperar", dto, cabeceras: CrearCabeceras());
+        }
+
         private Dictionary<string, string> CrearCabeceras()
         {
             return new Dictionary<string, string>

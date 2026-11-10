@@ -59,7 +59,7 @@ public class AdministradoresResource {
         }
     }
 
-    // Desactivar 
+    // Desactivar
     @DELETE
     @Path("/{id}")
     public Response desactivar(@PathParam("id") int id) {

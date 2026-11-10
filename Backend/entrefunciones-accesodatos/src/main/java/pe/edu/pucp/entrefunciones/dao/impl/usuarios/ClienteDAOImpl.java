@@ -103,11 +103,7 @@ public class ClienteDAOImpl
 
             cmd.registerOutParameter("p_id", Types.INTEGER);
 
-            if (cmd.executeUpdate() == 0) {
-                throw new SQLException(
-                        "No se pudo insertar el cliente"
-                );
-            }
+            cmd.executeUpdate();
 
             cliente.setId(cmd.getInt("p_id"));
         }
@@ -143,11 +139,7 @@ public class ClienteDAOImpl
             cmd.setString("p_telefono", cliente.getTelefono());
             cmd.setInt("p_id", cliente.getId());
 
-            if (cmd.executeUpdate() == 0) {
-                throw new SQLException(
-                        "No se pudo actualizar el cliente"
-                );
-            }
+            cmd.executeUpdate();
         }
     }
 }

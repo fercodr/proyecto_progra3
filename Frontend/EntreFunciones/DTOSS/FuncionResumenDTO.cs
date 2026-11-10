@@ -1,10 +1,6 @@
 namespace EntreFunciones.DTOSS
 {
-<<<<<<< Updated upstream
-    // Resumen de función que devuelve /auditorias (ver FuncionResumenDTO.java).
-    // Antes se llamaba FuncionDTO, pero chocaba con el FuncionDTO del Catálogo en el merge.
-=======
->>>>>>> Stashed changes
+
     public class FuncionResumenDTO : Dto
     {
         public string Titulo { get; set; } = string.Empty;

@@ -55,25 +55,6 @@ namespace EntreFunciones.Servicios.Rest
             return await base.Update(modelo.Id, payload);
         }
 
-<<<<<<< Updated upstream
-        public async Task<List<AdministradorViewModel>>
-            FindResponsablesActivos()
-        {
-            string url = ConstruirSubruta("opciones", "responsables");
-            List<AdministradorDTO> dtos =
-                await ConsultarLista<AdministradorDTO>(url);
-            return dtos.Select(ToAdministradorViewModel).ToList();
-        }
-
-        public async Task<List<FuncionViewModel>> FindFuncionesAsignables()
-        {
-            string url = ConstruirSubruta("opciones", "funciones");
-            List<FuncionResumenDTO> dtos = await ConsultarLista<FuncionResumenDTO>(url);
-            return dtos.Select(ToFuncionViewModel).ToList();
-        }
-
-=======
->>>>>>> Stashed changes
         protected override AuditoriaViewModel ToViewModel(
             AuditoriaDTO dto)
         {
@@ -92,34 +73,5 @@ namespace EntreFunciones.Servicios.Rest
                 EstadoAuditoria = dto.Estado
             };
         }
-<<<<<<< Updated upstream
-
-        private static AdministradorViewModel ToAdministradorViewModel(
-            AdministradorDTO dto)
-        {
-            return new AdministradorViewModel
-            {
-                Id = dto.Id,
-                IsActivo = dto.Activo,
-                Nombres = dto.Nombres,
-                Apellidos = dto.Apellidos
-            };
-        }
-
-        private static FuncionViewModel ToFuncionViewModel(FuncionResumenDTO dto)
-        {
-            return new FuncionViewModel
-            {
-                Id = dto.Id,
-                Titulo = dto.Titulo,
-                Fecha = dto.Fecha,
-                HoraInicio = dto.HoraInicio,
-                Sede = dto.Sede,
-                Sala = dto.Sala,
-                Estado = dto.Estado
-            };
-        }
-=======
->>>>>>> Stashed changes
     }
 }

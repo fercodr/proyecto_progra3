@@ -1,6 +1,12 @@
 ﻿@page "/admin/usuarios"
 @attribute [Authorize(Policy = "UsuariosRoles")]
+@using EntreFunciones.DTOSS.Usuarios
+@using EntreFunciones.Servicios
+@using EntreFunciones.Servicios.Rest
 @inject NavigationManager Nav
+@inject IClienteService ClienteService
+@inject IGestionAdministradorService AdministradorService
+@inject AuthenticationStateProvider Auth
 
 @using Microsoft.AspNetCore.Components.QuickGrid
 
@@ -33,6 +39,9 @@
 @if (MensajeExito != null) {
     <div class="alert alert-success" role="status" aria-live="polite">@MensajeExito</div>
 }
+@if (MensajeError != null) {
+    <div class="alert alert-danger" role="alert" aria-live="assertive">@MensajeError</div>
+}
 
 <div class="filter-panel">
     <div class="row g-3 align-items-end">
@@ -61,12 +70,12 @@
             <PropertyColumn Title="Correo" Property="c => c.Correo" Sortable="true" />
             <PropertyColumn Title="Teléfono" Property="c => c.Telefono" />
             <TemplateColumn Title="Activo" Align="Align.Center">
-                <input type="checkbox" checked="@context.IsActivo" disabled />
+                <input type="checkbox" checked="@context.Activo" disabled />
             </TemplateColumn>
             <TemplateColumn Title="Acciones">
-                <button type="button" class="btn btn-sm @(context.IsActivo ? "btn-warning" : "btn-success")"
+                <button type="button" class="btn btn-sm @(context.Activo ? "btn-warning" : "btn-success")"
                         @onclick="() => CambiarEstadoCliente(context)">
-                    @(context.IsActivo ? "Desactivar" : "Activar")
+                    @(context.Activo ? "Desactivar" : "Activar")
                 </button>
             </TemplateColumn>
         </QuickGrid>
@@ -87,12 +96,12 @@ else {
             <PropertyColumn Title="Apellidos" Property="a => a.Apellidos" Sortable="true" />
             <PropertyColumn Title="Correo" Property="a => a.Correo" Sortable="true" />
             <TemplateColumn Title="Activo" Align="Align.Center">
-                <input type="checkbox" checked="@context.IsActivo" disabled />
+                <input type="checkbox" checked="@context.Activo" disabled />
             </TemplateColumn>
             <TemplateColumn Title="Acciones">
-                <button type="button" class="btn btn-sm @(context.IsActivo ? "btn-warning" : "btn-success")"
+                <button type="button" class="btn btn-sm @(context.Activo ? "btn-warning" : "btn-success")"
                         @onclick="() => CambiarEstadoAdministrador(context)">
-                    @(context.IsActivo ? "Desactivar" : "Activar")
+                    @(context.Activo ? "Desactivar" : "Activar")
                 </button>
             </TemplateColumn>
         </QuickGrid>
@@ -106,30 +115,44 @@ else {
     [SupplyParameterFromQuery(Name = "pestana")]
     public string? Pestana { get; set; }
 
-    private IQueryable<ClienteDemo> Clientes { get; set; } = Enumerable.Empty<ClienteDemo>().AsQueryable();
-    private IQueryable<AdministradorDemo> Administradores { get; set; } = Enumerable.Empty<AdministradorDemo>().AsQueryable();
+    // Listas completas que llegan de Java (se filtran en memoria)
+    private List<ClienteDTO> TodosClientes { get; set; } = new();
+    private List<AdministradorDTO> TodosAdministradores { get; set; } = new();
+
+    private IQueryable<ClienteDTO> Clientes { get; set; } = Enumerable.Empty<ClienteDTO>().AsQueryable();
+    private IQueryable<AdministradorDTO> Administradores { get; set; } = Enumerable.Empty<AdministradorDTO>().AsQueryable();
     private string PestanaActiva { get; set; } = "clientes";
     private string Filtro { get; set; } = string.Empty;
     private string? MensajeExito { get; set; }
+    private string? MensajeError { get; set; }
     private PaginationState PaginacionClientes { get; } = new() { ItemsPerPage = 5 };
     private PaginationState PaginacionAdministradores { get; } = new() { ItemsPerPage = 5 };
 
-    protected override void OnInitialized() {
+    protected override async Task OnInitializedAsync() {
         if (Pestana == "administradores") {
             PestanaActiva = "administradores";
         }
-        CargarTodo();
+        await CargarTodo();
     }
 
-    private void CargarTodo() {
-        Clientes = DatosDemo.Clientes.AsQueryable();
-        Administradores = DatosDemo.Administradores.AsQueryable();
+    // GET /clientes y GET /administradores
+    private async Task CargarTodo() {
+        try {
+            TodosClientes = await ClienteService.Listar();
+            TodosAdministradores = await AdministradorService.Listar();
+            MensajeError = null;
+        }
+        catch (Exception ex) when (ex is ServiceException or HttpRequestException or InvalidOperationException) {
+            MensajeError = "No se pudieron cargar los usuarios: " + ex.Message;
+        }
+        Filtrar();
     }
 
     private void CambiarPestana(string pestana) {
         PestanaActiva = pestana;
         MensajeExito = null;
-        LimpiarFiltro();
+        Filtro = string.Empty;
+        Filtrar();
     }
 
     private void NuevoAdministrador() {
@@ -138,26 +161,63 @@ else {
 
     private void Filtrar() {
         string f = Filtro.Trim().ToLower();
-        Clientes = DatosDemo.Clientes
+        Clientes = TodosClientes
             .Where(c => (c.Nombres + " " + c.Apellidos).ToLower().Contains(f))
             .AsQueryable();
-        Administradores = DatosDemo.Administradores
+        Administradores = TodosAdministradores
             .Where(a => (a.Nombres + " " + a.Apellidos).ToLower().Contains(f))
             .AsQueryable();
     }
 
-    private void LimpiarFiltro() {
+    private async Task LimpiarFiltro() {
         Filtro = string.Empty;
-        CargarTodo();
+        await CargarTodo();
     }
 
-    private void CambiarEstadoCliente(ClienteDemo cliente) {
-        cliente.IsActivo = !cliente.IsActivo;
-        MensajeExito = $"Cliente {cliente.Nombres} {(cliente.IsActivo ? "activado" : "desactivado")}.";
+    // DELETE /clientes/{id}  o  POST /clientes/{id}/activar
+    private async Task CambiarEstadoCliente(ClienteDTO cliente) {
+        MensajeExito = null;
+        MensajeError = null;
+        bool nuevoEstado = !cliente.Activo;
+        try {
+            if (nuevoEstado) {
+                await ClienteService.Activar(cliente.Id);
+            } else {
+                await ClienteService.Desactivar(cliente.Id);
+            }
+            cliente.Activo = nuevoEstado;
+            MensajeExito = $"Cliente {cliente.Nombres} {(nuevoEstado ? "activado" : "desactivado")}.";
+        }
+        catch (ServiceException ex) {
+            MensajeError = ex.Message;
+        }
     }
 
-    private void CambiarEstadoAdministrador(AdministradorDemo admin) {
-        admin.IsActivo = !admin.IsActivo;
-        MensajeExito = $"Administrador {admin.Nombres} {(admin.IsActivo ? "activado" : "desactivado")}.";
+    // DELETE /administradores/{id}  o  POST /administradores/{id}/activar
+    private async Task CambiarEstadoAdministrador(AdministradorDTO admin) {
+        MensajeExito = null;
+        MensajeError = null;
+        bool nuevoEstado = !admin.Activo;
+
+        // No se puede desactivar la cuenta con la que se inició sesión
+        AuthenticationState estado = await Auth.GetAuthenticationStateAsync();
+        string? miId = estado.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!nuevoEstado && miId == admin.Id.ToString()) {
+            MensajeError = "No puedes desactivar tu propia cuenta.";
+            return;
+        }
+
+        try {
+            if (nuevoEstado) {
+                await AdministradorService.Activar(admin.Id);
+            } else {
+                await AdministradorService.Desactivar(admin.Id);
+            }
+            admin.Activo = nuevoEstado;
+            MensajeExito = $"Administrador {admin.Nombres} {(nuevoEstado ? "activado" : "desactivado")}.";
+        }
+        catch (ServiceException ex) {
+            MensajeError = ex.Message;
+        }
     }
 }
