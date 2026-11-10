@@ -1,3 +1,4 @@
+using EntreFunciones.DTOSS;
 using EntreFunciones.ViewModels;
 
 namespace EntreFunciones.Servicios.Rest
@@ -5,9 +6,13 @@ namespace EntreFunciones.Servicios.Rest
     public interface IAuditoriaService
     {
         Task<List<AuditoriaViewModel>> FindAll();
+        Task<List<AuditoriaViewModel>> FilterBy(
+            string? descripcion,
+            EstadoAuditoria? estado);
         Task<AuditoriaViewModel> FindById(int id);
-        Task Insert(AuditoriaViewModel modelo);
-        Task Update(AuditoriaViewModel modelo);
-        Task Delete(int id);
+        Task<AuditoriaViewModel> Insert(AuditoriaViewModel modelo);
+        Task<AuditoriaViewModel> Update(AuditoriaViewModel modelo);
+        Task<List<AdministradorViewModel>> FindResponsablesActivos();
+        Task<List<FuncionViewModel>> FindFuncionesAsignables();
     }
 }

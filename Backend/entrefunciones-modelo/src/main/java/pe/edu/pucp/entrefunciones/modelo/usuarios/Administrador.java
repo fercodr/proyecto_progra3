@@ -8,6 +8,16 @@ public class Administrador extends Usuario {
         setCodigoEmpleado(codigoEmpleado);
     }
 
+    /** Referencia resumida usada por Auditoria; no contiene credenciales. */
+    public Administrador(int id, String nombres, String apellidos,
+                         String codigoEmpleado, boolean activo) {
+        super(id, nombres, apellidos);
+        setCodigoEmpleado(codigoEmpleado);
+        if (!activo) {
+            desactivar();
+        }
+    }
+
     /** Constructor de copia. */
     public Administrador (final Administrador administrador){
         super(administrador);

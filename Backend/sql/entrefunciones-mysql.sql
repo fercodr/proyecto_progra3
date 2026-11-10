@@ -168,14 +168,23 @@ CREATE TABLE entrada (
 );
 
 CREATE TABLE auditoria (
-    id           INT AUTO_INCREMENT PRIMARY KEY,
-    funcion_id   INT           NULL,
-    fecha        DATETIME      NOT NULL,
-    responsable  VARCHAR(150)  NOT NULL,
-    descripcion  VARCHAR(500)  NOT NULL,
-    estado       ENUM('PENDIENTE','EN_PROCESO','RESUELTA') NOT NULL DEFAULT 'PENDIENTE',
-    CONSTRAINT fk_auditoria_funcion FOREIGN KEY (funcion_id) REFERENCES funcion (id)
+    id              INT AUTO_INCREMENT PRIMARY KEY,
+    funcion_id      INT           NULL,
+    fecha           DATETIME      NOT NULL,
+    responsable_id  INT           NULL,
+    -- Respaldo temporal para filas legadas que todavia no puedan vincularse
+    -- sin ambiguedad. Las altas nuevas no escriben esta columna.
+    responsable     VARCHAR(150)  NULL,
+    descripcion     VARCHAR(500)  NOT NULL,
+    estado          ENUM('PENDIENTE','EN_PROCESO','RESUELTA') NOT NULL DEFAULT 'PENDIENTE',
+    CONSTRAINT fk_auditoria_funcion FOREIGN KEY (funcion_id)
+        REFERENCES funcion (id),
+    CONSTRAINT fk_auditoria_responsable FOREIGN KEY (responsable_id)
+        REFERENCES administrador (usuario_id) ON DELETE RESTRICT,
+    CONSTRAINT chk_auditoria_responsable
+        CHECK (responsable_id IS NOT NULL OR responsable IS NOT NULL)
 );
 
 CREATE INDEX ix_funcion_sala_fecha ON funcion(sala_id,fecha);
 CREATE INDEX ix_reserva_funcion_estado ON reserva(funcion_id,estado,fecha_expiracion);
+CREATE INDEX ix_auditoria_responsable ON auditoria(responsable_id);

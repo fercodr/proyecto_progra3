@@ -6,6 +6,100 @@ SELECT e.id,e.precio,e.activo,e.imagen_url,
  p.nombre_pelicula,p.duracion_minutos,p.genero,p.clasificacion_edad,p.director,
  o.titulo,o.nombre_director,o.elenco,a.nombre,a.expositor,a.tipo_actividad
 FROM evento e LEFT JOIN pelicula p ON p.evento_id=e.id LEFT JOIN obra_teatro o ON o.evento_id=e.id LEFT JOIN actividad_cultural a ON a.evento_id=e.id;
+
+CREATE OR REPLACE VIEW v_responsables_auditoria AS
+SELECT u.id AS responsable_id,
+       u.nombres AS responsable_nombres,
+       u.apellidos AS responsable_apellidos,
+       u.activo AS responsable_activo,
+       ad.codigo_empleado AS responsable_codigo_empleado
+FROM administrador ad
+JOIN usuario u ON u.id = ad.usuario_id;
+
+CREATE OR REPLACE VIEW v_funciones_auditoria AS
+SELECT f.id AS funcion_id,
+       f.evento_id,
+       f.sala_id,
+       f.fecha AS funcion_fecha,
+       f.hora_inicio AS funcion_hora_inicio,
+       f.hora_fin AS funcion_hora_fin,
+       f.idioma AS funcion_idioma,
+       f.estado AS funcion_estado,
+       ev.precio AS evento_precio,
+       ev.activo AS evento_activo,
+       ev.tipo_evento,
+       ev.nombre_pelicula,
+       ev.duracion_minutos,
+       ev.genero,
+       ev.clasificacion_edad,
+       ev.director,
+       ev.titulo,
+       ev.nombre_director,
+       ev.elenco,
+       ev.nombre,
+       ev.expositor,
+       ev.tipo_actividad,
+       s.nombre AS sala_nombre,
+       s.aforo AS sala_aforo,
+       s.tipo_sala,
+       s.activo AS sala_activo,
+       se.id AS sede_id,
+       se.razon_social AS sede_razon_social,
+       se.direccion AS sede_direccion,
+       se.ciudad AS sede_ciudad,
+       se.telefono_contacto AS sede_telefono_contacto,
+       se.activo AS sede_activo
+FROM funcion f
+JOIN v_eventos ev ON ev.id = f.evento_id
+JOIN sala s ON s.id = f.sala_id
+JOIN sede se ON se.id = s.sede_id;
+
+CREATE OR REPLACE VIEW v_auditorias_detalle AS
+SELECT a.id AS auditoria_id,
+       a.fecha AS auditoria_fecha,
+       a.descripcion AS auditoria_descripcion,
+       a.estado AS auditoria_estado,
+       a.responsable AS responsable_texto_original,
+       r.responsable_id,
+       r.responsable_nombres,
+       r.responsable_apellidos,
+       r.responsable_activo,
+       r.responsable_codigo_empleado,
+       f.funcion_id,
+       f.evento_id,
+       f.sala_id,
+       f.funcion_fecha,
+       f.funcion_hora_inicio,
+       f.funcion_hora_fin,
+       f.funcion_idioma,
+       f.funcion_estado,
+       f.evento_precio,
+       f.evento_activo,
+       f.tipo_evento,
+       f.nombre_pelicula,
+       f.duracion_minutos,
+       f.genero,
+       f.clasificacion_edad,
+       f.director,
+       f.titulo,
+       f.nombre_director,
+       f.elenco,
+       f.nombre,
+       f.expositor,
+       f.tipo_actividad,
+       f.sala_nombre,
+       f.sala_aforo,
+       f.tipo_sala,
+       f.sala_activo,
+       f.sede_id,
+       f.sede_razon_social,
+       f.sede_direccion,
+       f.sede_ciudad,
+       f.sede_telefono_contacto,
+       f.sede_activo
+FROM auditoria a
+LEFT JOIN v_responsables_auditoria r ON r.responsable_id = a.responsable_id
+LEFT JOIN v_funciones_auditoria f ON f.funcion_id = a.funcion_id;
 DROP PROCEDURE IF EXISTS listar_sedes;
 DROP PROCEDURE IF EXISTS buscar_sede_por_id;
 DROP PROCEDURE IF EXISTS buscar_sede_por_razon_social;
@@ -52,6 +146,15 @@ DROP PROCEDURE IF EXISTS insertar_funcion;
 DROP PROCEDURE IF EXISTS modificar_funcion;
 DROP PROCEDURE IF EXISTS cancelar_funcion;
 DROP PROCEDURE IF EXISTS cancelar_funciones_por_evento;
+DROP PROCEDURE IF EXISTS listar_auditorias;
+DROP PROCEDURE IF EXISTS buscar_auditoria_por_id;
+DROP PROCEDURE IF EXISTS listar_auditorias_filtradas;
+DROP PROCEDURE IF EXISTS listar_responsables_activos_auditoria;
+DROP PROCEDURE IF EXISTS listar_funciones_asignables_auditoria;
+DROP PROCEDURE IF EXISTS buscar_responsable_auditoria_por_id;
+DROP PROCEDURE IF EXISTS buscar_funcion_auditoria_por_id;
+DROP PROCEDURE IF EXISTS insertar_auditoria;
+DROP PROCEDURE IF EXISTS modificar_auditoria_atencion;
 DROP PROCEDURE IF EXISTS listar_reservas;
 DROP PROCEDURE IF EXISTS buscar_reserva_por_id;
 DROP PROCEDURE IF EXISTS listar_reservas_por_cliente;
@@ -486,6 +589,142 @@ DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_fin=TRUE;
 OPEN c;
 bucle: LOOP FETCH c INTO v_id; IF v_fin THEN LEAVE bucle; END IF; CALL cancelar_funcion(v_id); END LOOP;
 CLOSE c;
+END$$
+
+CREATE PROCEDURE listar_auditorias()
+BEGIN
+    SELECT *
+    FROM v_auditorias_detalle
+    ORDER BY auditoria_fecha DESC, auditoria_id DESC;
+END$$
+
+CREATE PROCEDURE buscar_auditoria_por_id(IN p_id INT)
+BEGIN
+    SELECT *
+    FROM v_auditorias_detalle
+    WHERE auditoria_id = p_id;
+END$$
+
+CREATE PROCEDURE listar_auditorias_filtradas(
+    IN p_descripcion VARCHAR(500),
+    IN p_estado VARCHAR(20)
+)
+BEGIN
+    SELECT *
+    FROM v_auditorias_detalle
+    WHERE (p_descripcion IS NULL OR TRIM(p_descripcion) = ''
+           OR auditoria_descripcion LIKE CONCAT('%', TRIM(p_descripcion), '%'))
+      AND (p_estado IS NULL OR TRIM(p_estado) = '' OR auditoria_estado = p_estado)
+    ORDER BY auditoria_fecha DESC, auditoria_id DESC;
+END$$
+
+CREATE PROCEDURE listar_responsables_activos_auditoria()
+BEGIN
+    SELECT *
+    FROM v_responsables_auditoria
+    WHERE responsable_activo = TRUE
+    ORDER BY responsable_apellidos, responsable_nombres, responsable_id;
+END$$
+
+CREATE PROCEDURE listar_funciones_asignables_auditoria()
+BEGIN
+    SELECT *
+    FROM v_funciones_auditoria
+    WHERE funcion_estado <> 'CANCELADA'
+      AND evento_activo = TRUE
+      AND sala_activo = TRUE
+      AND sede_activo = TRUE
+    ORDER BY funcion_fecha DESC, funcion_hora_inicio, funcion_id;
+END$$
+
+CREATE PROCEDURE buscar_responsable_auditoria_por_id(IN p_usuario_id INT)
+BEGIN
+    SELECT *
+    FROM v_responsables_auditoria
+    WHERE responsable_id = p_usuario_id;
+END$$
+
+CREATE PROCEDURE buscar_funcion_auditoria_por_id(IN p_funcion_id INT)
+BEGIN
+    SELECT *
+    FROM v_funciones_auditoria
+    WHERE funcion_id = p_funcion_id;
+END$$
+
+CREATE PROCEDURE insertar_auditoria(
+    IN p_funcion_id INT,
+    IN p_responsable_id INT,
+    IN p_descripcion VARCHAR(500),
+    OUT p_id INT,
+    OUT p_fecha DATETIME
+)
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM administrador ad
+        JOIN usuario u ON u.id = ad.usuario_id
+        WHERE ad.usuario_id = p_responsable_id AND u.activo = TRUE
+    ) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'El responsable no es un administrador activo';
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1
+        FROM funcion f
+        JOIN evento ev ON ev.id = f.evento_id
+        JOIN sala s ON s.id = f.sala_id
+        JOIN sede se ON se.id = s.sede_id
+        WHERE f.id = p_funcion_id
+          AND f.estado <> 'CANCELADA'
+          AND ev.activo = TRUE
+          AND s.activo = TRUE
+          AND se.activo = TRUE
+    ) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'La funcion no esta disponible para una incidencia nueva';
+    END IF;
+
+    SET p_fecha = CURRENT_TIMESTAMP;
+    INSERT INTO auditoria
+        (funcion_id, fecha, responsable_id, responsable, descripcion, estado)
+    VALUES
+        (p_funcion_id, p_fecha, p_responsable_id, NULL, p_descripcion, 'PENDIENTE');
+    SET p_id = LAST_INSERT_ID();
+END$$
+
+CREATE PROCEDURE modificar_auditoria_atencion(
+    IN p_id INT,
+    IN p_responsable_id INT,
+    IN p_estado VARCHAR(20)
+)
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM auditoria WHERE id = p_id) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'La auditoria indicada no existe';
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1
+        FROM administrador ad
+        JOIN usuario u ON u.id = ad.usuario_id
+        WHERE ad.usuario_id = p_responsable_id AND u.activo = TRUE
+    ) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'El responsable no es un administrador activo';
+    END IF;
+
+    IF p_estado IS NULL
+       OR p_estado NOT IN ('PENDIENTE', 'EN_PROCESO', 'RESUELTA') THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'El estado de auditoria no es valido';
+    END IF;
+
+    -- Los datos originales (fecha, funcion y descripcion) son inmutables.
+    UPDATE auditoria
+    SET responsable_id = p_responsable_id,
+        estado = p_estado
+    WHERE id = p_id;
 END$$
 
 CREATE PROCEDURE listar_reservas()

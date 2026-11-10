@@ -1,7 +1,9 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Security.Claims;
 using System.Text.Json;
+using Microsoft.AspNetCore.Components.Authorization;
 
 namespace EntreFunciones.Servicios.Rest
 {
@@ -39,7 +41,23 @@ namespace EntreFunciones.Servicios.Rest
                 }
             }
 
-            HttpResponseMessage respuesta = await _http.SendAsync(peticion);
+            HttpResponseMessage respuesta;
+            try
+            {
+                respuesta = await _http.SendAsync(peticion);
+            }
+            catch (TaskCanceledException ex)
+            {
+                throw new ServiceException(
+                    "El servicio REST no respondio dentro del tiempo esperado.",
+                    ex);
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new ServiceException(
+                    "No se pudo establecer comunicacion con el servicio REST.",
+                    ex);
+            }
 
             if (!respuesta.IsSuccessStatusCode)
             {
@@ -87,7 +105,23 @@ namespace EntreFunciones.Servicios.Rest
                 throw new ServiceException("Se esperaba contenido, pero el servidor devolvió 204.");
             }
 
-            TResponse? resultado = await respuesta.Content.ReadFromJsonAsync<TResponse>();
+            TResponse? resultado;
+            try
+            {
+                resultado = await respuesta.Content.ReadFromJsonAsync<TResponse>();
+            }
+            catch (JsonException ex)
+            {
+                throw new ServiceException(
+                    "El servicio REST devolvio una respuesta incompatible.",
+                    ex);
+            }
+            catch (NotSupportedException ex)
+            {
+                throw new ServiceException(
+                    "El formato devuelto por el servicio REST no es compatible.",
+                    ex);
+            }
 
             if (resultado is null)
             {
@@ -103,6 +137,17 @@ namespace EntreFunciones.Servicios.Rest
             IReadOnlyDictionary<string, string>? cabeceras = null)
         {
             return await Enviar<TResponse>(HttpMethod.Get, url, token: token, cabeceras: cabeceras);
+        }
+
+        public static async Task<List<TResponse>> DoGetList<TResponse>(
+            string url,
+            string? token = null,
+            IReadOnlyDictionary<string, string>? cabeceras = null)
+        {
+            return await DoGet<List<TResponse>>(
+                url,
+                token,
+                cabeceras);
         }
 
         public static async Task<TResponse> DoPost<TRequest, TResponse>(
@@ -185,6 +230,82 @@ namespace EntreFunciones.Servicios.Rest
                 url,
                 token: token,
                 cabeceras: cabeceras);
+        }
+
+        public static string ConstruirUrl(
+            string baseUrl,
+            params string[] segmentos)
+        {
+            if (string.IsNullOrWhiteSpace(baseUrl))
+            {
+                throw new ArgumentException(
+                    "La URL base no puede estar vacia.",
+                    nameof(baseUrl));
+            }
+
+            string url = baseUrl.TrimEnd('/');
+            foreach (string segmento in segmentos)
+            {
+                if (!string.IsNullOrWhiteSpace(segmento))
+                {
+                    url = $"{url}/{segmento.Trim('/')}";
+                }
+            }
+
+            return url;
+        }
+
+        public static string AgregarParametrosConsulta(
+            string url,
+            IEnumerable<KeyValuePair<string, string?>> parametros)
+        {
+            List<string> valores = new();
+            foreach (KeyValuePair<string, string?> parametro in parametros)
+            {
+                if (!string.IsNullOrWhiteSpace(parametro.Value))
+                {
+                    valores.Add(
+                        $"{Uri.EscapeDataString(parametro.Key)}="
+                        + Uri.EscapeDataString(parametro.Value));
+                }
+            }
+
+            return valores.Count == 0
+                ? url
+                : $"{url}?{string.Join("&", valores)}";
+        }
+
+        public static async Task<IReadOnlyDictionary<string, string>>
+            CrearCabecerasAutenticadas(
+                IConfiguration config,
+                AuthenticationStateProvider auth)
+        {
+            AuthenticationState estadoAutenticacion =
+                await auth.GetAuthenticationStateAsync();
+            ClaimsPrincipal usuario = estadoAutenticacion.User;
+            string? idUsuario = usuario
+                .FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (usuario.Identity?.IsAuthenticated != true
+                || !int.TryParse(idUsuario, out int cuentaId)
+                || cuentaId <= 0)
+            {
+                throw new InvalidOperationException(
+                    "Inicia sesion para continuar.");
+            }
+
+            string? apiKey = config["Rest:ApiKey"];
+            if (string.IsNullOrWhiteSpace(apiKey))
+            {
+                throw new InvalidOperationException(
+                    "Falta configurar el acceso al servicio REST.");
+            }
+
+            return new Dictionary<string, string>
+            {
+                ["X-Api-Key"] = apiKey,
+                ["X-Usuario-Id"] = cuentaId.ToString()
+            };
         }
 
         private sealed class ErrorRespuestaDto
