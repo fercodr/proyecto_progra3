@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import pe.edu.pucp.entrefunciones.bl.BLException;
+import pe.edu.pucp.entrefunciones.bl.error.BLException;
 import pe.edu.pucp.entrefunciones.dao.auditoria.AuditoriaDAO;
 import pe.edu.pucp.entrefunciones.modelo.auditoria.Auditoria;
 import pe.edu.pucp.entrefunciones.modelo.auditoria.EstadoAuditoria;

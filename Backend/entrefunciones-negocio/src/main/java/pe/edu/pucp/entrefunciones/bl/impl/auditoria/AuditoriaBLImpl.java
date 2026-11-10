@@ -5,7 +5,7 @@ import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
-import pe.edu.pucp.entrefunciones.bl.BLException;
+import pe.edu.pucp.entrefunciones.bl.error.BLException;
 import pe.edu.pucp.entrefunciones.bl.auditoria.AuditoriaBL;
 import pe.edu.pucp.entrefunciones.dao.auditoria.AuditoriaDAO;
 import pe.edu.pucp.entrefunciones.dao.impl.auditoria.AuditoriaDAOImpl;

@@ -2,7 +2,7 @@ package pe.edu.pucp.entrefunciones.bl.auditoria;
 
 import java.util.List;
 import pe.edu.pucp.entrefunciones.bl.BL;
-import pe.edu.pucp.entrefunciones.bl.BLException;
+import pe.edu.pucp.entrefunciones.bl.error.BLException;
 import pe.edu.pucp.entrefunciones.modelo.auditoria.Auditoria;
 import pe.edu.pucp.entrefunciones.modelo.auditoria.EstadoAuditoria;
 import pe.edu.pucp.entrefunciones.modelo.catalogo.Funcion;
