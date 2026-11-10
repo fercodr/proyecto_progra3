@@ -5,14 +5,13 @@ namespace EntreFunciones.Servicios.Rest
 {
     public interface IAuditoriaService
     {
-        Task<List<AuditoriaViewModel>> FindAll(
-            string? descripcion = null,
-            EstadoAuditoria? estado = null);
+        Task<List<AuditoriaViewModel>> FindAll();
+        Task<List<AuditoriaViewModel>> FilterBy(
+            string? descripcion,
+            EstadoAuditoria? estado);
         Task<AuditoriaViewModel> FindById(int id);
-        Task<AuditoriaViewModel> Insert(NuevaAuditoriaFormModel formulario);
-        Task<AuditoriaViewModel> Update(
-            int id,
-            AtencionAuditoriaFormModel formulario);
+        Task<AuditoriaViewModel> Insert(AuditoriaViewModel modelo);
+        Task<AuditoriaViewModel> Update(AuditoriaViewModel modelo);
         Task<List<AdministradorViewModel>> FindResponsablesActivos();
         Task<List<FuncionViewModel>> FindFuncionesAsignables();
     }

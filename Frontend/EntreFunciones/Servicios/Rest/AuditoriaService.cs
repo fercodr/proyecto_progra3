@@ -1,154 +1,86 @@
 using EntreFunciones.DTOSS;
 using EntreFunciones.ViewModels;
 using Microsoft.AspNetCore.Components.Authorization;
-using System.Security.Claims;
 
 namespace EntreFunciones.Servicios.Rest
 {
-    public class AuditoriaService : IAuditoriaService
+    public class AuditoriaService
+        : RestServiceBase<AuditoriaDTO, AuditoriaViewModel>,
+          IAuditoriaService
     {
-        private readonly IConfiguration _config;
-        private readonly AuthenticationStateProvider _auth;
+        protected override string ClaveRuta => "Auditorias";
 
-        public AuditoriaService(
-            IConfiguration config,
-            AuthenticationStateProvider auth)
-        {
-            _config = config;
-            _auth = auth;
-        }
+        public AuditoriaService(IConfiguration config,AuthenticationStateProvider auth): base(config, auth)
+        {}
 
-        private string Url
+        public async Task<List<AuditoriaViewModel>> FilterBy(string? descripcion,EstadoAuditoria? estado)
         {
-            get
+            List<KeyValuePair<string, string?>> parametros = new()
             {
-                string baseUrl = _config["Rest:BaseUrl"]
-                    ?? throw new InvalidOperationException(
-                        "Falta configurar Rest:BaseUrl.");
-                string ruta = _config["Rest:Rutas:Auditorias"]
-                    ?? throw new InvalidOperationException(
-                        "Falta configurar la ruta Auditorias.");
-                return $"{baseUrl.TrimEnd('/')}/{ruta.TrimStart('/')}";
-            }
+                new KeyValuePair<string, string?>("descripcion",descripcion?.Trim()),new KeyValuePair<string, string?>("estado",
+                    estado?.ToString())
+            };
+            return await ConsultarModelos(parametros);
         }
 
-        public async Task<List<AuditoriaViewModel>> FindAll(
-            string? descripcion = null,
-            EstadoAuditoria? estado = null)
-        {
-            List<string> parametros = new();
-            if (!string.IsNullOrWhiteSpace(descripcion))
-            {
-                parametros.Add(
-                    $"descripcion={Uri.EscapeDataString(descripcion.Trim())}");
-            }
-            if (estado.HasValue)
-            {
-                parametros.Add($"estado={estado.Value}");
-            }
-
-            string url = parametros.Count == 0
-                ? Url
-                : $"{Url}?{string.Join("&", parametros)}";
-            IReadOnlyDictionary<string, string> cabeceras =
-                await CrearCabeceras();
-            List<AuditoriaDTO> dtos =
-                await HttpUtils.DoGet<List<AuditoriaDTO>>(
-                    url,
-                    cabeceras: cabeceras);
-            return dtos.Select(ToViewModel).ToList();
-        }
-
-        public async Task<AuditoriaViewModel> FindById(int id)
-        {
-            IReadOnlyDictionary<string, string> cabeceras =
-                await CrearCabeceras();
-            AuditoriaDTO dto = await HttpUtils.DoGet<AuditoriaDTO>(
-                $"{Url}/{id}",
-                cabeceras: cabeceras);
-            return ToViewModel(dto);
-        }
-
-        public async Task<AuditoriaViewModel> Insert(
-            NuevaAuditoriaFormModel formulario)
+        public async Task<AuditoriaViewModel> Insert(AuditoriaViewModel modelo)
         {
             CrearAuditoriaDTO payload = new()
             {
-                FuncionId = formulario.FuncionId,
-                ResponsableId = formulario.ResponsableId,
-                Descripcion = formulario.Descripcion
+                FuncionId = modelo.FuncionId,
+                ResponsableId = modelo.ResponsableId,
+                Descripcion = modelo.Descripcion
             };
-            IReadOnlyDictionary<string, string> cabeceras =
-                await CrearCabeceras();
-            AuditoriaDTO dto =
-                await HttpUtils.DoPost<CrearAuditoriaDTO, AuditoriaDTO>(
-                    Url,
-                    payload,
-                    cabeceras: cabeceras);
-            return ToViewModel(dto);
+            return await base.Insert(payload);
         }
 
         public async Task<AuditoriaViewModel> Update(
-            int id,
-            AtencionAuditoriaFormModel formulario)
+            AuditoriaViewModel modelo)
         {
             ActualizarAuditoriaDTO payload = new()
             {
-                ResponsableId = formulario.ResponsableId,
-                Estado = formulario.Estado
+                ResponsableId = modelo.ResponsableId,
+                Estado = modelo.EstadoAuditoria
             };
-            IReadOnlyDictionary<string, string> cabeceras =
-                await CrearCabeceras();
-            AuditoriaDTO dto =
-                await HttpUtils.DoPut<ActualizarAuditoriaDTO, AuditoriaDTO>(
-                    $"{Url}/{id}",
-                    payload,
-                    cabeceras: cabeceras);
-            return ToViewModel(dto);
+            return await base.Update(modelo.Id, payload);
         }
 
         public async Task<List<AdministradorViewModel>>
             FindResponsablesActivos()
         {
-            IReadOnlyDictionary<string, string> cabeceras =
-                await CrearCabeceras();
+            string url = ConstruirSubruta("opciones", "responsables");
             List<AdministradorDTO> dtos =
-                await HttpUtils.DoGet<List<AdministradorDTO>>(
-                    $"{Url}/opciones/responsables",
-                    cabeceras: cabeceras);
-            return dtos.Select(ToViewModel).ToList();
+                await ConsultarLista<AdministradorDTO>(url);
+            return dtos.Select(ToAdministradorViewModel).ToList();
         }
 
         public async Task<List<FuncionViewModel>> FindFuncionesAsignables()
         {
-            IReadOnlyDictionary<string, string> cabeceras =
-                await CrearCabeceras();
-            List<FuncionDTO> dtos =
-                await HttpUtils.DoGet<List<FuncionDTO>>(
-                    $"{Url}/opciones/funciones",
-                    cabeceras: cabeceras);
-            return dtos.Select(ToViewModel).ToList();
+            string url = ConstruirSubruta("opciones", "funciones");
+            List<FuncionDTO> dtos = await ConsultarLista<FuncionDTO>(url);
+            return dtos.Select(ToFuncionViewModel).ToList();
         }
 
-        private static AuditoriaViewModel ToViewModel(AuditoriaDTO dto)
+        protected override AuditoriaViewModel ToViewModel(
+            AuditoriaDTO dto)
         {
             return new AuditoriaViewModel
             {
                 Id = dto.Id,
                 Funcion = dto.Funcion is null
                     ? null
-                    : ToViewModel(dto.Funcion),
+                    : ToFuncionViewModel(dto.Funcion),
                 Fecha = dto.Fecha,
                 Responsable = dto.Responsable is null
                     ? null
-                    : ToViewModel(dto.Responsable),
+                    : ToAdministradorViewModel(dto.Responsable),
                 ResponsableTextoOriginal = dto.ResponsableTextoOriginal,
                 Descripcion = dto.Descripcion,
                 EstadoAuditoria = dto.Estado
             };
         }
 
-        private static AdministradorViewModel ToViewModel(
+        private static AdministradorViewModel ToAdministradorViewModel(
             AdministradorDTO dto)
         {
             return new AdministradorViewModel
@@ -160,7 +92,7 @@ namespace EntreFunciones.Servicios.Rest
             };
         }
 
-        private static FuncionViewModel ToViewModel(FuncionDTO dto)
+        private static FuncionViewModel ToFuncionViewModel(FuncionDTO dto)
         {
             return new FuncionViewModel
             {
@@ -171,37 +103,6 @@ namespace EntreFunciones.Servicios.Rest
                 Sede = dto.Sede,
                 Sala = dto.Sala,
                 Estado = dto.Estado
-            };
-        }
-
-        private async Task<IReadOnlyDictionary<string, string>>
-            CrearCabeceras()
-        {
-            AuthenticationState estadoAutenticacion =
-                await _auth.GetAuthenticationStateAsync();
-            ClaimsPrincipal usuario = estadoAutenticacion.User;
-            string? idUsuario = usuario
-                .FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-            if (usuario.Identity?.IsAuthenticated != true
-                || !int.TryParse(idUsuario, out int cuentaId)
-                || cuentaId <= 0)
-            {
-                throw new InvalidOperationException(
-                    "Inicia sesion para continuar.");
-            }
-
-            string? apiKey = _config["Rest:ApiKey"];
-            if (string.IsNullOrWhiteSpace(apiKey))
-            {
-                throw new InvalidOperationException(
-                    "Falta configurar el acceso al servicio REST.");
-            }
-
-            return new Dictionary<string, string>
-            {
-                ["X-Api-Key"] = apiKey,
-                ["X-Usuario-Id"] = cuentaId.ToString()
             };
         }
     }

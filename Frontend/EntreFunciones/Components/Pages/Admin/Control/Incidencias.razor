@@ -15,7 +15,8 @@
             <p class="page-description">Registra y consulta las incidencias de cada función.</p>
         </div>
 
-        <button type="button" class="btn btn-primary" @onclick="AbrirNueva">
+        <button type="button" class="btn btn-primary"
+                disabled="@Procesando" @onclick="AbrirNueva">
             Nueva incidencia
         </button>
     </div>
@@ -34,22 +35,37 @@
         <div class="filter-panel">
             <div class="row g-3">
                 <div class="col-12 col-md-3">
-                    <label for="buscarId" class="form-label">Buscar por ID</label>
-                    <input id="buscarId" type="number" min="1"
-                           class="form-control" @bind="BusquedaId" />
+                    <label for="modoBusqueda" class="form-label">Modo de búsqueda</label>
+                    <select id="modoBusqueda" class="form-select"
+                            disabled="@Procesando"
+                            @bind="ModoBusquedaActual"
+                            @bind:after="CambiarModoBusqueda">
+                        <option value="@ModoBusqueda.PorId">Por ID</option>
+                        <option value="@ModoBusqueda.PorFiltros">Por filtros</option>
+                    </select>
                 </div>
 
-                <div class="col-12 col-md-5">
+                <div class="col-12 col-md-3">
+                    <label for="buscarId" class="form-label">ID</label>
+                    <input id="buscarId" type="text" inputmode="numeric"
+                           class="form-control" placeholder="Ej. 12"
+                           disabled="@(Procesando || ModoBusquedaActual != ModoBusqueda.PorId)"
+                           @bind="BusquedaIdTexto" @bind:event="oninput" />
+                </div>
+
+                <div class="col-12 col-md-3">
                     <label for="buscarDescripcion" class="form-label">Descripción</label>
                     <input id="buscarDescripcion" type="search"
                            class="form-control"
                            placeholder="Ej. dato incorrecto"
+                           disabled="@(Procesando || ModoBusquedaActual != ModoBusqueda.PorFiltros)"
                            @bind="DescripcionFiltro" />
                 </div>
 
-                <div class="col-12 col-md-4">
+                <div class="col-12 col-md-3">
                     <label for="filtroEstado" class="form-label">Estado</label>
                     <select id="filtroEstado" class="form-select"
+                            disabled="@(Procesando || ModoBusquedaActual != ModoBusqueda.PorFiltros)"
                             @bind="EstadoFiltro">
                         <option value="">Todos</option>
                         <option value="PENDIENTE">Pendiente</option>
@@ -61,7 +77,7 @@
 
             <div class="d-flex flex-wrap justify-content-end gap-2 mt-3">
                 <button type="button" class="btn btn-outline-secondary"
-                        @onclick="LimpiarFiltros">
+                        disabled="@Procesando" @onclick="LimpiarBusqueda">
                     Limpiar
                 </button>
                 <button type="button" class="btn btn-primary"
@@ -91,7 +107,7 @@
                         {
                             <tr>
                                 <td colspan="7" class="text-center text-secondary py-4">
-                                    No se encontraron incidencias.
+                                    Sin coincidencias.
                                 </td>
                             </tr>
                         }
@@ -113,6 +129,7 @@
                                     <td>
                                         <button type="button"
                                                 class="btn btn-outline-primary btn-sm"
+                                                disabled="@Procesando"
                                                 @onclick="() => Gestionar(incidencia)">
                                             Gestionar
                                         </button>
@@ -181,7 +198,8 @@
 
                 <div class="d-flex flex-wrap justify-content-end gap-2 mt-4">
                     <button type="button" class="btn btn-outline-secondary"
-                            @onclick="Volver">Cancelar</button>
+                            disabled="@Procesando"
+                            @onclick="CancelarNueva">Cancelar</button>
                     <button type="submit" class="btn btn-primary"
                             disabled="@Procesando">Registrar incidencia</button>
                 </div>
@@ -253,7 +271,7 @@
                     <div class="col-12 col-md-6">
                         <label for="editarEstado" class="form-label">Estado</label>
                         <select id="editarEstado" class="form-select"
-                                @bind="Atencion.Estado">
+                                @bind="Atencion.EstadoAuditoria">
                             <option value="PENDIENTE">Pendiente</option>
                             <option value="EN_PROCESO">En proceso</option>
                             <option value="RESUELTA">Resuelta</option>
@@ -263,7 +281,8 @@
 
                 <div class="d-flex flex-wrap justify-content-end gap-2 mt-4">
                     <button type="button" class="btn btn-outline-secondary"
-                            @onclick="Volver">Cancelar</button>
+                            disabled="@Procesando"
+                            @onclick="CancelarEdicion">Cancelar</button>
                     <button type="submit" class="btn btn-primary"
                             disabled="@Procesando">Guardar cambios</button>
                 </div>
@@ -280,14 +299,21 @@
         Detalle
     }
 
+    private enum ModoBusqueda
+    {
+        PorId,
+        PorFiltros
+    }
+
     private readonly List<AuditoriaViewModel> Resultados = new();
     private List<AdministradorViewModel> Responsables = new();
     private List<FuncionViewModel> Funciones = new();
-    private NuevaAuditoriaFormModel Nueva = new();
-    private AtencionAuditoriaFormModel Atencion = new();
+    private AuditoriaViewModel Nueva = new();
+    private AuditoriaViewModel Atencion = new();
     private AuditoriaViewModel? Seleccionada;
     private Vista VistaActual = Vista.Inicio;
-    private int? BusquedaId;
+    private ModoBusqueda ModoBusquedaActual = ModoBusqueda.PorFiltros;
+    private string BusquedaIdTexto = string.Empty;
     private string DescripcionFiltro = string.Empty;
     private string EstadoFiltro = string.Empty;
     private bool ResultadosCargados;
@@ -302,47 +328,83 @@
 
     private async Task CargarOpciones()
     {
+        Task<string?> responsablesTask = CargarResponsables();
+        Task<string?> funcionesTask = CargarFunciones();
+        await Task.WhenAll(responsablesTask, funcionesTask);
+
+        List<string> errores = new();
+        string? errorResponsables = await responsablesTask;
+        string? errorFunciones = await funcionesTask;
+        if (!string.IsNullOrWhiteSpace(errorResponsables))
+        {
+            errores.Add(errorResponsables);
+        }
+        if (!string.IsNullOrWhiteSpace(errorFunciones))
+        {
+            errores.Add(errorFunciones);
+        }
+        Error = string.Join(" ", errores);
+    }
+
+    private async Task<string?> CargarResponsables()
+    {
         try
         {
-            Task<List<AdministradorViewModel>> responsablesTask =
-                Auditorias.FindResponsablesActivos();
-            Task<List<FuncionViewModel>> funcionesTask =
-                Auditorias.FindFuncionesAsignables();
-            await Task.WhenAll(responsablesTask, funcionesTask);
-            Responsables = await responsablesTask;
-            Funciones = await funcionesTask;
+            Responsables = await Auditorias.FindResponsablesActivos();
+            return null;
         }
-        catch (Exception ex) when (EsErrorDeServicio(ex))
+        catch (Exception ex)
         {
-            Error = ex.Message;
+            Responsables = new List<AdministradorViewModel>();
+            return $"No se pudieron cargar los responsables: {MensajeError(ex)}";
+        }
+    }
+
+    private async Task<string?> CargarFunciones()
+    {
+        try
+        {
+            Funciones = await Auditorias.FindFuncionesAsignables();
+            return null;
+        }
+        catch (Exception ex)
+        {
+            Funciones = new List<FuncionViewModel>();
+            return $"No se pudieron cargar las funciones: {MensajeError(ex)}";
         }
     }
 
     private async Task Buscar()
     {
+        if (Procesando)
+        {
+            return;
+        }
+
         LimpiarMensajes();
+        int id = 0;
+        if (ModoBusquedaActual == ModoBusqueda.PorId
+            && (!int.TryParse(BusquedaIdTexto?.Trim(), out id) || id <= 0))
+        {
+            LimpiarResultados();
+            Error = "Ingrese un ID entero positivo.";
+            return;
+        }
+
         Procesando = true;
         try
         {
-            Resultados.Clear();
-            if (BusquedaId.HasValue && BusquedaId.Value > 0)
-            {
-                Resultados.Add(await Auditorias.FindById(BusquedaId.Value));
-            }
-            else
-            {
-                EstadoAuditoria? estado = string.IsNullOrWhiteSpace(EstadoFiltro)
-                    ? null
-                    : Enum.Parse<EstadoAuditoria>(EstadoFiltro);
-                Resultados.AddRange(await Auditorias.FindAll(
-                    DescripcionFiltro,
-                    estado));
-            }
+            List<AuditoriaViewModel> encontrados =
+                ModoBusquedaActual == ModoBusqueda.PorId
+                    ? await ConsultarPorId(id)
+                    : await ConsultarPorFiltros();
+            ReemplazarResultados(encontrados);
             ResultadosCargados = true;
         }
-        catch (Exception ex) when (EsErrorDeServicio(ex))
+        catch (Exception ex)
         {
-            Error = ex.Message;
+            LimpiarResultados();
+            Error = MensajeError(ex);
         }
         finally
         {
@@ -350,15 +412,74 @@
         }
     }
 
+    private async Task<List<AuditoriaViewModel>> ConsultarPorId(int id)
+    {
+        AuditoriaViewModel encontrada = await Auditorias.FindById(id);
+        return new List<AuditoriaViewModel> { encontrada };
+    }
+
+    private async Task<List<AuditoriaViewModel>> ConsultarPorFiltros()
+    {
+        EstadoAuditoria? estado = null;
+        if (!string.IsNullOrWhiteSpace(EstadoFiltro))
+        {
+            if (!Enum.TryParse(
+                    EstadoFiltro,
+                    ignoreCase: true,
+                    out EstadoAuditoria estadoSeleccionado))
+            {
+                throw new InvalidOperationException(
+                    "El estado seleccionado no es valido.");
+            }
+            estado = estadoSeleccionado;
+        }
+
+        if (string.IsNullOrWhiteSpace(DescripcionFiltro)
+            && !estado.HasValue)
+        {
+            return await Auditorias.FindAll();
+        }
+
+        return await Auditorias.FilterBy(DescripcionFiltro, estado);
+    }
+
+    private void CambiarModoBusqueda()
+    {
+        if (ModoBusquedaActual == ModoBusqueda.PorId)
+        {
+            DescripcionFiltro = string.Empty;
+            EstadoFiltro = string.Empty;
+        }
+        else
+        {
+            BusquedaIdTexto = string.Empty;
+        }
+
+        LimpiarMensajes();
+        LimpiarResultados();
+    }
+
+    private void ReemplazarResultados(
+        IEnumerable<AuditoriaViewModel> encontrados)
+    {
+        Resultados.Clear();
+        Resultados.AddRange(encontrados);
+    }
+
     private void AbrirNueva()
     {
         LimpiarMensajes();
-        Nueva = new NuevaAuditoriaFormModel();
+        Nueva = new AuditoriaViewModel();
         VistaActual = Vista.Nueva;
     }
 
     private async Task Registrar()
     {
+        if (Procesando)
+        {
+            return;
+        }
+
         LimpiarMensajes();
         Procesando = true;
         try
@@ -368,11 +489,12 @@
             Resultados.Insert(0, registrada);
             ResultadosCargados = true;
             Mensaje = $"Incidencia #{registrada.Id} registrada.";
+            Nueva = new AuditoriaViewModel();
             VistaActual = Vista.Inicio;
         }
-        catch (Exception ex) when (EsErrorDeServicio(ex))
+        catch (Exception ex)
         {
-            Error = ex.Message;
+            Error = MensajeError(ex);
         }
         finally
         {
@@ -387,19 +509,17 @@
         bool responsableSigueActivo = incidencia.Responsable is not null
             && Responsables.Any(item =>
                 item.Id == incidencia.Responsable.Id);
-        Atencion = new AtencionAuditoriaFormModel
+        Atencion = CopiarParaEdicion(incidencia);
+        if (!responsableSigueActivo)
         {
-            ResponsableId = responsableSigueActivo
-                ? incidencia.Responsable!.Id
-                : 0,
-            Estado = incidencia.EstadoAuditoria
-        };
+            Atencion.ResponsableId = 0;
+        }
         VistaActual = Vista.Detalle;
     }
 
     private async Task Actualizar()
     {
-        if (Seleccionada is null)
+        if (Seleccionada is null || Procesando)
         {
             return;
         }
@@ -408,21 +528,21 @@
         Procesando = true;
         try
         {
-            AuditoriaViewModel actualizada = await Auditorias.Update(
-                Seleccionada.Id,
-                Atencion);
+            AuditoriaViewModel actualizada =
+                await Auditorias.Update(Atencion);
             int indice = Resultados.FindIndex(item => item.Id == actualizada.Id);
             if (indice >= 0)
             {
                 Resultados[indice] = actualizada;
             }
-            Seleccionada = actualizada;
             Mensaje = $"Incidencia #{actualizada.Id} actualizada.";
+            Atencion = new AuditoriaViewModel();
+            Seleccionada = null;
             VistaActual = Vista.Inicio;
         }
-        catch (Exception ex) when (EsErrorDeServicio(ex))
+        catch (Exception ex)
         {
-            Error = ex.Message;
+            Error = MensajeError(ex);
         }
         finally
         {
@@ -430,18 +550,60 @@
         }
     }
 
-    private void Volver()
+    private void CancelarNueva()
     {
         LimpiarMensajes();
+        Nueva = new AuditoriaViewModel();
         VistaActual = Vista.Inicio;
-        Seleccionada = null;
     }
 
-    private void LimpiarFiltros()
+    private void CancelarEdicion()
     {
-        BusquedaId = null;
-        DescripcionFiltro = string.Empty;
-        EstadoFiltro = string.Empty;
+        LimpiarMensajes();
+        Atencion = new AuditoriaViewModel();
+        Seleccionada = null;
+        VistaActual = Vista.Inicio;
+    }
+
+    private static AuditoriaViewModel CopiarParaEdicion(
+        AuditoriaViewModel incidencia)
+    {
+        return new AuditoriaViewModel
+        {
+            Id = incidencia.Id,
+            IsActivo = incidencia.IsActivo,
+            Funcion = incidencia.Funcion,
+            FuncionId = incidencia.FuncionId,
+            Descripcion = incidencia.Descripcion,
+            Responsable = incidencia.Responsable,
+            ResponsableId = incidencia.ResponsableId,
+            ResponsableTextoOriginal =
+                incidencia.ResponsableTextoOriginal,
+            Fecha = incidencia.Fecha,
+            EstadoAuditoria = incidencia.EstadoAuditoria
+        };
+    }
+
+    private void LimpiarBusqueda()
+    {
+        if (ModoBusquedaActual == ModoBusqueda.PorId)
+        {
+            BusquedaIdTexto = string.Empty;
+        }
+        else
+        {
+            DescripcionFiltro = string.Empty;
+            EstadoFiltro = string.Empty;
+        }
+
+        LimpiarMensajes();
+        LimpiarResultados();
+    }
+
+    private void LimpiarResultados()
+    {
+        Resultados.Clear();
+        ResultadosCargados = false;
     }
 
     private void LimpiarMensajes()
@@ -477,11 +639,10 @@
         };
     }
 
-    private static bool EsErrorDeServicio(Exception ex)
+    private static string MensajeError(Exception ex)
     {
-        return ex is HttpRequestException
-            or InvalidOperationException
-            or ServiceException
-            or TaskCanceledException;
+        return string.IsNullOrWhiteSpace(ex.Message)
+            ? "No se pudo completar la operacion."
+            : ex.Message;
     }
 }
