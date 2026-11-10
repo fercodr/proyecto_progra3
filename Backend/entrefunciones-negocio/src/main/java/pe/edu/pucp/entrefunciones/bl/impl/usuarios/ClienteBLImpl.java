@@ -41,6 +41,9 @@ public class ClienteBLImpl extends UsuarioBLImpl<Cliente> implements ClienteBL {
     public void insert(Cliente cliente) throws BLException {
         validarFormato(cliente);
 
+        // Se guarda el hash, nunca la contraseña real
+        cliente.setContrasena(PasswordUtil.hashear(cliente.getContrasena()));
+
         try {
             clienteDAO.insert(cliente);
         } catch (SQLException e) {
