@@ -2,23 +2,26 @@ using System.Text.Json.Serialization;
 
 namespace EntreFunciones.DTOSS
 {
-    public class ButacaDto
+    public class ButacaDto : Dto
     {
-        [JsonPropertyName("id")]
-        public int Id { get; set; }
-
-        [JsonPropertyName("fila")]
+        public int IdSala { get; set; }
         public string Fila { get; set; } = string.Empty;
-
-        [JsonPropertyName("columna")]
         public int Columna { get; set; }
+        public string TipoButaca { get; set; } = string.Empty;
 
-        [JsonPropertyName("activo")]
-        public bool Activo { get; set; }
-
-        [JsonPropertyName("ocupada")]
+        // Solo en el flujo de compra (disponibilidad de una función)
         public bool Ocupada { get; set; }
 
+        // Solo en el cliente: no viene del backend
+        [JsonIgnore]
         public bool Elegida { get; set; }
+
+        // Alias para el código de compra existente (.Activo)
+        [JsonIgnore]
+        public bool Activo
+        {
+            get => IsActivo;
+            set => IsActivo = value;
+        }
     }
 }

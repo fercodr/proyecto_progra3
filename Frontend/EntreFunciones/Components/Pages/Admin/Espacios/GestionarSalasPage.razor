@@ -1,11 +1,14 @@
 @page "/admin/salas/nuevo"
 @page "/admin/salas/editar/{Id:int}"
 @attribute [Authorize(Policy = "Espacios")]
+@inject ISalaService SalaService
+@inject ISedeService SedeService
 @inject NavigationManager Nav
 
+@using EntreFunciones.Servicios
 @using EntreFunciones.ViewModels
 
-@* 11. Salas · RF-M2-01 (Lab 9: solo interfaz, Guardar no registra nada) *@
+@* 11. Salas · RF-M2-01 *@
 
 <PageTitle>@(Id == null ? "Nueva sala" : "Editar sala")</PageTitle>
 
@@ -30,7 +33,7 @@
         <label for="sedeSala" class="form-label">Sede</label>
         <InputSelect id="sedeSala" class="form-select" @bind-Value="ViewModel.IdSede">
             <option value="0">-- Seleccione --</option>
-            @foreach (SedeViewModel sede in DatosEspaciosDemo.Sedes) {
+            @foreach (SedeViewModel sede in Sedes) {
                 <option value="@sede.Id">@sede.RazonSocial</option>
             }
         </InputSelect>
@@ -74,24 +77,37 @@
     public int? Id { get; set; }
 
     private SalaViewModel ViewModel { get; set; } = new();
+    private List<SedeViewModel> Sedes { get; set; } = [];
     private string? MensajeError { get; set; }
 
-    protected override void OnParametersSet() {
-        if (Id == null) {
-            ViewModel = new SalaViewModel();
-            return;
+    protected override async Task OnParametersSetAsync() {
+        try {
+            Sedes = await SedeService.FindAll();
+            if (Id == null) {
+                ViewModel = new SalaViewModel();
+                return;
+            }
+            ViewModel = await SalaService.FindById(Id.Value);
+        } catch (ServiceException ex) {
+            if (Id == null) {
+                MensajeError = ex.Message;
+            } else {
+                Nav.NavigateTo("/admin/salas");
+            }
         }
-        SalaViewModel? sala = DatosEspaciosDemo.Salas.FirstOrDefault(s => s.Id == Id.Value);
-        if (sala == null) {
-            Nav.NavigateTo("/admin/salas");
-            return;
-        }
-        // Se trabaja sobre una copia para no modificar los datos de ejemplo
-        ViewModel = sala.Clonar();
+
     }
 
-    private void Guardar() {
-        // Lab 9: solo interfaz. Aquí se llamará al servicio de salas (insertar o modificar).
-        Nav.NavigateTo("/admin/salas");
+    private async Task Guardar() {
+        try {
+            if (Id == null) {
+                await SalaService.Insert(ViewModel);
+            } else {
+                await SalaService.Update(ViewModel);
+            }
+            Nav.NavigateTo("/admin/salas");
+        } catch (ServiceException ex) {
+            MensajeError = ex.Message;
+        }
     }
 }

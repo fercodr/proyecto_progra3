@@ -310,6 +310,7 @@ namespace EntreFunciones.Servicios.Rest
 
         private sealed class ErrorRespuestaDto
         {
+            [JsonPropertyName("error")]
             public string Mensaje { get; set; } = string.Empty;
         }
     }
