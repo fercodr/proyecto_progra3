@@ -13,7 +13,7 @@ public final class AdministradorMapper {
     private AdministradorMapper() {
     }
 
-    /** Modelo → DTO. La contraseña NO se copia. */
+    //contraseña NO se copia.
     public static AdministradorDTO toDTO(Administrador administrador) {
         AdministradorDTO dto = new AdministradorDTO();
         dto.setId(administrador.getId());
@@ -34,7 +34,7 @@ public final class AdministradorMapper {
         return dtos;
     }
 
-    /** DTO → modelo. El DTO debe traer la contraseña (ver nota en ClienteMapper.toModelo). */
+    //El DTO debe traer la contraseña
     public static Administrador toModelo(AdministradorDTO dto) throws BLException {
         try {
             Administrador administrador = new Administrador(dto.getId(), dto.getNombres(), dto.getApellidos(),

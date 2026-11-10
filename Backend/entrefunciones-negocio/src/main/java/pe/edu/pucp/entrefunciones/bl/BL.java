@@ -11,7 +11,7 @@ public interface BL<T, ID> {
 
     T findById(ID id) throws BLException;
 
-    void insert(T entidad) throws BLException, SQLException;
+    void insert(T entidad) throws BLException;
 
     void update(T entidad) throws BLException;
 

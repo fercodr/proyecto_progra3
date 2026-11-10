@@ -10,4 +10,10 @@ public interface CuentaUsuarioBL {
     // Busca la cuenta (admin o cliente) por correo.
     Usuario findByCorreo(String correo) throws BLException;
 
+    // cambia la contraseña verificando primero la actual.
+    void cambiarContrasena(int idUsuario, String actual, String nueva) throws BLException;
+
+    // pone una contraseña nueva si el correo y el DNI coinciden.
+    void recuperarContrasena(String correo, String dni, String nueva) throws BLException;
+
 }
