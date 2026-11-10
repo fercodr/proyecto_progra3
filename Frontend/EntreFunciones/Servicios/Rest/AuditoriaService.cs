@@ -10,14 +10,24 @@ namespace EntreFunciones.Servicios.Rest
     {
         protected override string ClaveRuta => "Auditorias";
 
-        public AuditoriaService(IConfiguration config,AuthenticationStateProvider auth): base(config, auth)
-        {}
+        public AuditoriaService(
+            IConfiguration config,
+            AuthenticationStateProvider auth)
+            : base(config, auth)
+        {
+        }
 
-        public async Task<List<AuditoriaViewModel>> FilterBy(string? descripcion,EstadoAuditoria? estado)
+        public async Task<List<AuditoriaViewModel>> FilterBy(
+            string? descripcion,
+            EstadoAuditoria? estado)
         {
             List<KeyValuePair<string, string?>> parametros = new()
             {
-                new KeyValuePair<string, string?>("descripcion",descripcion?.Trim()),new KeyValuePair<string, string?>("estado",
+                new KeyValuePair<string, string?>(
+                    "descripcion",
+                    descripcion?.Trim()),
+                new KeyValuePair<string, string?>(
+                    "estado",
                     estado?.ToString())
             };
             return await ConsultarModelos(parametros);
@@ -45,6 +55,7 @@ namespace EntreFunciones.Servicios.Rest
             return await base.Update(modelo.Id, payload);
         }
 
+<<<<<<< Updated upstream
         public async Task<List<AdministradorViewModel>>
             FindResponsablesActivos()
         {
@@ -61,6 +72,8 @@ namespace EntreFunciones.Servicios.Rest
             return dtos.Select(ToFuncionViewModel).ToList();
         }
 
+=======
+>>>>>>> Stashed changes
         protected override AuditoriaViewModel ToViewModel(
             AuditoriaDTO dto)
         {
@@ -69,16 +82,17 @@ namespace EntreFunciones.Servicios.Rest
                 Id = dto.Id,
                 Funcion = dto.Funcion is null
                     ? null
-                    : ToFuncionViewModel(dto.Funcion),
+                    : FuncionService.Convertir(dto.Funcion),
                 Fecha = dto.Fecha,
                 Responsable = dto.Responsable is null
                     ? null
-                    : ToAdministradorViewModel(dto.Responsable),
+                    : AdministradorService.Convertir(dto.Responsable),
                 ResponsableTextoOriginal = dto.ResponsableTextoOriginal,
                 Descripcion = dto.Descripcion,
                 EstadoAuditoria = dto.Estado
             };
         }
+<<<<<<< Updated upstream
 
         private static AdministradorViewModel ToAdministradorViewModel(
             AdministradorDTO dto)
@@ -105,5 +119,7 @@ namespace EntreFunciones.Servicios.Rest
                 Estado = dto.Estado
             };
         }
+=======
+>>>>>>> Stashed changes
     }
 }

@@ -1,6 +1,7 @@
 package pe.edu.pucp.entrefunciones.dao.impl.usuarios;
 
 import pe.edu.pucp.entrefunciones.dao.transacciones.ConnectionScope;
+import pe.edu.pucp.entrefunciones.modelo.auditoria.Auditoria;
 import pe.edu.pucp.entrefunciones.modelo.usuarios.Administrador;
 
 import java.sql.CallableStatement;
@@ -8,6 +9,8 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.ArrayList;
+import java.util.List;
 
 import pe.edu.pucp.entrefunciones.db.DBManager;
 import pe.edu.pucp.entrefunciones.dao.usuarios.AdministradorDAO;
@@ -68,7 +71,18 @@ public class AdministradorDAOImpl extends UsuarioDAOImpl<Administrador> implemen
     protected String getProcedimientoEliminar() {
         return "eliminar_administrador";
     }
-
+    public List<Administrador> findAllActiveAdmins() throws SQLException {
+        String sql = "{call listar_responsables_activos_auditoria()}";
+        try (Connection conn = DBManager.getInstance().getConnection();
+             CallableStatement cmd = conn.prepareCall(sql);
+             ResultSet rs = cmd.executeQuery()) {
+            List<Administrador> responsables = new ArrayList<>();
+            while (rs.next()) {
+                responsables.add(construir(rs));
+            }
+            return responsables;
+        }
+    }
     @Override
     public Administrador findByCodigoEmpleado(String codigoEmpleado)
             throws SQLException {

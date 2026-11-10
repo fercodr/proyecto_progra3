@@ -5,6 +5,8 @@
 @using EntreFunciones.ViewModels
 @using Microsoft.AspNetCore.Components.Forms
 @inject IAuditoriaService Auditorias
+@inject IFuncionService FuncionesService
+@inject IAdministradorService Administradores
 
 <PageTitle>Incidencias</PageTitle>
 
@@ -16,10 +18,30 @@
         </div>
 
         <button type="button" class="btn btn-primary"
-                disabled="@Procesando" @onclick="AbrirNueva">
+                disabled="@(Procesando || CargandoOpciones)"
+                @onclick="AbrirNueva">
             Nueva incidencia
         </button>
     </div>
+
+    @if (CargandoOpciones)
+    {
+        <div class="alert alert-info" role="status">
+            Cargando funciones y responsables...
+        </div>
+    }
+    @if (!string.IsNullOrWhiteSpace(ErrorOpciones))
+    {
+        <div class="alert alert-danger d-flex flex-wrap align-items-center justify-content-between gap-2"
+             role="alert">
+            <span>@ErrorOpciones</span>
+            <button type="button" class="btn btn-outline-danger btn-sm"
+                    disabled="@(Procesando || CargandoOpciones)"
+                    @onclick="CargarOpciones">
+                Reintentar carga
+            </button>
+        </div>
+    }
 
     @if (!string.IsNullOrWhiteSpace(Error))
     {
@@ -156,6 +178,7 @@
                 <div class="mb-3">
                     <label for="nuevaFuncion" class="form-label">Función</label>
                     <select id="nuevaFuncion" class="form-select"
+                            disabled="@(Procesando || CargandoOpciones)"
                             @bind="Nueva.FuncionId">
                         <option value="0">Selecciona una función</option>
                         @foreach (FuncionViewModel funcion in Funciones)
@@ -177,6 +200,7 @@
                     <div class="col-12 col-md-6">
                         <label for="nuevoResponsable" class="form-label">Responsable</label>
                         <select id="nuevoResponsable" class="form-select"
+                                disabled="@(Procesando || CargandoOpciones)"
                                 @bind="Nueva.ResponsableId">
                             <option value="0">Selecciona un responsable</option>
                             @foreach (AdministradorViewModel responsable in Responsables)
@@ -259,6 +283,7 @@
                     <div class="col-12 col-md-6">
                         <label for="editarResponsable" class="form-label">Responsable</label>
                         <select id="editarResponsable" class="form-select"
+                                disabled="@(Procesando || CargandoOpciones)"
                                 @bind="Atencion.ResponsableId">
                             <option value="0">Selecciona un responsable activo</option>
                             @foreach (AdministradorViewModel responsable in Responsables)
@@ -318,7 +343,9 @@
     private string EstadoFiltro = string.Empty;
     private bool ResultadosCargados;
     private bool Procesando;
+    private bool CargandoOpciones;
     private string Error = string.Empty;
+    private string ErrorOpciones = string.Empty;
     private string Mensaje = string.Empty;
 
     protected override async Task OnInitializedAsync()
@@ -328,29 +355,43 @@
 
     private async Task CargarOpciones()
     {
-        Task<string?> responsablesTask = CargarResponsables();
-        Task<string?> funcionesTask = CargarFunciones();
-        await Task.WhenAll(responsablesTask, funcionesTask);
+        if (CargandoOpciones)
+        {
+            return;
+        }
 
-        List<string> errores = new();
-        string? errorResponsables = await responsablesTask;
-        string? errorFunciones = await funcionesTask;
-        if (!string.IsNullOrWhiteSpace(errorResponsables))
+        CargandoOpciones = true;
+        ErrorOpciones = string.Empty;
+        try
         {
-            errores.Add(errorResponsables);
+            Task<string?> responsablesTask = CargarResponsables();
+            Task<string?> funcionesTask = CargarFunciones();
+            await Task.WhenAll(responsablesTask, funcionesTask);
+
+            List<string> errores = new();
+            string? errorResponsables = await responsablesTask;
+            string? errorFunciones = await funcionesTask;
+            if (!string.IsNullOrWhiteSpace(errorResponsables))
+            {
+                errores.Add(errorResponsables);
+            }
+            if (!string.IsNullOrWhiteSpace(errorFunciones))
+            {
+                errores.Add(errorFunciones);
+            }
+            ErrorOpciones = string.Join(" ", errores);
         }
-        if (!string.IsNullOrWhiteSpace(errorFunciones))
+        finally
         {
-            errores.Add(errorFunciones);
+            CargandoOpciones = false;
         }
-        Error = string.Join(" ", errores);
     }
 
     private async Task<string?> CargarResponsables()
     {
         try
         {
-            Responsables = await Auditorias.FindResponsablesActivos();
+            Responsables = await Administradores.FindAll();
             return null;
         }
         catch (Exception ex)
@@ -364,7 +405,7 @@
     {
         try
         {
-            Funciones = await Auditorias.FindFuncionesAsignables();
+            Funciones = await FuncionesService.FindAll();
             return null;
         }
         catch (Exception ex)

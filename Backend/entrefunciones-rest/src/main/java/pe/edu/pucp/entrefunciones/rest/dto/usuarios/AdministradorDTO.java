@@ -1,4 +1,7 @@
 package pe.edu.pucp.entrefunciones.rest.dto.usuarios;
+
+import pe.edu.pucp.entrefunciones.modelo.usuarios.Administrador;
+
 //AdministradorDTO para guardar los datos personales de los administradores en la base de datos.
 //Se creo un DTO porque Glassfish necesita un constructor vacío para pasar el objeto a Java, pero en la capa modelos no hay constructor vacio. El registro fallaria
 // El getter se llama estaActivo(). GlassFish no lo reconoce como propiedad, así que el JSON saldría sin activo.
@@ -12,7 +15,7 @@ public class AdministradorDTO {
     private String dni;
     private String codigoEmpleado;
 
-    public AdministradorDTO() {
+    public AdministradorDTO(Administrador responsable) {
     }
 
     public int getId() {

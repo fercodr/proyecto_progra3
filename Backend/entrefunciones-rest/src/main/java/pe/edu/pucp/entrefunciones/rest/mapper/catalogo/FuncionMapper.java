@@ -2,6 +2,8 @@ package pe.edu.pucp.entrefunciones.rest.mapper.catalogo;
 
 import pe.edu.pucp.entrefunciones.bl.error.BLException;
 import pe.edu.pucp.entrefunciones.bl.error.ValidacionException;
+import pe.edu.pucp.entrefunciones.bl.eventos.EventoBL;
+import pe.edu.pucp.entrefunciones.bl.impl.eventos.EventoBLImpl;
 import pe.edu.pucp.entrefunciones.modelo.catalogo.Evento;
 import pe.edu.pucp.entrefunciones.modelo.catalogo.Funcion;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Sala;
@@ -22,6 +24,7 @@ import java.util.List;
  * el nombre de la sala en Cartelera/Detalle.
  */
 public final class FuncionMapper {
+    private EventoBL eventoBL = new EventoBLImpl();
 
     private FuncionMapper() {
     }
@@ -82,6 +85,29 @@ public final class FuncionMapper {
             return funcion;
         } catch (IllegalArgumentException | DateTimeException e) {
             throw new ValidacionException(e.getMessage());
+        }
+    }
+
+    public static Funcion toModelo(FuncionDTO dto) throws ValidacionException {
+        try {
+            Sala sala = new Sala();
+            sala.setId(dto.getIdSala());
+
+            LocalDate fecha = dto.getFecha() == null ? null : LocalDate.parse(dto.getFecha());
+            LocalTime horaInicio = dto.getHoraInicio() == null ? null : LocalTime.parse(dto.getHoraInicio());
+            LocalTime horaFin = dto.getHoraFin() == null ? null : LocalTime.parse(dto.getHoraFin());
+
+            Funcion funcion = new Funcion(dto.getId(),EventoMapper.toModelo(dto.getEvento()), sala, fecha, horaInicio, horaFin, dto.getIdioma());
+
+            if (dto.getEstado() != null) {
+                funcion.setEstado(EstadoFuncion.valueOf(dto.getEstado()));
+            }
+
+            return funcion;
+        } catch (IllegalArgumentException | DateTimeException e) {
+            throw new ValidacionException(e.getMessage());
+        } catch (BLException e) {
+            throw new RuntimeException(e);
         }
     }
 }

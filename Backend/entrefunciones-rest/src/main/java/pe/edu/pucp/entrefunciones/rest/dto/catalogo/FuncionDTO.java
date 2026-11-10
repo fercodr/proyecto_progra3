@@ -1,8 +1,20 @@
 package pe.edu.pucp.entrefunciones.rest.dto.catalogo;
 
+import pe.edu.pucp.entrefunciones.modelo.catalogo.Evento;
+
 public class FuncionDTO {
     private int id;
     private int idEvento;
+
+    public EventoDTO getEvento() {
+        return evento;
+    }
+
+    public void setEvento(EventoDTO evento) {
+        this.evento = evento;
+    }
+
+    private EventoDTO evento;
     private String tituloEvento;
     private int idSala;
     private String nombreSala;
