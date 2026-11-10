@@ -1,11 +1,28 @@
 @page "/evento/{Id:int}"
 @using System.Globalization
+@using EntreFunciones.DTOSS
+@using EntreFunciones.Servicios.Rest
 @inject NavigationManager Nav
+@inject ICatalogoService Catalogo
 
 <PageTitle>@(Evento?.Titulo ?? "Detalle del evento")</PageTitle>
 
 <div class="page-shell">
-@if (Evento == null)
+@if (Cargando)
+{
+    <div class="text-center my-5" role="status">
+        <div class="spinner-border" aria-hidden="true"></div>
+        <p class="text-muted mt-2">Cargando evento...</p>
+    </div>
+}
+else if (ErrorCarga is not null)
+{
+    <div class="alert alert-danger" role="alert">
+        No se pudo cargar el evento: @ErrorCarga
+        <button type="button" class="btn btn-sm btn-outline-danger ms-2" @onclick="Cargar">Reintentar</button>
+    </div>
+}
+else if (Evento == null)
 {
     <div class="alert alert-warning" role="status">
         No se encontró el evento solicitado.
@@ -23,17 +40,28 @@ else
 
     <div class="row g-4">
         <div class="col-12 col-md-7">
+            <div class="d-flex align-items-center justify-content-center bg-light rounded mb-3" style="height:220px;">
+                <i class="@IconoTipo(Evento.Tipo) text-secondary" style="font-size:5rem;"></i>
+            </div>
             <span class="badge text-bg-secondary mb-2">@TextoTipo(Evento.Tipo)</span>
             <h1 class="page-title mb-2">@Evento.Titulo</h1>
-            <p class="text-muted mb-1">@Evento.Duracion min &middot; @Evento.Clasificacion</p>
-            <p class="mb-1"><strong>@CampoSecundario</strong>: @Evento.ValorSecundario</p>
-            <p class="mb-3">@Evento.Descripcion</p>
+            @if (Evento.DuracionMinutos is not null)
+            {
+                <p class="text-muted mb-1">@Evento.DuracionMinutos min &middot; @TextoClasificacion(Evento.ClasificacionPorEdad)</p>
+            }
+            @if (!string.IsNullOrWhiteSpace(EtiquetaSecundaria))
+            {
+                <p class="mb-1"><strong>@EtiquetaSecundaria</strong>: @ValorSecundario</p>
+            }
             <p class="fs-4"><strong>S/ @Evento.Precio.ToString("N2", CultureInfo.InvariantCulture)</strong></p>
         </div>
         <div class="col-12 col-md-5">
             <div class="card">
                 <div class="card-body">
-                    <h2 class="card-title h5">Funciones disponibles</h2>
+                    <h2 class="card-title h5">
+                        Funciones disponibles
+                        <i class="bi bi-info-circle text-muted" title="Solo se muestran funciones confirmadas o programadas; una función cancelada no aparece aquí."></i>
+                    </h2>
                     @if (!Funciones.Any())
                     {
                         <p class="text-muted mb-0">No hay funciones programadas por el momento.</p>
@@ -41,12 +69,12 @@ else
                     else
                     {
                         <div class="list-group">
-                            @foreach (FuncionDetalle funcion in Funciones)
+                            @foreach (FuncionDTO funcion in Funciones)
                             {
                                 <div class="list-group-item d-flex justify-content-between align-items-center">
                                     <div>
-                                        <div><strong>@funcion.Fecha.ToString("dd/MM/yyyy")</strong> &middot; @funcion.HoraInicio.ToString("hh\\:mm")</div>
-                                        <div class="text-muted small">@funcion.Sede &middot; Sala @funcion.Sala &middot; @funcion.Idioma</div>
+                                        <div><strong>@FormatearFecha(funcion.Fecha)</strong> &middot; @FormatearHora(funcion.HoraInicio)</div>
+                                        <div class="text-muted small">@funcion.NombreSede &middot; Sala @funcion.NombreSala &middot; @funcion.Idioma</div>
                                     </div>
                                     <button type="button" class="btn btn-sm btn-primary" @onclick="() => ElegirFuncion(funcion.Id)">
                                         Elegir
@@ -66,59 +94,88 @@ else
     [Parameter]
     public int Id { get; set; }
 
-    // RF-M4-01: datos de ejemplo mientras no hay conexion al backend Java.
-    // Reemplazar por EventoBL.findById(Id) y FuncionBL al integrar con el backend.
-    private List<EventoDetalle> Eventos = new()
-    {
-        new EventoDetalle(1, "Pelicula", "Interestelar", "Director", "Christopher Nolan", 169, "Apta para todo publico",
-            "Un grupo de astronautas viaja a traves de un agujero de gusano en busca de un nuevo hogar para la humanidad.", 22.00),
-        new EventoDetalle(2, "Pelicula", "Spider-Man: Brand New Day", "Director", "Destin Daniel Cretton", 130, "Apta para todo publico",
-            "Peter Parker enfrenta un nuevo enemigo mientras intenta equilibrar su vida como superheroe y como estudiante.", 18.50),
-        new EventoDetalle(3, "ObraTeatro", "La Muralla", "Elenco", "Compania Teatral Lima", 120, "Apta para todo publico",
-            "Un drama historico sobre la construccion de la muralla de Lima en el siglo XVII.", 35.00),
-        new EventoDetalle(4, "ActividadCultural", "Charla: Arte Contemporaneo", "Expositor", "Maria Fernandez", 60, "Apta para todo publico",
-            "Una charla introductoria sobre las corrientes del arte contemporaneo en el Peru.", 10.00),
-        new EventoDetalle(5, "ActividadCultural", "Taller de Ceramica", "Expositor", "Carlos Quispe", 180, "Apta para todo publico",
-            "Taller practico de ceramica para principiantes, materiales incluidos.", 25.00),
-    };
+    private bool Cargando = true;
+    private string? ErrorCarga;
+    private EventoDTO? Evento;
+    private List<FuncionDTO> Funciones = new();
 
-    // RF-M3-01: funciones de ejemplo asociadas a cada evento.
-    private List<FuncionDetalle> TodasLasFunciones = new()
+    protected override async Task OnParametersSetAsync()
     {
-        new FuncionDetalle(101, 1, DateTime.Today.AddDays(1), new TimeSpan(18, 30, 0), "Cineplanet Jockey Plaza", "3", "Subtitulada"),
-        new FuncionDetalle(102, 1, DateTime.Today.AddDays(1), new TimeSpan(21, 0, 0), "Cineplanet Jockey Plaza", "3", "Doblada"),
-        new FuncionDetalle(103, 2, DateTime.Today.AddDays(2), new TimeSpan(20, 0, 0), "Cineplanet Norte", "1", "Doblada"),
-        new FuncionDetalle(104, 3, DateTime.Today.AddDays(3), new TimeSpan(19, 0, 0), "Teatro Municipal", "Principal", "Espanol"),
-        new FuncionDetalle(105, 4, DateTime.Today.AddDays(2), new TimeSpan(17, 0, 0), "Sede Miraflores", "Auditorio", "Espanol"),
-        new FuncionDetalle(106, 5, DateTime.Today.AddDays(4), new TimeSpan(10, 0, 0), "Sede Barranco", "Taller 1", "Espanol"),
-    };
-
-    private EventoDetalle? Evento;
-    private List<FuncionDetalle> Funciones = new();
-
-    protected override void OnParametersSet()
-    {
-        Evento = Eventos.FirstOrDefault(e => e.Id == Id);
-        Funciones = TodasLasFunciones.Where(f => f.EventoId == Id).OrderBy(f => f.Fecha).ToList();
+        await Cargar();
     }
+
+    private async Task Cargar()
+    {
+        Cargando = true;
+        ErrorCarga = null;
+        try
+        {
+            Evento = await Catalogo.ObtenerEvento(Id, completo: true);
+            Funciones = (Evento.Funciones ?? new())
+                .Where(f => f.Estado != "CANCELADA")
+                .OrderBy(f => f.Fecha).ThenBy(f => f.HoraInicio)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            ErrorCarga = ex.Message;
+        }
+        finally
+        {
+            Cargando = false;
+        }
+    }
+
+    private string EtiquetaSecundaria => Evento?.Tipo switch
+    {
+        "PELICULA" => "Director",
+        "OBRA_TEATRO" => "Director",
+        "ACTIVIDAD_CULTURAL" => "Expositor",
+        _ => ""
+    } ?? "";
+
+    private string ValorSecundario => Evento?.Tipo switch
+    {
+        "PELICULA" => Evento.Director ?? "",
+        "OBRA_TEATRO" => Evento.NombreDirector ?? "",
+        "ACTIVIDAD_CULTURAL" => Evento.Expositor ?? "",
+        _ => ""
+    } ?? "";
+
+    // Icono generico por tipo mientras el equipo decide como se van a manejar las imagenes
+    // reales de cada evento (ver decisiones-diseno-catalogo-rest.md).
+    private string IconoTipo(string tipo) => tipo switch
+    {
+        "PELICULA" => "bi bi-film",
+        "OBRA_TEATRO" => "bi bi-emoji-smile",
+        "ACTIVIDAD_CULTURAL" => "bi bi-people",
+        _ => "bi bi-calendar-event"
+    };
 
     private string TextoTipo(string tipo) => tipo switch
     {
-        "Pelicula" => "Película",
-        "ObraTeatro" => "Obra de teatro",
-        "ActividadCultural" => "Actividad cultural",
+        "PELICULA" => "Película",
+        "OBRA_TEATRO" => "Obra de teatro",
+        "ACTIVIDAD_CULTURAL" => "Actividad cultural",
         _ => tipo
     };
 
-    private string CampoSecundario => Evento?.EtiquetaSecundaria ?? string.Empty;
+    private string TextoClasificacion(string? clasificacion) => clasificacion switch
+    {
+        "APTA_TODO_PUBLICO" => "Apta para todo público",
+        "PG13" => "PG-13",
+        "MAYORES_18" => "Solo mayores de 18",
+        _ => clasificacion ?? ""
+    };
+
+    private string FormatearFecha(string fechaIso) =>
+        DateOnly.TryParse(fechaIso, out DateOnly fecha) ? fecha.ToString("dd/MM/yyyy") : fechaIso;
+
+    private string FormatearHora(string horaIso) =>
+        TimeOnly.TryParse(horaIso, out TimeOnly hora) ? hora.ToString("HH:mm") : horaIso;
 
     private void ElegirFuncion(int funcionId)
     {
         Nav.NavigateTo($"/funcion/{funcionId}/butacas");
     }
-
-    private record EventoDetalle(int Id, string Tipo, string Titulo, string EtiquetaSecundaria, string ValorSecundario,
-        int Duracion, string Clasificacion, string Descripcion, double Precio);
-
-    private record FuncionDetalle(int Id, int EventoId, DateTime Fecha, TimeSpan HoraInicio, string Sede, string Sala, string Idioma);
 }
