@@ -15,9 +15,19 @@ public class AdministradorDTO {
     private String dni;
     private String codigoEmpleado;
 
-    public AdministradorDTO(Administrador responsable) {
+    public AdministradorDTO() {
     }
-
+    public AdministradorDTO(Administrador administrador) {
+        if (administrador != null) {
+            this.id = administrador.getId();
+            this.activo = administrador.estaActivo();
+            this.nombres = administrador.getNombres();
+            this.apellidos = administrador.getApellidos();
+            this.correo = administrador.getCorreo();
+            this.dni = administrador.getDni();
+            this.codigoEmpleado = administrador.getCodigoEmpleado();
+        }
+    }
     public int getId() {
         return id;
     }

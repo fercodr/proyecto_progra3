@@ -15,7 +15,7 @@ public final class AdministradorMapper {
 
     /** Modelo → DTO. La contraseña NO se copia. */
     public static AdministradorDTO toDTO(Administrador administrador) {
-        AdministradorDTO dto = new AdministradorDTO(auditoria.getResponsable());
+        AdministradorDTO dto = new AdministradorDTO();
         dto.setId(administrador.getId());
         dto.setActivo(administrador.estaActivo());
         dto.setNombres(administrador.getNombres());
