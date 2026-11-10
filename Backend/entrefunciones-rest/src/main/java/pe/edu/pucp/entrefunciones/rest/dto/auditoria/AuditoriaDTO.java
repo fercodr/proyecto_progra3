@@ -2,32 +2,28 @@ package pe.edu.pucp.entrefunciones.rest.dto.auditoria;
 
 import java.time.LocalDateTime;
 import pe.edu.pucp.entrefunciones.modelo.auditoria.Auditoria;
+import pe.edu.pucp.entrefunciones.rest.dto.catalogo.FuncionDTO;
+import pe.edu.pucp.entrefunciones.rest.dto.usuarios.AdministradorDTO;
 
-public class AuditoriaResponseDTO {
+public class AuditoriaDTO {
 
     private int id;
-    private FuncionResumenDTO funcion;
+    private FuncionDTO funcion;
     private LocalDateTime fecha;
-    private AdministradorResumenDTO responsable;
-    private String responsableTextoOriginal;
+    private AdministradorDTO responsable;
     private String descripcion;
     private String estado;
-
-    public AuditoriaResponseDTO() {
+    public AuditoriaDTO() {
     }
 
-    public AuditoriaResponseDTO(Auditoria auditoria) {
+    public AuditoriaDTO(Auditoria auditoria) {
         this.id = auditoria.getId();
         if (auditoria.getFuncion() != null) {
-            this.funcion = new FuncionResumenDTO(auditoria.getFuncion());
+            this.funcion = new FuncionDTO();
         }
         this.fecha = auditoria.getFecha();
         if (auditoria.getResponsable() != null) {
-            this.responsable = new AdministradorResumenDTO(
-                    auditoria.getResponsable());
-        } else {
-            this.responsableTextoOriginal =
-                    auditoria.getResponsableTextoOriginal();
+            this.responsable = new AdministradorDTO(auditoria.getResponsable());
         }
         this.descripcion = auditoria.getDescripcion();
         this.estado = auditoria.getEstado().name();
@@ -41,11 +37,11 @@ public class AuditoriaResponseDTO {
         this.id = id;
     }
 
-    public FuncionResumenDTO getFuncion() {
+    public FuncionDTO getFuncion() {
         return funcion;
     }
 
-    public void setFuncion(FuncionResumenDTO funcion) {
+    public void setFuncion(FuncionDTO funcion) {
         this.funcion = funcion;
     }
 
@@ -57,21 +53,12 @@ public class AuditoriaResponseDTO {
         this.fecha = fecha;
     }
 
-    public AdministradorResumenDTO getResponsable() {
+    public AdministradorDTO getResponsable() {
         return responsable;
     }
 
-    public void setResponsable(AdministradorResumenDTO responsable) {
+    public void setResponsable(AdministradorDTO responsable) {
         this.responsable = responsable;
-    }
-
-    public String getResponsableTextoOriginal() {
-        return responsableTextoOriginal;
-    }
-
-    public void setResponsableTextoOriginal(
-            String responsableTextoOriginal) {
-        this.responsableTextoOriginal = responsableTextoOriginal;
     }
 
     public String getDescripcion() {

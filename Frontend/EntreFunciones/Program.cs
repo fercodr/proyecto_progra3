@@ -10,6 +10,8 @@ builder.Services.AddRazorComponents()
 builder.Services.AddSeguridad();
 builder.Services.AddScoped<ICompraService, CompraService>();
 builder.Services.AddScoped<IAuditoriaService, AuditoriaService>();
+builder.Services.AddScoped<IFuncionService, FuncionService>();
+builder.Services.AddScoped<IAdministradorService, AdministradorService>();
 builder.Services.AddScoped<ICatalogoService, CatalogoService>();
 builder.Services.AddScoped<ISedeService, SedeService>();
 builder.Services.AddScoped<ISalaService, SalaService>();

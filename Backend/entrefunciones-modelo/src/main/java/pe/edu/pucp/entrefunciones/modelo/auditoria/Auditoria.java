@@ -9,7 +9,6 @@ public class Auditoria {
     private Funcion funcion;
     private LocalDateTime fecha;
     private Administrador responsable;
-    private String responsableTextoOriginal;
     private String descripcion;
     private EstadoAuditoria estado;
 
@@ -23,43 +22,13 @@ public class Auditoria {
         this.estado = EstadoAuditoria.PENDIENTE;
     }
 
-    /** RNF-SEG-01: registro de trazabilidad general, sin una funcion asociada. */
     public Auditoria(int id, LocalDateTime fecha, Administrador responsable,
                      String descripcion) {
         this(id, fecha, responsable, descripcion, null);
     }
 
-    /**
-     * Restaura una fila historica cuyo responsable aun no pudo relacionarse
-     * de forma segura. Las altas nuevas deben usar los constructores normales.
-     */
-    public static Auditoria restaurarHistorica(
-            int id, LocalDateTime fecha, Administrador responsable,
-            String responsableTextoOriginal, String descripcion,
-            Funcion funcion, EstadoAuditoria estado) {
+    public Auditoria() {}
 
-        if (responsable == null
-                && (responsableTextoOriginal == null
-                || responsableTextoOriginal.isBlank())) {
-            throw new IllegalArgumentException(
-                    "La auditoria historica debe conservar un responsable");
-        }
-
-        Auditoria auditoria = new Auditoria();
-        auditoria.setId(id);
-        auditoria.setFecha(fecha);
-        auditoria.responsable = responsable;
-        auditoria.responsableTextoOriginal = responsableTextoOriginal;
-        auditoria.setDescripcion(descripcion);
-        auditoria.setFuncion(funcion);
-        auditoria.setEstado(estado);
-        return auditoria;
-    }
-
-    private Auditoria() {
-    }
-
-    /** Constructor de copia. */
     public Auditoria(final Auditoria auditoria) {
         if (auditoria == null) {
             throw new IllegalArgumentException("auditoria no puede ser nulo");
@@ -67,7 +36,6 @@ public class Auditoria {
         setId(auditoria.getId());
         setFecha(auditoria.getFecha());
         this.responsable = auditoria.getResponsable();
-        this.responsableTextoOriginal = auditoria.getResponsableTextoOriginal();
         setDescripcion(auditoria.getDescripcion());
         setFuncion(auditoria.getFuncion());
         setEstado(auditoria.getEstado());
@@ -130,10 +98,6 @@ public class Auditoria {
         this.responsable = responsable;
     }
 
-    /** Solo se informa para filas historicas aun no vinculadas. */
-    public String getResponsableTextoOriginal() {
-        return responsableTextoOriginal;
-    }
 
     public String getDescripcion(){
         return descripcion;

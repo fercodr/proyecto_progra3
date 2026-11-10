@@ -17,6 +17,18 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 public class FuncionDAOImpl implements FuncionDAO {
+    public List<Funcion> findAllActiveFunctions() throws SQLException {
+        String sql = "{call listar_funciones_asignables_auditoria()}";
+        try (Connection conn = DBManager.getInstance().getConnection();
+             CallableStatement cmd = conn.prepareCall(sql);
+             ResultSet rs = cmd.executeQuery()) {
+            List<Funcion> funciones = new ArrayList<>();
+            while (rs.next()) {
+                funciones.add(mapear(rs));
+            }
+            return funciones;
+        }
+    }
 
     @Override
     public void insertFunciones(int idEvento, List<Funcion> funciones) throws SQLException {

@@ -8,7 +8,7 @@ import pe.edu.pucp.entrefunciones.modelo.catalogo.Funcion;
 import java.sql.SQLException;
 import java.util.List;
 public interface FuncionDAO extends DAO<Funcion, Integer> {
-
+    public List<Funcion> findAllActiveFunctions() throws SQLException ;
     void insertFunciones(int idEvento, List<Funcion> funciones) throws SQLException;
 
     void updateFunciones(int idEvento, List<Funcion> funciones) throws SQLException;

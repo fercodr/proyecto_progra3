@@ -2,6 +2,7 @@ package pe.edu.pucp.entrefunciones.bl;
 
 import pe.edu.pucp.entrefunciones.bl.error.BLException;
 
+import java.sql.SQLException;
 import java.util.List;
 
 public interface BL<T, ID> {
@@ -10,7 +11,7 @@ public interface BL<T, ID> {
 
     T findById(ID id) throws BLException;
 
-    void insert(T entidad) throws BLException;
+    void insert(T entidad) throws BLException, SQLException;
 
     void update(T entidad) throws BLException;
 

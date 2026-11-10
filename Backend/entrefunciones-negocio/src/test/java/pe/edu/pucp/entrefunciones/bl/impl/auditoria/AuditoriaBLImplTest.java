@@ -38,10 +38,8 @@ class AuditoriaBLImplTest {
     @BeforeEach
     void preparar() {
         dao = new FakeAuditoriaDAO();
-        Clock reloj = Clock.fixed(
-                Instant.parse("2026-11-09T15:30:00Z"),
-                ZONA_LIMA);
-        bl = new AuditoriaBLImpl(dao, reloj);
+        Clock reloj = Clock.fixed(Instant.parse("2026-11-09T15:30:00Z"), ZONA_LIMA);
+        bl = new AuditoriaBLImpl(reloj);
 
         Sede sede = new Sede(
                 1, "Centro", "Av. Principal 100", "Lima", "014000000");

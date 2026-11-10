@@ -9,15 +9,5 @@ import pe.edu.pucp.entrefunciones.modelo.catalogo.Funcion;
 import pe.edu.pucp.entrefunciones.modelo.usuarios.Administrador;
 
 public interface AuditoriaDAO extends DAO<Auditoria, Integer> {
-
-    List<Auditoria> findByFilters(String descripcion, EstadoAuditoria estado)
-            throws SQLException;
-
-    List<Administrador> findResponsablesActivos() throws SQLException;
-
-    List<Funcion> findFuncionesAsignables() throws SQLException;
-
-    Administrador findResponsableById(Integer usuarioId) throws SQLException;
-
-    Funcion findFuncionById(Integer funcionId) throws SQLException;
+    public List<Auditoria> findByFilters(String descripcion, EstadoAuditoria estado) throws SQLException;
 }

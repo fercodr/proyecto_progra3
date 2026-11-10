@@ -12,7 +12,5 @@ namespace EntreFunciones.Servicios.Rest
         Task<AuditoriaViewModel> FindById(int id);
         Task<AuditoriaViewModel> Insert(AuditoriaViewModel modelo);
         Task<AuditoriaViewModel> Update(AuditoriaViewModel modelo);
-        Task<List<AdministradorViewModel>> FindResponsablesActivos();
-        Task<List<FuncionViewModel>> FindFuncionesAsignables();
     }
 }
