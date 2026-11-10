@@ -9,6 +9,7 @@ builder.Services.AddRazorComponents()
 builder.Services.AddSeguridad();
 builder.Services.AddScoped<ICompraService, CompraService>();
 builder.Services.AddScoped<IAuditoriaService, AuditoriaService>();
+builder.Services.AddScoped<ICatalogoService, CatalogoService>();
 
 var app = builder.Build();
 
