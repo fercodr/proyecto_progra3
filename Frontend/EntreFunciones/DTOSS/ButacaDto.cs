@@ -8,8 +8,9 @@ namespace EntreFunciones.DTOSS
         public string Fila { get; set; } = string.Empty;
         public int Columna { get; set; }
         public string TipoButaca { get; set; } = string.Empty;
-
+        
         // Solo en el flujo de compra (disponibilidad de una función)
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public bool Ocupada { get; set; }
 
         // Solo en el cliente: no viene del backend

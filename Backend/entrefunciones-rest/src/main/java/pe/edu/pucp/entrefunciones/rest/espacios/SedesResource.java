@@ -4,6 +4,7 @@ package pe.edu.pucp.entrefunciones.rest.espacios;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.SecurityContext;
 import jakarta.ws.rs.core.UriInfo;
 import pe.edu.pucp.entrefunciones.bl.error.BLException;
 import pe.edu.pucp.entrefunciones.bl.error.NoEncontradoException;
@@ -25,6 +26,9 @@ public class SedesResource {
 
     @Context
     private UriInfo uriInfo;
+
+    @Context
+    private SecurityContext securityContext;
 
     public SedesResource() {
         sedeBL = new SedeBLImpl();
@@ -62,6 +66,10 @@ public class SedesResource {
 
     @POST
     public Response insert(SedeDTO sedeDTO) {
+        Response prohibido = soloAdministrador();
+        if (prohibido != null) {
+            return prohibido;
+        }
         try {
             sedeDTO.setActivo(true);
             Sede sede = SedeMapper.toModelo(sedeDTO);
@@ -87,6 +95,10 @@ public class SedesResource {
     @PUT
     @Path("/{id}")
     public Response update(@PathParam("id") int id, SedeDTO sedeDTO) {
+        Response prohibido = soloAdministrador();
+        if (prohibido != null) {
+            return prohibido;
+        }
         try {
             if (id != sedeDTO.getId()) {
                 throw new ValidacionException("El id y el payload no coinciden");
@@ -113,6 +125,10 @@ public class SedesResource {
     @PUT
     @Path("/{id}/salas")
     public Response sincronizarSalas(@PathParam("id") int id, SedeDTO sedeDTO) {
+        Response prohibido = soloAdministrador();
+        if (prohibido != null) {
+            return prohibido;
+        }
         try {
             if (id != sedeDTO.getId()) {
                 throw new ValidacionException("El id y el payload no coinciden");
@@ -138,6 +154,10 @@ public class SedesResource {
     @DELETE
     @Path("/{id}")
     public Response delete(@PathParam("id") int id) {
+        Response prohibido = soloAdministrador();
+        if (prohibido != null) {
+            return prohibido;
+        }
         try {
             sedeBL.delete(id);
             return Response.noContent().build();
@@ -148,6 +168,14 @@ public class SedesResource {
         catch (BLException ex) {
             return error(Response.Status.INTERNAL_SERVER_ERROR, ex);
         }
+    }
+
+    private Response soloAdministrador() {
+        if (securityContext.isUserInRole("Administrador")) {
+            return null;
+        }
+        return error(Response.Status.FORBIDDEN,
+                new Exception("Solo un administrador puede modificar sedes"));
     }
 
     private Response error(Response.Status status, Exception ex) {
