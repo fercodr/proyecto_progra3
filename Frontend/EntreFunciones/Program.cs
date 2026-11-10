@@ -1,5 +1,6 @@
 using EntreFunciones.Components;
 using EntreFunciones.Seguridad;
+using EntreFunciones.Servicios;
 using EntreFunciones.Servicios.Rest;
 var builder = WebApplication.CreateBuilder(args);
 

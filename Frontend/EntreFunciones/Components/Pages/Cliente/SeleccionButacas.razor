@@ -1,6 +1,7 @@
 @page "/funcion/{Id:int}/butacas"
 @using System.Globalization
 @using EntreFunciones.DTOSS
+@using EntreFunciones.Mappers
 @using EntreFunciones.Servicios.Rest
 @inject NavigationManager Nav
 @inject ICompraService Api
@@ -9,6 +10,8 @@
 <PageTitle>Selección de butacas</PageTitle>
 
 <div class="page-shell">
+<PasosCompra PasoActual="1" />
+
 @if (Cargando)
 {
     <div class="d-flex align-items-center gap-2 text-secondary" role="status" aria-live="polite">
@@ -95,16 +98,49 @@ else
         </div>
     }
 
+    @if (!string.IsNullOrEmpty(ErrorAccion))
+    {
+        <div class="alert alert-danger summary-card" role="alert" aria-live="assertive">@ErrorAccion</div>
+    }
+
     <div class="card summary-card">
         <div class="card-body">
             <h2 class="card-title h5">Resumen</h2>
+            @if (Funcion.AforoNumerado)
+            {
+                <p class="mb-1">Butacas: <strong>@(ButacasElegidasTexto == "" ? "Ninguna" : ButacasElegidasTexto)</strong></p>
+            }
             <p class="mb-1">Cantidad: <strong>@CantidadElegida</strong></p>
-            <p class="mb-3">Total: <strong>S/ @((CantidadElegida * Funcion.Precio).ToString("N2", CultureInfo.InvariantCulture))</strong></p>
-            <button type="button" class="btn btn-primary w-100" disabled="@(CantidadElegida <= 0 || Enviando)" @onclick="ContinuarAReserva">
-                @(Enviando ? "Reservando..." : "Reservar")
+            <p class="mb-1">Precio unitario: <strong>@CompraClienteMapper.Soles(Funcion.Precio)</strong></p>
+            <p class="mb-3">Total: <strong>@CompraClienteMapper.Soles(Total)</strong></p>
+            <button type="button" class="btn btn-primary w-100" disabled="@(CantidadElegida <= 0 || Enviando)" @onclick="() => MostrarConfirmacion = true">
+                Continuar
             </button>
+            <p class="small text-muted mt-2 mb-0">
+                Se separarán por 15 minutos
+                <IconoInfo Texto="Al continuar se crea tu reserva y las butacas quedan bloqueadas para otros usuarios durante 15 minutos. Si no pagas en ese tiempo, se liberan automáticamente." />
+            </p>
         </div>
     </div>
+
+    <ModalConfirmacion Visible="MostrarConfirmacion" Titulo="¿Confirmar reserva?" Icono="bi-ticket-perforated"
+                       TextoConfirmar="Sí, reservar" Procesando="Enviando"
+                       OnConfirmar="ContinuarAReserva" OnCancelar="() => MostrarConfirmacion = false">
+        <p class="mb-2">Vas a reservar para <strong>@Funcion.Titulo</strong>:</p>
+        <ul class="mb-2">
+            <li>@Funcion.Fecha.ToString("dd/MM/yyyy") &middot; @Funcion.HoraInicio &middot; @Funcion.Sede, sala @Funcion.Sala</li>
+            @if (Funcion.AforoNumerado)
+            {
+                <li>Butacas: @ButacasElegidasTexto</li>
+            }
+            else
+            {
+                <li>Cupos: @CantidadElegida</li>
+            }
+            <li>Total a pagar: <strong>@CompraClienteMapper.Soles(Total)</strong></li>
+        </ul>
+        <p class="small text-muted mb-0">Tendrás 15 minutos para completar el pago.</p>
+    </ModalConfirmacion>
 }
 </div>
 
@@ -127,6 +163,10 @@ else
         finally { Cargando=false; }
     }
     private int CantidadElegida => Funcion?.AforoNumerado==true?Butacas.Count(b=>b.Elegida):Cantidad;
+    private decimal Total => CantidadElegida * (Funcion?.Precio ?? 0);
+    private string ButacasElegidasTexto => string.Join(", ", Butacas.Where(b=>b.Elegida).OrderBy(b=>b.Fila).ThenBy(b=>b.Columna).Select(b=>$"{b.Fila}{b.Columna}"));
+    private bool MostrarConfirmacion;
+    private string ErrorAccion = "";
     private string ClaseButaca(ButacaDto b)=>!b.Activo?"bloqueada":b.Ocupada?"ocupada":b.Elegida?"elegida":"libre";
     private string DescripcionButaca(ButacaDto b)=>$"Butaca {b.Fila}{b.Columna}: {(!b.Activo?"inactiva":b.Ocupada?"ocupada":b.Elegida?"seleccionada":"libre")}";
     private void ToggleButaca(ButacaDto b) { if(b.Activo && !b.Ocupada && !Enviando)b.Elegida=!b.Elegida; }
@@ -135,11 +175,11 @@ else
     private async Task ContinuarAReserva()
     {
         if(Enviando || Funcion==null || CantidadElegida<=0)return;
-        Enviando=true;Error="";
+        Enviando=true;ErrorAccion="";
         try {
             var reserva=await Api.Crear(Id,Butacas.Where(b=>b.Elegida).Select(b=>b.Id).ToArray(),CantidadElegida);
             Nav.NavigateTo($"/reserva/{reserva.Id}/pago");
-        } catch(Exception e) when(e is HttpRequestException or InvalidOperationException or ServiceException or TaskCanceledException) { Error=e.Message; }
-        finally { Enviando=false; }
+        } catch(Exception e) when(e is HttpRequestException or InvalidOperationException or ServiceException or TaskCanceledException) { ErrorAccion=e.Message; }
+        finally { Enviando=false;MostrarConfirmacion=false; }
     }
 }

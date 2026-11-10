@@ -57,7 +57,7 @@ namespace EntreFunciones.Servicios.Rest
         public async Task<List<FuncionViewModel>> FindFuncionesAsignables()
         {
             string url = ConstruirSubruta("opciones", "funciones");
-            List<FuncionDTO> dtos = await ConsultarLista<FuncionDTO>(url);
+            List<FuncionResumenDTO> dtos = await ConsultarLista<FuncionResumenDTO>(url);
             return dtos.Select(ToFuncionViewModel).ToList();
         }
 
@@ -92,7 +92,7 @@ namespace EntreFunciones.Servicios.Rest
             };
         }
 
-        private static FuncionViewModel ToFuncionViewModel(FuncionDTO dto)
+        private static FuncionViewModel ToFuncionViewModel(FuncionResumenDTO dto)
         {
             return new FuncionViewModel
             {
