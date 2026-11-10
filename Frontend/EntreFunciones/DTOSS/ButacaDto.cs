@@ -16,7 +16,7 @@ namespace EntreFunciones.DTOSS
         [JsonPropertyName("activo")]
         public bool Activo { get; set; }
 
-        [JsonPropertyName("ocupada")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public bool Ocupada { get; set; }
 
         public bool Elegida { get; set; }

@@ -1,9 +1,10 @@
+using Microsoft.AspNetCore.Components.Authorization;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text.Json;
-using Microsoft.AspNetCore.Components.Authorization;
+using System.Text.Json.Serialization;
 
 namespace EntreFunciones.Servicios.Rest
 {
@@ -310,7 +311,13 @@ namespace EntreFunciones.Servicios.Rest
 
         private sealed class ErrorRespuestaDto
         {
-            public string Mensaje { get; set; } = string.Empty;
+            [JsonPropertyName("error")]
+            public string? Error { get; set; }
+
+            [JsonPropertyName("mensaje")]
+            public string? Mensaje { get; set; }
+
+            public string Texto => !string.IsNullOrWhiteSpace(Error) ? Error : Mensaje ?? string.Empty;
         }
     }
 }

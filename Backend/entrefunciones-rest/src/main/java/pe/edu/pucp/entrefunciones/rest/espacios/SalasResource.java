@@ -3,6 +3,7 @@ package pe.edu.pucp.entrefunciones.rest.espacios;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.SecurityContext;
 import jakarta.ws.rs.core.UriInfo;
 import pe.edu.pucp.entrefunciones.bl.error.BLException;
 import pe.edu.pucp.entrefunciones.bl.error.NoEncontradoException;
@@ -24,6 +25,9 @@ public class SalasResource {
 
     @Context
     private UriInfo uriInfo;
+
+    @Context
+    private SecurityContext securityContext;
 
     public SalasResource() {
         salaBL = new SalaBLImpl();
@@ -62,6 +66,10 @@ public class SalasResource {
 
     @POST
     public Response insert(SalaDTO salaDTO) {
+        Response prohibido = soloAdministrador();
+        if (prohibido != null) {
+            return prohibido;
+        }
         try {
             salaDTO.setActivo(true);
             Sala sala = SalaMapper.toModelo(salaDTO);
@@ -87,6 +95,10 @@ public class SalasResource {
     @PUT
     @Path("/{id}")
     public Response update(@PathParam("id") int id, SalaDTO salaDTO) {
+        Response prohibido = soloAdministrador();
+        if (prohibido != null) {
+            return prohibido;
+        }
         try {
             if (id != salaDTO.getId()) {
                 throw new ValidacionException("El id y el payload no coinciden");
@@ -112,6 +124,10 @@ public class SalasResource {
     @DELETE
     @Path("/{id}")
     public Response delete(@PathParam("id") int id) {
+        Response prohibido = soloAdministrador();
+        if (prohibido != null) {
+            return prohibido;
+        }
         try {
             salaBL.delete(id);
             return Response.noContent().build();
@@ -122,6 +138,14 @@ public class SalasResource {
         catch (BLException ex) {
             return error(Response.Status.INTERNAL_SERVER_ERROR, ex);
         }
+    }
+
+    private Response soloAdministrador() {
+        if (securityContext.isUserInRole("Administrador")) {
+            return null;
+        }
+        return error(Response.Status.FORBIDDEN,
+                new Exception("Solo un administrador puede modificar salas"));
     }
 
     private Response error(Response.Status status, Exception ex) {
