@@ -1,11 +1,13 @@
 @page "/admin/sedes/nuevo"
 @page "/admin/sedes/editar/{Id:int}"
 @attribute [Authorize(Policy = "Espacios")]
+@inject ISedeService SedeService
 @inject NavigationManager Nav
 
+@using EntreFunciones.Servicios
 @using EntreFunciones.ViewModels
 
-@* 11. Sedes · RF-M2-01 (Lab 9: solo interfaz, Guardar no registra nada) *@
+@* 11. Sedes · RF-M2-01 *@
 
 <PageTitle>@(Id == null ? "Nueva sede" : "Editar sede")</PageTitle>
 
@@ -66,22 +68,28 @@
     private SedeViewModel ViewModel { get; set; } = new();
     private string? MensajeError { get; set; }
 
-    protected override void OnParametersSet() {
+    protected override async Task OnParametersSetAsync() {
         if (Id == null) {
             ViewModel = new SedeViewModel();
             return;
         }
-        SedeViewModel? sede = DatosEspaciosDemo.Sedes.FirstOrDefault(s => s.Id == Id.Value);
-        if (sede == null) {
+        try {
+            ViewModel = await SedeService.FindById(Id.Value);
+        } catch (ServiceException) {
             Nav.NavigateTo("/admin/sedes");
-            return;
         }
-        // Se trabaja sobre una copia para no modificar los datos de ejemplo
-        ViewModel = sede.Clonar();
     }
 
-    private void Guardar() {
-        // Lab 9: solo interfaz. Aquí se llamará al servicio de sedes (insertar o modificar).
-        Nav.NavigateTo("/admin/sedes");
+    private async Task Guardar() {
+        try {
+            if (Id == null) {
+                await SedeService.Insert(ViewModel);
+            } else {
+                await SedeService.Update(ViewModel);
+            }
+            Nav.NavigateTo("/admin/sedes");
+        } catch (ServiceException ex) {
+            MensajeError = ex.Message;
+        }
     }
 }

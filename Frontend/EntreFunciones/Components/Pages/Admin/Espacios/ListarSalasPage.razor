@@ -1,11 +1,14 @@
 @page "/admin/salas"
 @attribute [Authorize(Policy = "Espacios")]
+@inject ISalaService SalaService
+@inject ISedeService SedeService
 @inject NavigationManager Nav
 
 @using Microsoft.AspNetCore.Components.QuickGrid
+@using EntreFunciones.Servicios
 @using EntreFunciones.ViewModels
 
-@* 11. Salas · RF-M2-01 (Lab 9: solo interfaz, datos de ejemplo)
+@* 11. Salas · RF-M2-01
    Se puede abrir filtrada por sede desde el listado de sedes: /admin/salas?sede=1 *@
 
 <PageTitle>Salas</PageTitle>
@@ -21,13 +24,17 @@
     </button>
 </div>
 
+@if (MensajeError != null) {
+    <div class="alert alert-danger" role="alert" aria-live="assertive">@MensajeError</div>
+}
+
 <div class="filter-panel">
     <div class="row g-3 align-items-end">
         <div class="col-12 col-md-5">
             <label for="filtroSede" class="form-label">Sede</label>
             <select id="filtroSede" class="form-select" @bind="FiltroSede">
                 <option value="0">Todas las sedes</option>
-                @foreach (SedeViewModel sede in DatosEspaciosDemo.Sedes) {
+                @foreach (SedeViewModel sede in Sedes) {
                     <option value="@sede.Id">@sede.RazonSocial</option>
                 }
             </select>
@@ -78,14 +85,24 @@ else {
     [SupplyParameterFromQuery(Name = "sede")]
     public int? SedeInicial { get; set; }
 
+    private List<SedeViewModel> Sedes { get; set; } = [];
     private IQueryable<SalaViewModel> Salas { get; set; } = Enumerable.Empty<SalaViewModel>().AsQueryable();
     private int FiltroSede { get; set; }
     private string Filtro { get; set; } = string.Empty;
+    private string? MensajeError { get; set; }
     private PaginationState Paginacion { get; } = new() { ItemsPerPage = 5 };
 
-    protected override void OnParametersSet() {
+    protected override async Task OnParametersSetAsync() {
         FiltroSede = SedeInicial ?? 0;
-        FiltrarSalas();
+        try {
+            if (Sedes.Count == 0) {
+                Sedes = await SedeService.FindAll();
+            }
+        } catch (ServiceException ex) {
+            MensajeError = ex.Message;
+            return;
+        }
+        await FiltrarSalas();
     }
 
     private void NuevaSala() {
@@ -100,20 +117,33 @@ else {
         Nav.NavigateTo($"/admin/salas/{idSala}/butacas");
     }
 
-    private void DesactivarSala(int id) {
-        // Lab 9: solo interfaz. Aquí se llamará al servicio de salas (eliminado lógico).
+    private async Task DesactivarSala(int id) {
+        try {
+            await SalaService.Delete(id);
+        } catch (ServiceException ex) {
+            MensajeError = ex.Message;
+            return;
+        }
+        await FiltrarSalas();
     }
 
-    private void FiltrarSalas() {
-        Salas = DatosEspaciosDemo.Salas
-            .Where(s => FiltroSede == 0 || s.IdSede == FiltroSede)
-            .Where(s => s.Nombre.Contains(Filtro, StringComparison.OrdinalIgnoreCase))
-            .AsQueryable();
+    private async Task FiltrarSalas() {
+        try {
+            List<SalaViewModel> lista = FiltroSede == 0
+                ? await SalaService.FindAll()
+                : await SalaService.FindBySede(FiltroSede);
+            Salas = lista
+                .Where(s => s.Nombre.Contains(Filtro, StringComparison.OrdinalIgnoreCase))
+                .AsQueryable();
+            MensajeError = null;
+        } catch (ServiceException ex) {
+            MensajeError = ex.Message;
+        }
     }
 
-    private void LimpiarFiltro() {
+    private async Task LimpiarFiltro() {
         FiltroSede = 0;
         Filtro = string.Empty;
-        Salas = DatosEspaciosDemo.Salas.AsQueryable();
+        await FiltrarSalas();
     }
 }
