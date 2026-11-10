@@ -66,6 +66,7 @@ CREATE TABLE evento (
     id      INT AUTO_INCREMENT PRIMARY KEY,
     precio  DECIMAL(8,2) NOT NULL,
     activo  BOOLEAN      NOT NULL DEFAULT TRUE,
+    imagen_url VARCHAR(255) NULL,  -- ruta relativa, p. ej. 'img/eventos/interestelar.jpg'
     CONSTRAINT chk_evento_precio CHECK (precio >= 0)
 );
 

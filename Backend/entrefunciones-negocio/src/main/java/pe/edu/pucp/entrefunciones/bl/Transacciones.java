@@ -1,4 +1,5 @@
 package pe.edu.pucp.entrefunciones.bl;
+import pe.edu.pucp.entrefunciones.bl.error.BLException;
 import pe.edu.pucp.entrefunciones.dao.transacciones.TransactionsManager;
 import java.sql.SQLException;
 public final class Transacciones {

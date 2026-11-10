@@ -15,6 +15,10 @@ BEGIN
         SET r.precio_unitario=COALESCE(ROUND(p.monto/NULLIF(COALESCE(r.cantidad,(SELECT COUNT(*) FROM reserva_butaca rb WHERE rb.reserva_id=r.id)),0),2),e.precio);
         ALTER TABLE reserva MODIFY precio_unitario DECIMAL(8,2) NOT NULL;
     END IF;
+    -- Imagen del evento: solo se agrega si la columna todavia no existe
+    IF NOT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='evento' AND column_name='imagen_url') THEN
+        ALTER TABLE evento ADD COLUMN imagen_url VARCHAR(255) NULL;
+    END IF;
 END$$
 DELIMITER ;
 CALL migrar_lab11();

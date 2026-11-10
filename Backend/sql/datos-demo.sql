@@ -37,12 +37,12 @@ INSERT INTO butaca (id, sala_id, fila, columna, tipo_butaca, activo) VALUES
 -- Catalogo: 5 eventos. Interestelar (evento 1) tiene DOS funciones (1 y 3,
 -- horarios distintos) que comparten el mismo evento_id: el catalogo
 -- (titulo, genero, director, precio) vive una sola vez.
-INSERT INTO evento (id, precio, activo) VALUES
-    (1, 25.00, TRUE),  -- Interestelar
-    (2, 22.00, TRUE),  -- La Casa del Terror
-    (3, 35.00, TRUE),  -- La Muralla
-    (4, 10.00, TRUE),  -- Charla de Cine Peruano Contemporaneo
-    (5, 15.00, TRUE);  -- Taller de Fotografia
+INSERT INTO evento (id, precio, activo, imagen_url) VALUES
+    (1, 25.00, TRUE, 'img/eventos/interestelar.jpg'),        -- Interestelar
+    (2, 22.00, TRUE, 'img/eventos/casa-del-terror.jpg'),     -- La Casa del Terror
+    (3, 35.00, TRUE, 'img/eventos/la-muralla.jpg'),          -- La Muralla
+    (4, 10.00, TRUE, 'img/eventos/charla-cine-peruano.jpg'), -- Charla de Cine Peruano Contemporaneo
+    (5, 15.00, TRUE, 'img/eventos/taller-foto.jpg');         -- Taller de Fotografia
 
 INSERT INTO pelicula (evento_id, nombre_pelicula, duracion_minutos, genero, clasificacion_edad, director) VALUES
     (1, 'Interestelar', 169, 'DRAMA', 'PG13', 'Christopher Nolan'),

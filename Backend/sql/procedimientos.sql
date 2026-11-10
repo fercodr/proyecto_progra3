@@ -1,7 +1,7 @@
 -- Contratos canónicos DAO. Instalar después del esquema o de la migración.
 USE entrefunciones;
 CREATE OR REPLACE VIEW v_eventos AS
-SELECT e.id,e.precio,e.activo,
+SELECT e.id,e.precio,e.activo,e.imagen_url,
  CASE WHEN p.evento_id IS NOT NULL THEN 'PELICULA' WHEN o.evento_id IS NOT NULL THEN 'OBRA_TEATRO' WHEN a.evento_id IS NOT NULL THEN 'ACTIVIDAD_CULTURAL' END AS tipo_evento,
  p.nombre_pelicula,p.duracion_minutos,p.genero,p.clasificacion_edad,p.director,
  o.titulo,o.nombre_director,o.elenco,a.nombre,a.expositor,a.tipo_actividad
@@ -481,14 +481,14 @@ BEGIN
 SELECT * FROM v_eventos WHERE id=p_id;
 END$$
 
-CREATE PROCEDURE insertar_evento(IN p_precio DECIMAL(8,2),IN p_activo BOOLEAN,OUT p_id INT)
+CREATE PROCEDURE insertar_evento(IN p_precio DECIMAL(8,2),IN p_activo BOOLEAN,IN p_imagen_url VARCHAR(255),OUT p_id INT)
 BEGIN
-INSERT INTO evento(precio,activo) VALUES(p_precio,p_activo); SET p_id=LAST_INSERT_ID();
+INSERT INTO evento(precio,activo,imagen_url) VALUES(p_precio,p_activo,p_imagen_url); SET p_id=LAST_INSERT_ID();
 END$$
 
-CREATE PROCEDURE modificar_evento(IN p_id INT,IN p_precio DECIMAL(8,2),IN p_activo BOOLEAN)
+CREATE PROCEDURE modificar_evento(IN p_id INT,IN p_precio DECIMAL(8,2),IN p_activo BOOLEAN,IN p_imagen_url VARCHAR(255))
 BEGIN
-UPDATE evento SET precio=p_precio,activo=p_activo WHERE id=p_id;
+UPDATE evento SET precio=p_precio,activo=p_activo,imagen_url=p_imagen_url WHERE id=p_id;
 END$$
 
 CREATE PROCEDURE eliminar_evento(IN p_id INT)

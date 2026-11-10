@@ -2,7 +2,7 @@
 
 import pe.edu.pucp.entrefunciones.dao.impl.usuarios.ClienteDAOImpl;
 import pe.edu.pucp.entrefunciones.modelo.usuarios.Cliente;
-import pe.edu.pucp.entrefunciones.bl.BLException;
+import pe.edu.pucp.entrefunciones.bl.error.BLException;
 import pe.edu.pucp.entrefunciones.bl.usuarios.ClienteBL;
 
 import java.sql.SQLException;
