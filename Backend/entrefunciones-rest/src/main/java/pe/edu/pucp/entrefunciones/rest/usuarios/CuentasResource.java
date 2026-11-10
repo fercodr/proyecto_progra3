@@ -28,7 +28,7 @@ public class CuentasResource {
         cuentaUsuarioBL = new CuentaUsuarioBLImpl();
     }
 
-    // Autenticar
+    //Autenticar
     @POST
     @Path("/login")
     public Response autenticar(CredencialesDTO credenciales) {
@@ -41,32 +41,36 @@ public class CuentasResource {
 
             if (usuario == null) {
                 return Response.status(Response.Status.UNAUTHORIZED)
-                        .entity(Map.of("error", "Correo o contraseña incorrectos"))
+                        .entity(Map.of("mensaje", "Correo o contraseña incorrectos"))
                         .build();
             }
             return Response.ok(CuentaUsuarioMapper.toDTO(usuario)).build();
-        } catch (ValidacionException ex) {
+        }
+        catch (ValidacionException ex) {
             return error(Response.Status.BAD_REQUEST, ex);
-        } catch (BLException ex) {
+        }
+        catch (BLException ex) {
             return error(Response.Status.INTERNAL_SERVER_ERROR, ex);
         }
     }
 
-    // Buscar la cuenta por correo
+    //Buscar la cuenta por correo
     @GET
     @Path("/{correo}")
     public Response findByCorreo(@PathParam("correo") String correo) {
         try {
             return Response.ok(CuentaUsuarioMapper.toDTO(cuentaUsuarioBL.findByCorreo(correo)))
                     .build();
-        } catch (NoEncontradoException ex) {
+        }
+        catch (NoEncontradoException ex) {
             return error(Response.Status.NOT_FOUND, ex);
-        } catch (BLException ex) {
+        }
+        catch (BLException ex) {
             return error(Response.Status.INTERNAL_SERVER_ERROR, ex);
         }
     }
 
-    // Es administrador?
+    //Es administrador?
     @GET
     @Path("/{correo}/administrador")
     public Response obtenerAdministrador(@PathParam("correo") String correo) {
@@ -76,14 +80,16 @@ public class CuentasResource {
                 throw new NoEncontradoException("La cuenta no es de administrador");
             }
             return Response.ok(AdministradorMapper.toDTO(admin)).build();
-        } catch (NoEncontradoException ex) {
+        }
+        catch (NoEncontradoException ex) {
             return error(Response.Status.NOT_FOUND, ex);
-        } catch (BLException ex) {
+        }
+        catch (BLException ex) {
             return error(Response.Status.INTERNAL_SERVER_ERROR, ex);
         }
     }
 
-    // Es cliente?
+    //Es cliente?
     @GET
     @Path("/{correo}/cliente")
     public Response obtenerCliente(@PathParam("correo") String correo) {
@@ -93,16 +99,18 @@ public class CuentasResource {
                 throw new NoEncontradoException("La cuenta no es de cliente");
             }
             return Response.ok(ClienteMapper.toDTO(cliente)).build();
-        } catch (NoEncontradoException ex) {
+        }
+        catch (NoEncontradoException ex) {
             return error(Response.Status.NOT_FOUND, ex);
-        } catch (BLException ex) {
+        }
+        catch (BLException ex) {
             return error(Response.Status.INTERNAL_SERVER_ERROR, ex);
         }
     }
 
     private Response error(Response.Status status, Exception ex) {
         return Response.status(status)
-                .entity(Map.of("error", ex.getMessage()))
+                .entity(Map.of("mensaje", ex.getMessage()))
                 .build();
     }
 }
