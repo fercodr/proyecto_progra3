@@ -10,7 +10,9 @@ builder.Services.AddSeguridad();
 builder.Services.AddScoped<ICompraService, CompraService>();
 builder.Services.AddScoped<IAuditoriaService, AuditoriaService>();
 builder.Services.AddScoped<ICatalogoService, CatalogoService>();
-
+builder.Services.AddScoped<ISedeService, SedeService>();
+builder.Services.AddScoped<ISalaService, SalaService>();
+builder.Services.AddScoped<IButacaService, ButacaService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

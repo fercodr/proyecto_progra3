@@ -1,10 +1,13 @@
 @page "/admin/salas/{IdSala:int}/butacas"
 @attribute [Authorize(Policy = "Espacios")]
+@inject ISalaService SalaService
+@inject IButacaService ButacaService
 @inject NavigationManager Nav
 
+@using EntreFunciones.Servicios
 @using EntreFunciones.ViewModels
 
-@* 12. Butacas · RF-M2-03 (Lab 9: solo interfaz, Guardar no registra nada)
+@* 12. Butacas · RF-M2-03
    Se entra con el botón "Butacas" del listado de salas. Clic en una butaca del mapa para editarla. *@
 
 <PageTitle>Butacas</PageTitle>
@@ -20,6 +23,10 @@
         <button type="button" class="btn btn-primary" @onclick="NuevaButaca">Nueva butaca</button>
     </div>
 </div>
+
+@if (MensajeError != null) {
+    <div class="alert alert-danger" role="alert" aria-live="assertive">@MensajeError</div>
+}
 
 <div class="row g-4">
     <div class="col-lg-8">
@@ -112,34 +119,48 @@
 
     private ButacaViewModel? ViewModel { get; set; }
     private int? IdSeleccionada { get; set; }
+    private string? MensajeError { get; set; }
     private bool EsNueva => ViewModel != null && IdSeleccionada == null;
 
-    protected override void OnParametersSet() {
-        SalaViewModel? sala = DatosEspaciosDemo.Salas.FirstOrDefault(s => s.Id == IdSala);
-        if (sala == null) {
+    protected override async Task OnParametersSetAsync() {
+        try {
+            Sala = await SalaService.FindById(IdSala);
+            Butacas = await ButacaService.FindBySala(IdSala);
+        } catch (ServiceException) {
             Nav.NavigateTo("/admin/salas");
             return;
         }
-        Sala = sala;
-        Butacas = DatosEspaciosDemo.ButacasDeSala(IdSala);
+
         ViewModel = null;
         IdSeleccionada = null;
+        MensajeError = null;
     }
 
     private void SeleccionarButaca(ButacaViewModel butaca) {
-        // Se trabaja sobre una copia para no modificar el mapa de ejemplo
+        // Se trabaja sobre una copia para no modificar el mapa mientras se edita
         ViewModel = butaca.Clonar();
         IdSeleccionada = butaca.Id;
+        MensajeError = null;
     }
 
     private void NuevaButaca() {
         ViewModel = new ButacaViewModel { IdSala = IdSala };
         IdSeleccionada = null;
+        MensajeError = null;
     }
 
-    private void Guardar() {
-        // Lab 9: solo interfaz. Aquí se llamará al servicio de butacas (insertar o modificar).
-        Cancelar();
+    private async Task Guardar() {
+        try {
+            if (EsNueva) {
+                await ButacaService.Insert(ViewModel!);
+            } else {
+                await ButacaService.Update(ViewModel!);
+            }
+            Butacas = await ButacaService.FindBySala(IdSala);
+            Cancelar();
+        } catch (ServiceException ex) {
+            MensajeError = ex.Message;
+        }
     }
 
     private void Cancelar() {
