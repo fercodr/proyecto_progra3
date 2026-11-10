@@ -1,5 +1,5 @@
 package pe.edu.pucp.entrefunciones.rest.usuarios;
-
+import java.sql.SQLException;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Response;
 import pe.edu.pucp.entrefunciones.bl.error.BLException;
@@ -56,6 +56,9 @@ public class ClientesResource {
         }
         catch (BLException ex) {
             return error(Response.Status.INTERNAL_SERVER_ERROR, ex);
+        }
+        catch (SQLException ex) {                                    // NUEVO
+            return error(Response.Status.INTERNAL_SERVER_ERROR, ex); // NUEVO
         }
     }
 
