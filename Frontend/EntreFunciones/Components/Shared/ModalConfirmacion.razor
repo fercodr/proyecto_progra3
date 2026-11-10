@@ -1,0 +1,76 @@
+@* Pop-up de confirmación reutilizable para acciones críticas (comprar, pagar, cancelar, eliminar...).
+   El padre controla Visible y decide qué hacer en OnConfirmar / OnCancelar.
+
+   <ModalConfirmacion Visible="MostrarModal" Titulo="¿Eliminar evento?" Variante="danger"
+                      TextoConfirmar="Sí, eliminar" Procesando="Eliminando"
+                      OnConfirmar="EliminarAsync" OnCancelar="() => MostrarModal = false">
+       Esta acción no se puede deshacer.
+   </ModalConfirmacion> *@
+
+@if (Visible)
+{
+    <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="@_idTitulo"
+         @onkeydown="AlPresionarTecla">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow">
+                <div class="modal-header">
+                    <h2 class="modal-title h5" id="@_idTitulo">
+                        <i class="bi @Icono text-@Variante me-2" aria-hidden="true"></i>@Titulo
+                    </h2>
+                    <button type="button" class="btn-close" aria-label="Cerrar" disabled="@Procesando" @onclick="CancelarAsync"></button>
+                </div>
+                <div class="modal-body">
+                    @ChildContent
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" disabled="@Procesando" @onclick="CancelarAsync">
+                        @TextoCancelar
+                    </button>
+                    <button type="button" class="btn btn-@Variante" disabled="@Procesando" @onclick="ConfirmarAsync">
+                        @if (Procesando)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+                            <span>Procesando...</span>
+                        }
+                        else
+                        {
+                            @TextoConfirmar
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    private readonly string _idTitulo = $"modal-titulo-{Guid.NewGuid():N}";
+
+    [Parameter] public bool Visible { get; set; }
+    [Parameter] public string Titulo { get; set; } = "¿Confirmar acción?";
+    [Parameter] public string TextoConfirmar { get; set; } = "Confirmar";
+    [Parameter] public string TextoCancelar { get; set; } = "Volver";
+    /// <summary>Color de Bootstrap del botón principal: primary, success, danger, warning...</summary>
+    [Parameter] public string Variante { get; set; } = "primary";
+    [Parameter] public string Icono { get; set; } = "bi-question-circle";
+    [Parameter] public bool Procesando { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public EventCallback OnConfirmar { get; set; }
+    [Parameter] public EventCallback OnCancelar { get; set; }
+
+    private async Task ConfirmarAsync()
+    {
+        if (!Procesando) await OnConfirmar.InvokeAsync();
+    }
+
+    private async Task CancelarAsync()
+    {
+        if (!Procesando) await OnCancelar.InvokeAsync();
+    }
+
+    private async Task AlPresionarTecla(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape") await CancelarAsync();
+    }
+}

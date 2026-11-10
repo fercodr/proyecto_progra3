@@ -1,0 +1,21 @@
+@* Ícono "i" que muestra información adicional al pasar el mouse o al hacer clic.
+   <IconoInfo Texto="Tus butacas quedan separadas por 15 minutos." /> *@
+
+<span class="icono-info">
+    <button type="button" class="btn btn-link p-0 align-baseline icono-info-boton"
+            title="@Texto" aria-label="Más información" aria-expanded="@Abierto"
+            @onclick="() => Abierto = !Abierto">
+        <i class="bi bi-info-circle" aria-hidden="true"></i>
+    </button>
+    @if (Abierto)
+    {
+        <span class="icono-info-panel shadow-sm" role="note">
+            @Texto
+        </span>
+    }
+</span>
+
+@code {
+    [Parameter, EditorRequired] public string Texto { get; set; } = default!;
+    private bool Abierto;
+}

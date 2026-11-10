@@ -19,6 +19,17 @@ public abstract class Usuario implements IAutenticable, IEliminable {
         this.activo=true;
     }
 
+    /**
+     * Constructor resumido para referencias de otras entidades. Evita cargar
+     * credenciales cuando solo se necesitan el identificador y el nombre.
+     */
+    protected Usuario(int id, String nombres, String apellidos) {
+        setId(id);
+        setNombres(nombres);
+        setApellidos(apellidos);
+        this.activo = true;
+    }
+
     /** Constructor de copia: crea un Usuario con los mismos datos que otro. */
     public Usuario (final Usuario usuario){
         if(usuario == null){

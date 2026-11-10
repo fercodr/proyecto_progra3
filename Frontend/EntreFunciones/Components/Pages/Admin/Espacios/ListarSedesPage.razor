@@ -1,11 +1,13 @@
 @page "/admin/sedes"
 @attribute [Authorize(Policy = "Espacios")]
+@inject ISedeService SedeService
 @inject NavigationManager Nav
 
 @using Microsoft.AspNetCore.Components.QuickGrid
+@using EntreFunciones.Servicios
 @using EntreFunciones.ViewModels
 
-@* 11. Sedes · RF-M2-01 (Lab 9: solo interfaz, datos de ejemplo) *@
+@* 11. Sedes · RF-M2-01 *@
 
 <PageTitle>Sedes</PageTitle>
 
@@ -19,6 +21,10 @@
         Nueva sede
     </button>
 </div>
+
+@if (MensajeError != null) {
+    <div class="alert alert-danger" role="alert" aria-live="assertive">@MensajeError</div>
+}
 
 <div class="filter-panel">
     <div class="row g-3 align-items-end">
@@ -65,12 +71,24 @@ else {
 </div>
 
 @code {
+    private List<SedeViewModel> Todas { get; set; } = [];
     private IQueryable<SedeViewModel> Sedes { get; set; } = Enumerable.Empty<SedeViewModel>().AsQueryable();
     private string Filtro { get; set; } = string.Empty;
+    private string? MensajeError { get; set; }
     private PaginationState Paginacion { get; } = new() { ItemsPerPage = 5 };
 
-    protected override void OnInitialized() {
-        Sedes = DatosEspaciosDemo.Sedes.AsQueryable();
+    protected override async Task OnInitializedAsync() {
+        await Cargar();
+    }
+
+    private async Task Cargar() {
+        try {
+            Todas = await SedeService.FindAll();
+            MensajeError = null;
+            FiltrarSedes();
+        } catch (ServiceException ex) {
+            MensajeError = ex.Message;
+        }
     }
 
     private void NuevaSede() {
@@ -85,12 +103,18 @@ else {
         Nav.NavigateTo($"/admin/salas?sede={idSede}");
     }
 
-    private void DesactivarSede(int id) {
-        // Lab 9: solo interfaz. Aquí se llamará al servicio de sedes (eliminado lógico).
+    private async Task DesactivarSede(int id) {
+        try {
+            await SedeService.Delete(id);
+        } catch (ServiceException ex) {
+            MensajeError = ex.Message;
+            return;
+        }
+        await Cargar();
     }
 
     private void FiltrarSedes() {
-        Sedes = DatosEspaciosDemo.Sedes
+        Sedes = Todas
             .Where(s => s.RazonSocial.Contains(Filtro, StringComparison.OrdinalIgnoreCase)
                      || s.Ciudad.Contains(Filtro, StringComparison.OrdinalIgnoreCase))
             .AsQueryable();
@@ -98,6 +122,6 @@ else {
 
     private void LimpiarFiltro() {
         Filtro = string.Empty;
-        Sedes = DatosEspaciosDemo.Sedes.AsQueryable();
+        FiltrarSedes();
     }
 }

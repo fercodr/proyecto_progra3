@@ -99,6 +99,8 @@ INSERT INTO entrada (id, reserva_id, butaca_id, fecha_emision, codigo_qr, precio
 
 -- Auditoria: una incidencia ligada a una funcion (RF-M6-04) y un registro
 -- de trazabilidad general sin funcion asociada (RNF-SEG-01).
-INSERT INTO auditoria (id, funcion_id, fecha, responsable, descripcion, estado) VALUES
-    (1, 1, '2026-09-14 10:06:00', 'Marco Reyes', 'Cliente reporto butaca A2 con reposabrazos suelto durante la funcion.', 'PENDIENTE'),
-    (2, NULL, '2026-09-14 09:58:00', 'valeria.suarez@gmail.com', 'Inicio de sesion exitoso desde nueva ubicacion.', 'RESUELTA');
+INSERT INTO auditoria (id, funcion_id, fecha, responsable_id, responsable, descripcion, estado) VALUES
+    (1, 1, '2026-09-14 10:06:00', 1, NULL, 'Cliente reporto butaca A2 con reposabrazos suelto durante la funcion.', 'PENDIENTE'),
+    -- Caso legado deliberado: el texto identifica a una cliente, no a un
+    -- administrador. Se conserva para resolucion manual y no se fuerza una FK.
+    (2, NULL, '2026-09-14 09:58:00', NULL, 'valeria.suarez@gmail.com', 'Inicio de sesion exitoso desde nueva ubicacion.', 'RESUELTA');

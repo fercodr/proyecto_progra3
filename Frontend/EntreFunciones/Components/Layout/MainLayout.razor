@@ -38,12 +38,10 @@
         @* ---------- Cliente: páginas públicas (sin Authorize, ver Permisos.cs) ---------- *@
         <NavLink class="nav-link" href="cartelera">Cartelera</NavLink>
 
-        @* ---------- Solo cliente autenticado (activar cuando existan las páginas) ---------- *@
-        @*
+        @* ---------- Solo cliente autenticado ---------- *@
         <AuthorizeView Policy="Compras">
             <NavLink class="nav-link" href="mis-compras">Mis compras</NavLink>
         </AuthorizeView>
-        *@
             </div>
 
             <div class="navbar-nav align-items-lg-center border-top border-light border-opacity-25 mt-2 pt-2 mt-lg-0 pt-lg-0 border-lg-0">

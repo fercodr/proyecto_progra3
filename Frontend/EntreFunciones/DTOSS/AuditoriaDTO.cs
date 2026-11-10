@@ -2,9 +2,10 @@ namespace EntreFunciones.DTOSS
 {
     public class AuditoriaDTO : Dto
     {
-        public int FuncionId { get; set; }
-        public DateTime? Fecha { get; set; }
-        public string Responsable { get; set; } = string.Empty;
+        public FuncionResumenDTO? Funcion { get; set; }
+        public DateTime Fecha { get; set; }
+        public AdministradorDTO? Responsable { get; set; }
+        public string? ResponsableTextoOriginal { get; set; }
         public string Descripcion { get; set; } = string.Empty;
         public EstadoAuditoria Estado { get; set; }
     }

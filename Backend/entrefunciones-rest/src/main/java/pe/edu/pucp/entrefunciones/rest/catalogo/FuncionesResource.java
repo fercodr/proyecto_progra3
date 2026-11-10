@@ -48,6 +48,17 @@ public class FuncionesResource {
         }
     }
 
+    /**
+     * Disponibilidad de butacas para comprar (pantalla Selección de butacas).
+     * Vive aquí porque JAX-RS envía todo /funciones/... a este recurso y nunca
+     * llegaría al método equivalente de VentasResource (@Path("/")).
+     */
+    @GET
+    @Path("/{id}/disponibilidad")
+    public jakarta.json.JsonObject disponibilidad(@PathParam("id") int id) throws Exception {
+        return new pe.edu.pucp.entrefunciones.rest.VentasResource().disponibilidad(id);
+    }
+
     @GET
     @Path("/{id}")
     public Response findById(@PathParam("id") int id) {

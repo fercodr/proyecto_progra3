@@ -1,0 +1,35 @@
+@* Indicador de etapas del flujo de compra: 1 Butacas - 2 Reserva - 3 Pago - 4 Confirmación.
+   Uso: <PasosCompra PasoActual="2" /> *@
+
+<nav class="pasos-compra mb-4" aria-label="Etapas de la compra">
+    <ol>
+        @for (int i = 0; i < Pasos.Length; i++)
+        {
+            int numero = i + 1;
+            string estado = numero < PasoActual ? "completado" : numero == PasoActual ? "actual" : "pendiente";
+            <li class="paso @estado" aria-current="@(numero == PasoActual ? "step" : null)">
+                <span class="paso-circulo" aria-hidden="true">
+                    @if (numero < PasoActual)
+                    {
+                        <i class="bi bi-check-lg"></i>
+                    }
+                    else
+                    {
+                        @numero
+                    }
+                </span>
+                <span class="paso-texto">@Pasos[i]</span>
+                <span class="visually-hidden">
+                    @(estado == "completado" ? "(completado)" : estado == "actual" ? "(etapa actual)" : "(pendiente)")
+                </span>
+            </li>
+        }
+    </ol>
+</nav>
+
+@code {
+    private static readonly string[] Pasos = ["Butacas", "Reserva", "Pago", "Confirmación"];
+
+    /// <summary>Etapa actual, de 1 (Butacas) a 4 (Confirmación).</summary>
+    [Parameter] public int PasoActual { get; set; } = 1;
+}

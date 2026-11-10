@@ -3,6 +3,7 @@ package pe.edu.pucp.entrefunciones.rest.espacios;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.SecurityContext;
 import jakarta.ws.rs.core.UriInfo;
 import pe.edu.pucp.entrefunciones.bl.error.BLException;
 import pe.edu.pucp.entrefunciones.bl.error.NoEncontradoException;
@@ -24,6 +25,9 @@ public class ButacasResource {
 
     @Context
     private UriInfo uriInfo;
+
+    @Context
+    private SecurityContext securityContext;
 
     public ButacasResource() {
         butacaBL = new ButacaBLImpl();
@@ -67,6 +71,10 @@ public class ButacasResource {
 
     @POST
     public Response insert(ButacaDTO butacaDTO) {
+        Response prohibido = soloAdministrador();
+        if (prohibido != null) {
+            return prohibido;
+        }
         try {
             butacaDTO.setActivo(true);
             Butaca butaca = ButacaMapper.toModelo(butacaDTO);
@@ -92,6 +100,10 @@ public class ButacasResource {
     @PUT
     @Path("/{id}")
     public Response update(@PathParam("id") int id, ButacaDTO butacaDTO) {
+        Response prohibido = soloAdministrador();
+        if (prohibido != null) {
+            return prohibido;
+        }
         try {
             if (id != butacaDTO.getId()) {
                 throw new ValidacionException("El id y el payload no coinciden");
@@ -117,6 +129,10 @@ public class ButacasResource {
     @DELETE
     @Path("/{id}")
     public Response delete(@PathParam("id") int id) {
+        Response prohibido = soloAdministrador();
+        if (prohibido != null) {
+            return prohibido;
+        }
         try {
             butacaBL.delete(id);
             return Response.noContent().build();
@@ -127,6 +143,14 @@ public class ButacasResource {
         catch (BLException ex) {
             return error(Response.Status.INTERNAL_SERVER_ERROR, ex);
         }
+    }
+
+    private Response soloAdministrador() {
+        if (securityContext.isUserInRole("Administrador")) {
+            return null;
+        }
+        return error(Response.Status.FORBIDDEN,
+                new Exception("Solo un administrador puede modificar butacas"));
     }
 
     private Response error(Response.Status status, Exception ex) {

@@ -1,251 +1,648 @@
-﻿@page "/incidencias"
-
+@page "/incidencias"
+@using EntreFunciones.DTOSS
+@using EntreFunciones.Servicios
+@using EntreFunciones.Servicios.Rest
+@using EntreFunciones.ViewModels
+@using Microsoft.AspNetCore.Components.Forms
+@inject IAuditoriaService Auditorias
 
 <PageTitle>Incidencias</PageTitle>
 
 <div class="page-shell">
-
-    <!-- ENCABEZADO -->
     <div class="page-header">
         <div>
             <h1 class="page-title">Incidencias</h1>
             <p class="page-description">Registra y consulta las incidencias de cada función.</p>
         </div>
 
-        <button type="button" class="btn btn-primary">
+        <button type="button" class="btn btn-primary"
+                disabled="@Procesando" @onclick="AbrirNueva">
             Nueva incidencia
         </button>
     </div>
 
-    <!-- FILTROS -->
-    <div class="filter-panel">
+    @if (!string.IsNullOrWhiteSpace(Error))
+    {
+        <div class="alert alert-danger" role="alert">@Error</div>
+    }
+    @if (!string.IsNullOrWhiteSpace(Mensaje))
+    {
+        <div class="alert alert-success" role="status">@Mensaje</div>
+    }
 
-        <div class="row g-3">
-            <div class="col-12 col-md-7">
-                <label for="buscar" class="form-label">
-                    Buscar por código o descripción
-                </label>
+    @if (VistaActual == Vista.Inicio)
+    {
+        <div class="filter-panel">
+            <div class="row g-3">
+                <div class="col-12 col-md-3">
+                    <label for="modoBusqueda" class="form-label">Modo de búsqueda</label>
+                    <select id="modoBusqueda" class="form-select"
+                            disabled="@Procesando"
+                            @bind="ModoBusquedaActual"
+                            @bind:after="CambiarModoBusqueda">
+                        <option value="@ModoBusqueda.PorId">Por ID</option>
+                        <option value="@ModoBusqueda.PorFiltros">Por filtros</option>
+                    </select>
+                </div>
 
-                <input id="buscar"
-                       type="search"
-                       class="form-control"
-                       placeholder="Ej. 23 o dato incorrecto" />
+                <div class="col-12 col-md-3">
+                    <label for="buscarId" class="form-label">ID</label>
+                    <input id="buscarId" type="text" inputmode="numeric"
+                           class="form-control" placeholder="Ej. 12"
+                           disabled="@(Procesando || ModoBusquedaActual != ModoBusqueda.PorId)"
+                           @bind="BusquedaIdTexto" @bind:event="oninput" />
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <label for="buscarDescripcion" class="form-label">Descripción</label>
+                    <input id="buscarDescripcion" type="search"
+                           class="form-control"
+                           placeholder="Ej. dato incorrecto"
+                           disabled="@(Procesando || ModoBusquedaActual != ModoBusqueda.PorFiltros)"
+                           @bind="DescripcionFiltro" />
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <label for="filtroEstado" class="form-label">Estado</label>
+                    <select id="filtroEstado" class="form-select"
+                            disabled="@(Procesando || ModoBusquedaActual != ModoBusqueda.PorFiltros)"
+                            @bind="EstadoFiltro">
+                        <option value="">Todos</option>
+                        <option value="PENDIENTE">Pendiente</option>
+                        <option value="EN_PROCESO">En proceso</option>
+                        <option value="RESUELTA">Resuelta</option>
+                    </select>
+                </div>
             </div>
 
-            <div class="col-12 col-md-5">
-                <label for="filtroEstado" class="form-label">
-                    Estado
-                </label>
-
-                <select id="filtroEstado" class="form-select">
-                    <option value="Todos" selected>Todos</option>
-                    <option value="Pendiente">Pendiente</option>
-                    <option value="Atendida">Atendida</option>
-                </select>
-            </div>
-        </div>
-    </div>
-
-    <!-- LISTADO -->
-    <div class="data-table-wrapper mb-4">
-        <table class="table table-bordered align-middle mb-0">
-
-            <thead style="--bs-table-bg: #edf2f9;">
-                <tr>
-                    <th scope="col">Código</th>
-                    <th scope="col">Función</th>
-                    <th scope="col">Descripción</th>
-                    <th scope="col">Fecha</th>
-                    <th scope="col">Responsable</th>
-                    <th scope="col">Estado</th>
-                    <th scope="col">Acción</th>
-                </tr>
-            </thead>
-
-            <tbody>
-                <tr>
-                    <th scope="row" class="fw-normal">#23</th>
-                    <td>Evento A · 27/10, 18:00</td>
-                    <td>Dato incorrecto de la función.</td>
-                    <td class="text-nowrap">27/10/2026</td>
-                    <td>Ana Pérez</td>
-                    <td>
-                        <span class="badge rounded-pill text-bg-warning">
-                            Pendiente
-                        </span>
-                    </td>
-                    <td>
-                        <button type="button"
-                                class="btn btn-outline-primary btn-sm">
-                            Gestionar
-                        </button>
-                    </td>
-                </tr>
-
-                <tr>
-                    <th scope="row" class="fw-normal">#24</th>
-                    <td>Evento B · 28/10, 19:30</td>
-                    <td>Horario por corregir.</td>
-                    <td class="text-nowrap">27/10/2026</td>
-                    <td>Luis Torres</td>
-                    <td>
-                        <span class="badge rounded-pill text-bg-secondary">
-                            Atendida
-                        </span>
-                    </td>
-                    <td>
-                        <button type="button"
-                                class="btn btn-outline-primary btn-sm">
-                            Gestionar
-                        </button>
-                    </td>
-                </tr>
-            </tbody>
-
-        </table>
-    </div>
-
-    <!-- PANEL: NUEVA INCIDENCIA -->
-    <section class="card card-body mb-4">
-
-        <h2 class="fs-4 fw-bold mb-3">Nueva incidencia</h2>
-
-        <div class="mb-3">
-            <label for="nuevaFuncion" class="form-label">
-                Función
-            </label>
-
-            <select id="nuevaFuncion" class="form-select">
-                <option value="0" selected>Selecciona una función</option>
-                <option value="1">
-                    Evento A · 27/10/2026, 18:00 · Centro / Sala 1
-                </option>
-                <option value="2">
-                    Evento B · 28/10/2026, 19:30 · Norte / Sala 2
-                </option>
-            </select>
-        </div>
-
-        <div class="mb-3">
-            <label for="nuevaDescripcion" class="form-label">
-                Descripción
-            </label>
-
-            <textarea id="nuevaDescripcion"
-                      class="form-control"
-                      rows="3"
-                      placeholder="Describe lo ocurrido..."></textarea>
-        </div>
-
-        <div class="row g-3 mb-3">
-            <div class="col-12 col-md-6">
-                <label for="nuevoResponsable" class="form-label">
-                    Responsable
-                </label>
-
-                <select id="nuevoResponsable" class="form-select">
-                    <option value="" selected>
-                        Selecciona un responsable
-                    </option>
-                    <option value="Ana Pérez">Ana Pérez</option>
-                    <option value="Luis Torres">Luis Torres</option>
-                    <option value="María Rojas">María Rojas</option>
-                </select>
-            </div>
-
-            <div class="col-12 col-md-6">
-                <div class="form-label">Estado inicial</div>
-
-                <span class="badge rounded-pill text-bg-warning">
-                    Pendiente
-                </span>
+            <div class="d-flex flex-wrap justify-content-end gap-2 mt-3">
+                <button type="button" class="btn btn-outline-secondary"
+                        disabled="@Procesando" @onclick="LimpiarBusqueda">
+                    Limpiar
+                </button>
+                <button type="button" class="btn btn-primary"
+                        disabled="@Procesando" @onclick="Buscar">
+                    Buscar
+                </button>
             </div>
         </div>
 
-        <p class="small text-secondary mb-0">
-            El código y la fecha se asignarán al registrar.
-        </p>
+        @if (ResultadosCargados)
+        {
+            <div class="data-table-wrapper mb-4">
+                <table class="table table-bordered align-middle mb-0">
+                    <thead style="--bs-table-bg: #edf2f9;">
+                        <tr>
+                            <th scope="col">Código</th>
+                            <th scope="col">Función</th>
+                            <th scope="col">Descripción</th>
+                            <th scope="col">Fecha</th>
+                            <th scope="col">Responsable</th>
+                            <th scope="col">Estado</th>
+                            <th scope="col">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Resultados.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="7" class="text-center text-secondary py-4">
+                                    Sin coincidencias.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (AuditoriaViewModel incidencia in Resultados)
+                            {
+                                <tr>
+                                    <th scope="row" class="fw-normal">#@incidencia.Id</th>
+                                    <td>@PresentarFuncion(incidencia.Funcion)</td>
+                                    <td>@incidencia.Descripcion</td>
+                                    <td class="text-nowrap">@incidencia.Fecha.ToString("dd/MM/yyyy, HH:mm")</td>
+                                    <td>@incidencia.ResponsablePresentacion</td>
+                                    <td>
+                                        <span class="badge rounded-pill @ClaseEstado(incidencia.EstadoAuditoria)">
+                                            @NombreEstado(incidencia.EstadoAuditoria)
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button type="button"
+                                                class="btn btn-outline-primary btn-sm"
+                                                disabled="@Procesando"
+                                                @onclick="() => Gestionar(incidencia)">
+                                            Gestionar
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    }
 
-        <div class="d-flex flex-wrap justify-content-end gap-2 mt-4">
-            <button type="button" class="btn btn-outline-secondary">
-                Cancelar
-            </button>
+    @if (VistaActual == Vista.Nueva)
+    {
+        <EditForm Model="Nueva" OnValidSubmit="Registrar"
+                  FormName="nuevaIncidencia">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
 
-            <button type="button" class="btn btn-primary">
-                Registrar incidencia
-            </button>
-        </div>
+            <section class="card card-body mb-4">
+                <h2 class="fs-4 fw-bold mb-3">Nueva incidencia</h2>
 
-    </section>
+                <div class="mb-3">
+                    <label for="nuevaFuncion" class="form-label">Función</label>
+                    <select id="nuevaFuncion" class="form-select"
+                            @bind="Nueva.FuncionId">
+                        <option value="0">Selecciona una función</option>
+                        @foreach (FuncionViewModel funcion in Funciones)
+                        {
+                            <option value="@funcion.Id">@funcion.Presentacion</option>
+                        }
+                    </select>
+                </div>
 
-    <!-- PANEL: ATENDER INCIDENCIA -->
-    <section class="card card-body">
+                <div class="mb-3">
+                    <label for="nuevaDescripcion" class="form-label">Descripción</label>
+                    <textarea id="nuevaDescripcion" class="form-control"
+                              rows="3" maxlength="500"
+                              placeholder="Describe lo ocurrido..."
+                              @bind="Nueva.Descripcion"></textarea>
+                </div>
 
-        <h2 class="fs-4 fw-bold mb-3">
-            Atender incidencia #23
-        </h2>
+                <div class="row g-3 mb-3">
+                    <div class="col-12 col-md-6">
+                        <label for="nuevoResponsable" class="form-label">Responsable</label>
+                        <select id="nuevoResponsable" class="form-select"
+                                @bind="Nueva.ResponsableId">
+                            <option value="0">Selecciona un responsable</option>
+                            @foreach (AdministradorViewModel responsable in Responsables)
+                            {
+                                <option value="@responsable.Id">@responsable.NombreCompleto</option>
+                            }
+                        </select>
+                    </div>
 
-        <!-- DATOS ORIGINALES: SOLO LECTURA -->
-        <div class="row g-3">
-            <div class="col-12 col-md-8">
-                <div class="fw-semibold mb-1">Función</div>
+                    <div class="col-12 col-md-6">
+                        <div class="form-label">Estado inicial</div>
+                        <span class="badge rounded-pill text-bg-warning">Pendiente</span>
+                    </div>
+                </div>
 
-                <p class="mb-0">
-                    Evento A · 27/10/2026, 18:00 · Centro / Sala 1
+                <p class="small text-secondary mb-0">
+                    El código, la fecha y el estado inicial se asignarán en el servidor.
                 </p>
-            </div>
 
-            <div class="col-12 col-md-4">
-                <div class="fw-semibold mb-1">Fecha de registro</div>
-                <p class="mb-0">27/10/2026, 09:15</p>
-            </div>
+                <div class="d-flex flex-wrap justify-content-end gap-2 mt-4">
+                    <button type="button" class="btn btn-outline-secondary"
+                            disabled="@Procesando"
+                            @onclick="CancelarNueva">Cancelar</button>
+                    <button type="submit" class="btn btn-primary"
+                            disabled="@Procesando">Registrar incidencia</button>
+                </div>
+            </section>
+        </EditForm>
+    }
 
-            <div class="col-12">
-                <div class="fw-semibold mb-1">Descripción original</div>
-                <p class="mb-0">Dato incorrecto de la función.</p>
-            </div>
-        </div>
+    @if (VistaActual == Vista.Detalle && Seleccionada is not null)
+    {
+        <EditForm Model="Atencion" OnValidSubmit="Actualizar"
+                  FormName="atenderIncidencia">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
 
-        <hr class="my-4" />
+            <section class="card card-body">
+                <h2 class="fs-4 fw-bold mb-3">
+                    Atender incidencia #@Seleccionada.Id
+                </h2>
 
-        <!-- DATOS EDITABLES -->
-        <h3 class="fs-5 text-primary mb-3">Atención</h3>
+                <div class="row g-3">
+                    <div class="col-12 col-md-8">
+                        <div class="fw-semibold mb-1">Función</div>
+                        <p class="mb-0">@PresentarFuncion(Seleccionada.Funcion)</p>
+                    </div>
 
-        <div class="row g-3">
-            <div class="col-12 col-md-6">
-                <label for="editarResponsable" class="form-label">
-                    Responsable
-                </label>
+                    <div class="col-12 col-md-4">
+                        <div class="fw-semibold mb-1">Fecha de registro</div>
+                        <p class="mb-0">@Seleccionada.Fecha.ToString("dd/MM/yyyy, HH:mm")</p>
+                    </div>
 
-                <select id="editarResponsable" class="form-select">
-                    <option value="Ana Pérez" selected>Ana Pérez</option>
-                    <option value="Luis Torres">Luis Torres</option>
-                    <option value="María Rojas">María Rojas</option>
-                </select>
-            </div>
+                    <div class="col-12">
+                        <div class="fw-semibold mb-1">Descripción original</div>
+                        <p class="mb-0">@Seleccionada.Descripcion</p>
+                    </div>
 
-            <div class="col-12 col-md-6">
-                <label for="editarEstado" class="form-label">
-                    Estado
-                </label>
+                    <div class="col-12">
+                        <div class="fw-semibold mb-1">Responsable registrado</div>
+                        <p class="mb-0">
+                            @Seleccionada.ResponsablePresentacion
+                            @if (Seleccionada.Responsable is not null
+                                 && !Seleccionada.Responsable.IsActivo)
+                            {
+                                <span class="badge text-bg-secondary ms-2">Histórico / inactivo</span>
+                            }
+                            else if (Seleccionada.Responsable is null)
+                            {
+                                <span class="badge text-bg-secondary ms-2">Pendiente de vinculación</span>
+                            }
+                        </p>
+                    </div>
+                </div>
 
-                <select id="editarEstado" class="form-select">
-                    <option value="Pendiente" selected>Pendiente</option>
-                    <option value="Atendida">Atendida</option>
-                </select>
-            </div>
-        </div>
+                <hr class="my-4" />
+                <h3 class="fs-5 text-primary mb-3">Atención</h3>
 
-        <div class="d-flex flex-wrap justify-content-end gap-2 mt-4">
-            <button type="button" class="btn btn-outline-secondary">
-                Cancelar
-            </button>
+                <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                        <label for="editarResponsable" class="form-label">Responsable</label>
+                        <select id="editarResponsable" class="form-select"
+                                @bind="Atencion.ResponsableId">
+                            <option value="0">Selecciona un responsable activo</option>
+                            @foreach (AdministradorViewModel responsable in Responsables)
+                            {
+                                <option value="@responsable.Id">@responsable.NombreCompleto</option>
+                            }
+                        </select>
+                    </div>
 
-            <button type="button" class="btn btn-primary">
-                Guardar cambios
-            </button>
-        </div>
+                    <div class="col-12 col-md-6">
+                        <label for="editarEstado" class="form-label">Estado</label>
+                        <select id="editarEstado" class="form-select"
+                                @bind="Atencion.EstadoAuditoria">
+                            <option value="PENDIENTE">Pendiente</option>
+                            <option value="EN_PROCESO">En proceso</option>
+                            <option value="RESUELTA">Resuelta</option>
+                        </select>
+                    </div>
+                </div>
 
-    </section>
-
+                <div class="d-flex flex-wrap justify-content-end gap-2 mt-4">
+                    <button type="button" class="btn btn-outline-secondary"
+                            disabled="@Procesando"
+                            @onclick="CancelarEdicion">Cancelar</button>
+                    <button type="submit" class="btn btn-primary"
+                            disabled="@Procesando">Guardar cambios</button>
+                </div>
+            </section>
+        </EditForm>
+    }
 </div>
+
+@code {
+    private enum Vista
+    {
+        Inicio,
+        Nueva,
+        Detalle
+    }
+
+    private enum ModoBusqueda
+    {
+        PorId,
+        PorFiltros
+    }
+
+    private readonly List<AuditoriaViewModel> Resultados = new();
+    private List<AdministradorViewModel> Responsables = new();
+    private List<FuncionViewModel> Funciones = new();
+    private AuditoriaViewModel Nueva = new();
+    private AuditoriaViewModel Atencion = new();
+    private AuditoriaViewModel? Seleccionada;
+    private Vista VistaActual = Vista.Inicio;
+    private ModoBusqueda ModoBusquedaActual = ModoBusqueda.PorFiltros;
+    private string BusquedaIdTexto = string.Empty;
+    private string DescripcionFiltro = string.Empty;
+    private string EstadoFiltro = string.Empty;
+    private bool ResultadosCargados;
+    private bool Procesando;
+    private string Error = string.Empty;
+    private string Mensaje = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarOpciones();
+    }
+
+    private async Task CargarOpciones()
+    {
+        Task<string?> responsablesTask = CargarResponsables();
+        Task<string?> funcionesTask = CargarFunciones();
+        await Task.WhenAll(responsablesTask, funcionesTask);
+
+        List<string> errores = new();
+        string? errorResponsables = await responsablesTask;
+        string? errorFunciones = await funcionesTask;
+        if (!string.IsNullOrWhiteSpace(errorResponsables))
+        {
+            errores.Add(errorResponsables);
+        }
+        if (!string.IsNullOrWhiteSpace(errorFunciones))
+        {
+            errores.Add(errorFunciones);
+        }
+        Error = string.Join(" ", errores);
+    }
+
+    private async Task<string?> CargarResponsables()
+    {
+        try
+        {
+            Responsables = await Auditorias.FindResponsablesActivos();
+            return null;
+        }
+        catch (Exception ex)
+        {
+            Responsables = new List<AdministradorViewModel>();
+            return $"No se pudieron cargar los responsables: {MensajeError(ex)}";
+        }
+    }
+
+    private async Task<string?> CargarFunciones()
+    {
+        try
+        {
+            Funciones = await Auditorias.FindFuncionesAsignables();
+            return null;
+        }
+        catch (Exception ex)
+        {
+            Funciones = new List<FuncionViewModel>();
+            return $"No se pudieron cargar las funciones: {MensajeError(ex)}";
+        }
+    }
+
+    private async Task Buscar()
+    {
+        if (Procesando)
+        {
+            return;
+        }
+
+        LimpiarMensajes();
+        int id = 0;
+        if (ModoBusquedaActual == ModoBusqueda.PorId
+            && (!int.TryParse(BusquedaIdTexto?.Trim(), out id) || id <= 0))
+        {
+            LimpiarResultados();
+            Error = "Ingrese un ID entero positivo.";
+            return;
+        }
+
+        Procesando = true;
+        try
+        {
+            List<AuditoriaViewModel> encontrados =
+                ModoBusquedaActual == ModoBusqueda.PorId
+                    ? await ConsultarPorId(id)
+                    : await ConsultarPorFiltros();
+            ReemplazarResultados(encontrados);
+            ResultadosCargados = true;
+        }
+        catch (Exception ex)
+        {
+            LimpiarResultados();
+            Error = MensajeError(ex);
+        }
+        finally
+        {
+            Procesando = false;
+        }
+    }
+
+    private async Task<List<AuditoriaViewModel>> ConsultarPorId(int id)
+    {
+        AuditoriaViewModel encontrada = await Auditorias.FindById(id);
+        return new List<AuditoriaViewModel> { encontrada };
+    }
+
+    private async Task<List<AuditoriaViewModel>> ConsultarPorFiltros()
+    {
+        EstadoAuditoria? estado = null;
+        if (!string.IsNullOrWhiteSpace(EstadoFiltro))
+        {
+            if (!Enum.TryParse(
+                    EstadoFiltro,
+                    ignoreCase: true,
+                    out EstadoAuditoria estadoSeleccionado))
+            {
+                throw new InvalidOperationException(
+                    "El estado seleccionado no es valido.");
+            }
+            estado = estadoSeleccionado;
+        }
+
+        if (string.IsNullOrWhiteSpace(DescripcionFiltro)
+            && !estado.HasValue)
+        {
+            return await Auditorias.FindAll();
+        }
+
+        return await Auditorias.FilterBy(DescripcionFiltro, estado);
+    }
+
+    private void CambiarModoBusqueda()
+    {
+        if (ModoBusquedaActual == ModoBusqueda.PorId)
+        {
+            DescripcionFiltro = string.Empty;
+            EstadoFiltro = string.Empty;
+        }
+        else
+        {
+            BusquedaIdTexto = string.Empty;
+        }
+
+        LimpiarMensajes();
+        LimpiarResultados();
+    }
+
+    private void ReemplazarResultados(
+        IEnumerable<AuditoriaViewModel> encontrados)
+    {
+        Resultados.Clear();
+        Resultados.AddRange(encontrados);
+    }
+
+    private void AbrirNueva()
+    {
+        LimpiarMensajes();
+        Nueva = new AuditoriaViewModel();
+        VistaActual = Vista.Nueva;
+    }
+
+    private async Task Registrar()
+    {
+        if (Procesando)
+        {
+            return;
+        }
+
+        LimpiarMensajes();
+        Procesando = true;
+        try
+        {
+            AuditoriaViewModel registrada = await Auditorias.Insert(Nueva);
+            Resultados.RemoveAll(item => item.Id == registrada.Id);
+            Resultados.Insert(0, registrada);
+            ResultadosCargados = true;
+            Mensaje = $"Incidencia #{registrada.Id} registrada.";
+            Nueva = new AuditoriaViewModel();
+            VistaActual = Vista.Inicio;
+        }
+        catch (Exception ex)
+        {
+            Error = MensajeError(ex);
+        }
+        finally
+        {
+            Procesando = false;
+        }
+    }
+
+    private void Gestionar(AuditoriaViewModel incidencia)
+    {
+        LimpiarMensajes();
+        Seleccionada = incidencia;
+        bool responsableSigueActivo = incidencia.Responsable is not null
+            && Responsables.Any(item =>
+                item.Id == incidencia.Responsable.Id);
+        Atencion = CopiarParaEdicion(incidencia);
+        if (!responsableSigueActivo)
+        {
+            Atencion.ResponsableId = 0;
+        }
+        VistaActual = Vista.Detalle;
+    }
+
+    private async Task Actualizar()
+    {
+        if (Seleccionada is null || Procesando)
+        {
+            return;
+        }
+
+        LimpiarMensajes();
+        Procesando = true;
+        try
+        {
+            AuditoriaViewModel actualizada =
+                await Auditorias.Update(Atencion);
+            int indice = Resultados.FindIndex(item => item.Id == actualizada.Id);
+            if (indice >= 0)
+            {
+                Resultados[indice] = actualizada;
+            }
+            Mensaje = $"Incidencia #{actualizada.Id} actualizada.";
+            Atencion = new AuditoriaViewModel();
+            Seleccionada = null;
+            VistaActual = Vista.Inicio;
+        }
+        catch (Exception ex)
+        {
+            Error = MensajeError(ex);
+        }
+        finally
+        {
+            Procesando = false;
+        }
+    }
+
+    private void CancelarNueva()
+    {
+        LimpiarMensajes();
+        Nueva = new AuditoriaViewModel();
+        VistaActual = Vista.Inicio;
+    }
+
+    private void CancelarEdicion()
+    {
+        LimpiarMensajes();
+        Atencion = new AuditoriaViewModel();
+        Seleccionada = null;
+        VistaActual = Vista.Inicio;
+    }
+
+    private static AuditoriaViewModel CopiarParaEdicion(
+        AuditoriaViewModel incidencia)
+    {
+        return new AuditoriaViewModel
+        {
+            Id = incidencia.Id,
+            IsActivo = incidencia.IsActivo,
+            Funcion = incidencia.Funcion,
+            FuncionId = incidencia.FuncionId,
+            Descripcion = incidencia.Descripcion,
+            Responsable = incidencia.Responsable,
+            ResponsableId = incidencia.ResponsableId,
+            ResponsableTextoOriginal =
+                incidencia.ResponsableTextoOriginal,
+            Fecha = incidencia.Fecha,
+            EstadoAuditoria = incidencia.EstadoAuditoria
+        };
+    }
+
+    private void LimpiarBusqueda()
+    {
+        if (ModoBusquedaActual == ModoBusqueda.PorId)
+        {
+            BusquedaIdTexto = string.Empty;
+        }
+        else
+        {
+            DescripcionFiltro = string.Empty;
+            EstadoFiltro = string.Empty;
+        }
+
+        LimpiarMensajes();
+        LimpiarResultados();
+    }
+
+    private void LimpiarResultados()
+    {
+        Resultados.Clear();
+        ResultadosCargados = false;
+    }
+
+    private void LimpiarMensajes()
+    {
+        Error = string.Empty;
+        Mensaje = string.Empty;
+    }
+
+    private static string PresentarFuncion(FuncionViewModel? funcion)
+    {
+        return funcion?.Presentacion ?? "Sin función asociada (histórico)";
+    }
+
+    private static string NombreEstado(EstadoAuditoria estado)
+    {
+        return estado switch
+        {
+            EstadoAuditoria.PENDIENTE => "Pendiente",
+            EstadoAuditoria.EN_PROCESO => "En proceso",
+            EstadoAuditoria.RESUELTA => "Resuelta",
+            _ => estado.ToString()
+        };
+    }
+
+    private static string ClaseEstado(EstadoAuditoria estado)
+    {
+        return estado switch
+        {
+            EstadoAuditoria.PENDIENTE => "text-bg-warning",
+            EstadoAuditoria.EN_PROCESO => "text-bg-info",
+            EstadoAuditoria.RESUELTA => "text-bg-success",
+            _ => "text-bg-secondary"
+        };
+    }
+
+    private static string MensajeError(Exception ex)
+    {
+        return string.IsNullOrWhiteSpace(ex.Message)
+            ? "No se pudo completar la operacion."
+            : ex.Message;
+    }
+}
