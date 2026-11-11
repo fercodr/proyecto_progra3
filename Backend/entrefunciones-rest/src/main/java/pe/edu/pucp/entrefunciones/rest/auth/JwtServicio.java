@@ -78,6 +78,18 @@ public final class JwtServicio {
         if (valor == null || valor.isBlank()) {
             valor = System.getenv(nombre);
         }
+        if (valor == null || valor.isBlank()) {
+            // Igual que DBManager: si no hay variable de entorno, se busca en db.properties
+            // (clave jwt.secret) para no obligar a configurar variables de entorno de Windows.
+            try {
+                java.util.ResourceBundle rb = java.util.ResourceBundle.getBundle("db");
+                String clave = "jwt." + nombre.replaceFirst("^ENTREFUNCIONES_JWT_", "").toLowerCase();
+                if (rb.containsKey(clave)) {
+                    valor = rb.getString(clave);
+                }
+            } catch (java.util.MissingResourceException ignored) {
+            }
+        }
         return valor == null || valor.isBlank() ? valorPorDefecto : valor;
     }
 }

@@ -70,7 +70,7 @@ namespace EntreFunciones.Servicios.Rest
                 int codigo = (int)respuesta.StatusCode;
                 string mensaje = await LeerMensajeError(respuesta, codigo);
                 respuesta.Dispose();
-                throw new ServiceException(mensaje, codigo);
+                    throw new ServiceException(mensaje, codigo);
             }
 
             return respuesta;

@@ -12,7 +12,7 @@ import pe.edu.pucp.entrefunciones.bl.error.ValidacionException;
         if(e instanceof WebApplicationException web){status=web.getResponse().getStatus();mensaje=e.getMessage();}
         else if(e instanceof NoEncontradoException){status=404;mensaje=e.getMessage();}
         else if(e instanceof ValidacionException){status=400;mensaje=e.getMessage();}
-        else if(e instanceof BLException){status=500;mensaje="No se pudo completar la operaciÃ³n";}
+        else if(e instanceof BLException){status=500;mensaje="No se pudo completar la operación";}
         else if(e instanceof IllegalArgumentException || e instanceof jakarta.json.JsonException){status=400;mensaje="Revise los datos enviados";}
         if(status==500)LOG.log(java.util.logging.Level.SEVERE,"Error REST",e);
         return Response.status(status).type(MediaType.APPLICATION_JSON).entity(java.util.Map.of("mensaje",mensaje)).build();
