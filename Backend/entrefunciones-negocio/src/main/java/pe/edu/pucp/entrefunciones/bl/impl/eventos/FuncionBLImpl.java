@@ -1,20 +1,28 @@
 package pe.edu.pucp.entrefunciones.bl.impl.eventos;
 
 import pe.edu.pucp.entrefunciones.bl.error.BLException;
+import pe.edu.pucp.entrefunciones.bl.error.ValidacionException;
 import pe.edu.pucp.entrefunciones.bl.eventos.FuncionBL;
 import pe.edu.pucp.entrefunciones.dao.impl.eventos.EventoDAO;
 import pe.edu.pucp.entrefunciones.dao.impl.eventos.EventoDAOImpl;
 import pe.edu.pucp.entrefunciones.dao.impl.eventos.FuncionDAO;
 import pe.edu.pucp.entrefunciones.dao.impl.eventos.FuncionDAOImpl;
+import pe.edu.pucp.entrefunciones.dao.espacios.SalaDAO;
+import pe.edu.pucp.entrefunciones.dao.impl.espacios.SalaDAOImpl;
+import pe.edu.pucp.entrefunciones.dao.espacios.SedeDAO;
+import pe.edu.pucp.entrefunciones.dao.impl.espacios.SedeDAOImpl;
 import pe.edu.pucp.entrefunciones.modelo.catalogo.Funcion;
 
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.List;
 
 public class FuncionBLImpl implements FuncionBL {
 
     private final FuncionDAO funcionDAO = new FuncionDAOImpl();
     private final EventoDAO eventoDAO = new EventoDAOImpl();
+    private final SalaDAO salaDAO = new SalaDAOImpl();
+    private final SedeDAO sedeDAO = new SedeDAOImpl();
     private final pe.edu.pucp.entrefunciones.dao.impl.ControlOperacionesDAO control = new pe.edu.pucp.entrefunciones.dao.impl.ControlOperacionesDAO();
     private void validarDisponibilidad(Funcion funcion) throws SQLException, BLException {
         control.bloquearSala(funcion.getSala().getId());
@@ -47,6 +55,42 @@ public class FuncionBLImpl implements FuncionBL {
         } catch (SQLException e) {
             throw new BLException(
                     "No se pudo recuperar la función", e);
+        }
+    }
+
+    @Override
+    public List<Funcion> findReportes(LocalDate desde, LocalDate hasta,
+                                      Integer idSede, Integer idSala)
+            throws BLException {
+        if (desde == null || hasta == null) {
+            throw new ValidacionException("Las fechas desde y hasta son obligatorias");
+        }
+        if (desde.isAfter(hasta)) {
+            throw new ValidacionException("La fecha desde no puede ser posterior a hasta");
+        }
+        if (idSede != null && idSede <= 0) {
+            throw new ValidacionException("El identificador de sede debe ser positivo");
+        }
+        if (idSala != null && idSala <= 0) {
+            throw new ValidacionException("El identificador de sala debe ser positivo");
+        }
+
+        try {
+            if (idSede != null && sedeDAO.findById(idSede) == null) {
+                throw new ValidacionException("No existe la sede indicada");
+            }
+            if (idSala != null) {
+                var sala = salaDAO.findById(idSala);
+                if (sala == null) {
+                    throw new ValidacionException("No existe la sala indicada");
+                }
+                if (idSede != null && sala.getSede().getId() != idSede) {
+                    throw new ValidacionException("La sala no pertenece a la sede indicada");
+                }
+            }
+            return funcionDAO.findReportes(desde, hasta, idSede, idSala);
+        } catch (SQLException e) {
+            throw new BLException("No se pudo consultar el reporte de funciones", e);
         }
     }
 

@@ -5,6 +5,14 @@ import pe.edu.pucp.entrefunciones.dao.transacciones.TransactionsManager;
 import pe.edu.pucp.entrefunciones.db.DBManager;
 import pe.edu.pucp.entrefunciones.modelo.catalogo.Evento;
 import pe.edu.pucp.entrefunciones.modelo.catalogo.Funcion;
+import pe.edu.pucp.entrefunciones.modelo.catalogo.ActividadCultural;
+import pe.edu.pucp.entrefunciones.modelo.catalogo.CategoriaGenero;
+import pe.edu.pucp.entrefunciones.modelo.catalogo.ClasificacionEdad;
+import pe.edu.pucp.entrefunciones.modelo.catalogo.ObraTeatro;
+import pe.edu.pucp.entrefunciones.modelo.catalogo.Pelicula;
+import pe.edu.pucp.entrefunciones.modelo.catalogo.TipoActividad;
+import pe.edu.pucp.entrefunciones.modelo.espacios.Sala;
+import pe.edu.pucp.entrefunciones.modelo.espacios.Sede;
 import pe.edu.pucp.entrefunciones.modelo.funciones.EstadoFuncion;
 
 import java.sql.CallableStatement;
@@ -14,6 +22,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Types;
+import java.time.LocalDate;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 public class FuncionDAOImpl implements FuncionDAO {
@@ -24,10 +34,82 @@ public class FuncionDAOImpl implements FuncionDAO {
              ResultSet rs = cmd.executeQuery()) {
             List<Funcion> funciones = new ArrayList<>();
             while (rs.next()) {
-                funciones.add(mapear(rs));
+                funciones.add(mapearAsignable(rs));
             }
             return funciones;
         }
+    }
+
+    private Funcion mapearAsignable(ResultSet rs) throws SQLException {
+        Sede sede = new Sede(
+                rs.getInt("sede_id"),
+                rs.getString("sede_razon_social"),
+                rs.getString("sede_direccion"),
+                rs.getString("sede_ciudad"),
+                rs.getString("sede_telefono_contacto"));
+        if (!rs.getBoolean("sede_activo")) {
+            sede.desactivar();
+        }
+
+        Sala sala = new Sala(
+                rs.getInt("sala_id"),
+                sede,
+                rs.getString("sala_nombre"),
+                rs.getInt("sala_aforo"),
+                rs.getString("tipo_sala"));
+        if (!rs.getBoolean("sala_activo")) {
+            sala.desactivar();
+        }
+
+        Evento evento = construirEventoAsignable(rs);
+        if (!rs.getBoolean("evento_activo")) {
+            evento.desactivar();
+        }
+
+        Funcion funcion = new Funcion(
+                rs.getInt("funcion_id"),
+                evento,
+                sala,
+                rs.getDate("funcion_fecha").toLocalDate(),
+                rs.getTime("funcion_hora_inicio").toLocalTime(),
+                rs.getTime("funcion_hora_fin").toLocalTime(),
+                rs.getString("funcion_idioma"));
+        funcion.setEstado(Enum.valueOf(
+                EstadoFuncion.class,
+                rs.getString("funcion_estado")));
+        evento.agregarFuncion(funcion);
+        sala.agregarFuncion(funcion);
+        sede.agregarSala(sala);
+        return funcion;
+    }
+
+    private Evento construirEventoAsignable(ResultSet rs) throws SQLException {
+        String tipo = rs.getString("tipo_evento");
+        double precio = rs.getDouble("evento_precio");
+        int id = rs.getInt("evento_id");
+        return switch (tipo) {
+            case "PELICULA" -> new Pelicula(
+                    id, precio,
+                    rs.getString("nombre_pelicula"),
+                    rs.getInt("duracion_minutos"),
+                    Enum.valueOf(CategoriaGenero.class, rs.getString("genero")),
+                    Enum.valueOf(ClasificacionEdad.class,
+                            rs.getString("clasificacion_edad")),
+                    rs.getString("director"));
+            case "OBRA_TEATRO" -> new ObraTeatro(
+                    id, precio,
+                    rs.getString("titulo"),
+                    rs.getString("nombre_director"),
+                    rs.getString("elenco"));
+            case "ACTIVIDAD_CULTURAL" -> new ActividadCultural(
+                    id, precio,
+                    rs.getString("nombre"),
+                    rs.getString("expositor"),
+                    Enum.valueOf(TipoActividad.class,
+                            rs.getString("tipo_actividad")));
+            default -> throw new SQLException(
+                    "Tipo de evento desconocido: " + tipo);
+        };
     }
 
     @Override
@@ -109,6 +191,86 @@ public class FuncionDAOImpl implements FuncionDAO {
                 return funciones;
             }
         }
+    }
+
+    @Override
+    public List<Funcion> findReportes(LocalDate desde, LocalDate hasta,
+                                      Integer idSede, Integer idSala)
+            throws SQLException {
+        String sql = "{call listar_reportes_funciones(?, ?, ?, ?)}";
+        try (ConnectionScope scope = ConnectionScope.openForRead();
+             CallableStatement cmd = scope.connection().prepareCall(sql)) {
+            cmd.setDate("p_desde", Date.valueOf(desde));
+            cmd.setDate("p_hasta", Date.valueOf(hasta));
+            if (idSede == null) {
+                cmd.setNull("p_sede_id", Types.INTEGER);
+            } else {
+                cmd.setInt("p_sede_id", idSede);
+            }
+            if (idSala == null) {
+                cmd.setNull("p_sala_id", Types.INTEGER);
+            } else {
+                cmd.setInt("p_sala_id", idSala);
+            }
+
+            try (ResultSet rs = cmd.executeQuery()) {
+                List<Funcion> funciones = new ArrayList<>();
+                while (rs.next()) {
+                    funciones.add(mapearReporte(rs));
+                }
+                return funciones;
+            }
+        }
+    }
+
+    private Funcion mapearReporte(ResultSet rs) throws SQLException {
+        Sede sede = new Sede(
+                rs.getInt("sede_id"),
+                rs.getString("sede_razon_social"),
+                rs.getString("sede_direccion"),
+                rs.getString("sede_ciudad"),
+                rs.getString("sede_telefono_contacto"));
+        if (!rs.getBoolean("sede_activo")) {
+            sede.desactivar();
+        }
+
+        Sala sala = new Sala(
+                rs.getInt("sala_id"),
+                sede,
+                rs.getString("sala_nombre"),
+                rs.getInt("sala_aforo"),
+                rs.getString("sala_tipo_sala"));
+        if (!rs.getBoolean("sala_activo")) {
+            sala.desactivar();
+        }
+
+        Evento evento = construirEventoAsignable(rs);
+        if (!rs.getBoolean("evento_activo")) {
+            evento.desactivar();
+        }
+
+        Funcion funcion = new Funcion(
+                rs.getInt("funcion_id"),
+                evento,
+                sala,
+                rs.getDate("funcion_fecha").toLocalDate(),
+                rs.getTime("funcion_hora_inicio").toLocalTime(),
+                rs.getTime("funcion_hora_fin").toLocalTime(),
+                rs.getString("funcion_idioma"));
+        funcion.setEstado(Enum.valueOf(
+                EstadoFuncion.class, rs.getString("funcion_estado")));
+        funcion.setEntradasNoCanceladas(rs.getInt("entradas_no_canceladas"));
+        funcion.setEntradasCanceladas(rs.getInt("entradas_canceladas"));
+        BigDecimal ingresos = rs.getBigDecimal("ingresos_validos");
+        funcion.setIngresosValidos(ingresos == null ? BigDecimal.ZERO : ingresos);
+        funcion.setAsistentes(rs.getInt("asistentes"));
+        funcion.setPorcentajeOcupacion(
+                rs.getBigDecimal("porcentaje_ocupacion"));
+
+        evento.agregarFuncion(funcion);
+        sala.agregarFuncion(funcion);
+        sede.agregarSala(sala);
+        return funcion;
     }
 
     @Override

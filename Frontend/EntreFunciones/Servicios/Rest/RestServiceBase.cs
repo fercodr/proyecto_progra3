@@ -24,17 +24,19 @@ namespace EntreFunciones.Servicios.Rest
 
         protected string Url
         {
-            get
-            {
-                string baseUrl = _config["Rest:BaseUrl"]
-                    ?? throw new InvalidOperationException(
-                        "Falta configurar Rest:BaseUrl.");
-                string ruta = _config[$"Rest:Rutas:{ClaveRuta}"]
-                    ?? throw new InvalidOperationException(
-                        $"Falta configurar la ruta {ClaveRuta}.");
+            get => ConstruirUrlParaRuta(ClaveRuta);
+        }
 
-                return HttpUtils.ConstruirUrl(baseUrl, ruta);
-            }
+        protected string ConstruirUrlParaRuta(string claveRuta)
+        {
+            string baseUrl = _config["Rest:BaseUrl"]
+                ?? throw new InvalidOperationException(
+                    "Falta configurar Rest:BaseUrl.");
+            string ruta = _config[$"Rest:Rutas:{claveRuta}"]
+                ?? throw new InvalidOperationException(
+                    $"Falta configurar la ruta {claveRuta}.");
+
+            return HttpUtils.ConstruirUrl(baseUrl, ruta);
         }
 
         protected abstract TViewModel ToViewModel(TDto dto);

@@ -177,28 +177,5 @@ class AuditoriaBLImplTest {
             throw new SQLException("No soportado");
         }
 
-        @Override
-        public List<Administrador> findResponsablesActivos() {
-            return List.of(administrador);
-        }
-
-        @Override
-        public List<Funcion> findFuncionesAsignables() {
-            return List.of(funcion);
-        }
-
-        @Override
-        public Administrador findResponsableById(Integer usuarioId) {
-            return administrador != null && administrador.getId() == usuarioId
-                    ? administrador
-                    : null;
-        }
-
-        @Override
-        public Funcion findFuncionById(Integer funcionId) {
-            return funcion != null && funcion.getId() == funcionId
-                    ? funcion
-                    : null;
-        }
     }
 }

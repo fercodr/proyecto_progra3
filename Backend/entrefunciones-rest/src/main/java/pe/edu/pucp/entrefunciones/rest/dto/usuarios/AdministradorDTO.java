@@ -15,7 +15,17 @@ public class AdministradorDTO {
     private String dni;
     private String codigoEmpleado;
 
+    public AdministradorDTO() {
+    }
+
     public AdministradorDTO(Administrador responsable) {
+        this.id = responsable.getId();
+        this.activo = responsable.estaActivo();
+        this.nombres = responsable.getNombres();
+        this.apellidos = responsable.getApellidos();
+        this.correo = responsable.getCorreo();
+        this.dni = responsable.getDni();
+        this.codigoEmpleado = responsable.getCodigoEmpleado();
     }
 
     public int getId() {

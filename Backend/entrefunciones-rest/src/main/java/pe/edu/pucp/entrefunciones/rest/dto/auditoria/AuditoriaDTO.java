@@ -11,6 +11,7 @@ public class AuditoriaDTO {
     private FuncionDTO funcion;
     private LocalDateTime fecha;
     private AdministradorDTO responsable;
+    private String responsableTextoOriginal;
     private String descripcion;
     private String estado;
     public AuditoriaDTO() {
@@ -18,14 +19,15 @@ public class AuditoriaDTO {
 
     public AuditoriaDTO(Auditoria auditoria) {
         this.id = auditoria.getId();
-        if (auditoria.getFuncion() != null) {
-            this.funcion = new FuncionDTO();
-        }
+        this.funcion = auditoria.getFuncion() == null
+                ? null : pe.edu.pucp.entrefunciones.rest.mapper.catalogo.FuncionMapper
+                .toDTO(auditoria.getFuncion());
         this.fecha = auditoria.getFecha();
         if (auditoria.getResponsable() != null) {
             this.responsable = new AdministradorDTO(auditoria.getResponsable());
         }
         this.descripcion = auditoria.getDescripcion();
+        this.responsableTextoOriginal = auditoria.getResponsableTextoOriginal();
         this.estado = auditoria.getEstado().name();
     }
 
@@ -59,6 +61,14 @@ public class AuditoriaDTO {
 
     public void setResponsable(AdministradorDTO responsable) {
         this.responsable = responsable;
+    }
+
+    public String getResponsableTextoOriginal() {
+        return responsableTextoOriginal;
+    }
+
+    public void setResponsableTextoOriginal(String responsableTextoOriginal) {
+        this.responsableTextoOriginal = responsableTextoOriginal;
     }
 
     public String getDescripcion() {

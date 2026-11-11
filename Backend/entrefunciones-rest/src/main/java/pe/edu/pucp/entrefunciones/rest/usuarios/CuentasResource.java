@@ -14,6 +14,8 @@ import pe.edu.pucp.entrefunciones.rest.dto.usuarios.CredencialesDTO;
 import pe.edu.pucp.entrefunciones.rest.mapper.usuarios.AdministradorMapper;
 import pe.edu.pucp.entrefunciones.rest.mapper.usuarios.ClienteMapper;
 import pe.edu.pucp.entrefunciones.rest.mapper.usuarios.CuentaUsuarioMapper;
+import pe.edu.pucp.entrefunciones.rest.auth.JwtServicio;
+import pe.edu.pucp.entrefunciones.rest.dto.usuarios.SesionDTO;
 
 import java.util.Map;
 
@@ -44,7 +46,13 @@ public class CuentasResource {
                         .entity(Map.of("error", "Correo o contraseña incorrectos"))
                         .build();
             }
-            return Response.ok(CuentaUsuarioMapper.toDTO(usuario)).build();
+            JwtServicio.Emision emision = JwtServicio.emitir(usuario);
+            return Response.ok(new SesionDTO(
+                    emision.token(),
+                    emision.vence().toString(),
+                    emision.id(),
+                    emision.correo(),
+                    emision.rol())).build();
         } catch (ValidacionException ex) {
             return error(Response.Status.BAD_REQUEST, ex);
         } catch (BLException ex) {

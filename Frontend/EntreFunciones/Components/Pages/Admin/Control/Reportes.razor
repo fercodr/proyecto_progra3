@@ -1,7 +1,10 @@
-﻿@page "/admin" 
+@page "/admin"
 @attribute [Authorize(Policy = "Reportes")]
- 
 @rendermode InteractiveServer
+@using EntreFunciones.ViewModels
+@inject IFuncionService FuncionesService
+@inject ISedeService SedesService
+@inject ISalaService SalasService
 
 <PageTitle>Reportes</PageTitle>
 
@@ -10,190 +13,286 @@
         <div>
             <h1 class="page-title">Reportes</h1>
             <p class="page-description">Consulta la ocupación, los ingresos y la asistencia de las funciones.</p>
-            <p class="small text-secondary mt-2 mb-0">Resumen del @fechaDesde.ToString("dd/MM/yyyy") al @fechaHasta.ToString("dd/MM/yyyy")</p>
+            @if (tieneConsulta)
+            {
+                <p class="small text-secondary mt-2 mb-0">
+                    Resumen del @periodoDesde.ToString("dd/MM/yyyy") al @periodoHasta.ToString("dd/MM/yyyy")
+                </p>
+            }
         </div>
     </div>
 
+    @if (cargandoCatalogos)
+    {
+        <div class="alert alert-info" role="status">Cargando catálogos...</div>
+    }
 
+    @if (!string.IsNullOrWhiteSpace(errorCatalogos))
+    {
+        <div class="alert alert-danger" role="alert">@errorCatalogos</div>
+    }
 
-<div class="overflow-auto mb-4">
-    <div class="row flex-nowrap g-3 mx-0">
-        <div class="col" style="min-width: 220px">
-            <SummeryCard Atribute="Entradas no canceladas"
-                         Amount="100" />
-        </div>
-        <div class="col" style="min-width: 220px">
-            <SummeryCard Atribute="Ingresos válidos"
-                         Amount="3000" />
-
-        </div>
-        <div class="col" style="min-width: 220px">
-            <SummeryCard Atribute="Asistentes"
-                         Amount="120" />
-        </div>
-    </div>
-</div>
-
- <!--FILTROS-->
-    <div class="filter-panel">
+    <div class="filter-panel mb-4">
         <div class="row g-3 align-items-end">
             <div class="col-12 col-sm-6 col-lg-3">
-                    <label for="sedeReporte" class="form-label">Sede</label>
-                    <select id="sedeReporte" class="form-select form-select-sm">
-                        <option selected>Todas</option>
-                        <option value="1">Norte</option>
-                        <option value="2">Centro</option>
-                        <option value="3">Sur</option>
-                    </select>
+                <label for="sedeReporte" class="form-label">Sede</label>
+                <select id="sedeReporte" class="form-select form-select-sm"
+                        @bind="sedeSeleccionada" @bind:after="CambiarSede">
+                    <option value="">Todas</option>
+                    @foreach (SedeViewModel sede in sedes)
+                    {
+                        <option value="@sede.Id">@sede.RazonSocial</option>
+                    }
+                </select>
             </div>
             <div class="col-12 col-sm-6 col-lg-3">
-                    <label for="salaReporte" class="form-label">Sala</label>
-                    <select id="salaReporte" class="form-select form-select-sm">
-                        <option selected>Todas</option>
-                        <option value="1">Sala1</option>
-                        <option value="2">Sala2</option>
-                        <option value="3">Sala3</option>
-                    </select>
+                <label for="salaReporte" class="form-label">Sala</label>
+                <select id="salaReporte" class="form-select form-select-sm"
+                        @bind="salaSeleccionada" disabled="@cargandoSalas">
+                    <option value="">Todas</option>
+                    @foreach (SalaViewModel sala in salas)
+                    {
+                        <option value="@sala.Id">@sala.Nombre</option>
+                    }
+                </select>
             </div>
-
-            <div class="col-12 col-sm-6 col-lg-3">
-                    <label for="desde" class="form-label">Desde</label>
-                    <input type="date" id="desde" class="form-control form-control-sm" 
-                     
-                     @bind="fechaDesde"/>
-                    
+            <div class="col-12 col-sm-6 col-lg-2">
+                <label for="desde" class="form-label">Desde</label>
+                <input type="date" id="desde" class="form-control form-control-sm" @bind="fechaDesde" />
             </div>
-
-            <div class="col-12 col-sm-6 col-lg-3">
-                    <label for="hasta" class="form-label">Hasta</label>
-                    <input type="date" id="hasta" class="form-control form-control-sm"
-                    
-                    @bind="fechaHasta"/>
+            <div class="col-12 col-sm-6 col-lg-2">
+                <label for="hasta" class="form-label">Hasta</label>
+                <input type="date" id="hasta" class="form-control form-control-sm" @bind="fechaHasta" />
             </div>
-
-
+            <div class="col-12 col-lg-2">
+                <button type="button" class="btn btn-primary btn-sm w-100"
+                        @onclick="Consultar" disabled="@(cargandoConsulta || cargandoSalas || cargandoCatalogos)">
+                    @(cargandoConsulta ? "Consultando..." : "Consultar")
+                </button>
+            </div>
         </div>
     </div>
-    <!----------->
 
-    <!-----TABLA RESULTADO------>
-
-    <ul class="nav nav-tabs" role="tablist" aria-label="Tipos de reporte">
-        <li class="nav-item">
-            <button type="button" class="nav-link @(mostrarOcupacion ? "active" : "")" role="tab"
-                    aria-selected="@mostrarOcupacion" @onclick="() => mostrarOcupacion = true">
-                Ocupación
-            </button>
-        </li>
-
-        <li class="nav-item">
-            <button type="button" class="nav-link @(!mostrarOcupacion ? "active" : "")" role="tab"
-                    aria-selected="@(!mostrarOcupacion)" @onclick="() => mostrarOcupacion = false">
-                Ingresos y entradas
-            </button>
-         
-        </li>
-
-    </ul>
-
-    @if (mostrarOcupacion)
+    @if (!string.IsNullOrWhiteSpace(errorConsulta))
     {
-        <div class="data-table-wrapper mt-3">
-        <table class="table table-bordered">
-            <thead class="table-light">
-                <tr>
-                    <th scope="col">Evento / Función</th>
-                    <th scope="col">Sede/Sala</th>
-                    <th scope="col">Aforo</th>
-                    <th scope="col">Entradas</th>
-                    <th scope="col">Ocupación</th>
-                </tr>
-            </thead>
-
-            <tbody>
-                <tr>
-                    <th scope="row" class="fw-normal">Evento A / 20-10, 18:00 </th>
-                    <td>Centro / Sala 1</td>
-                    <td>100</td>
-                    <td>60</td>
-                    <td>60 %</td>
-                </tr>
-
-                <tr>
-                    <th scope="row" class="fw-normal">Evento B / 21-10, 19:30 </th>
-                    <td>Centro / Sala 4</td>
-                    <td>100</td>
-                    <td>20</td>
-                    <td>30 %</td>
-                </tr>
-                <tr>
-                    <th scope="row" class="fw-normal">Evento C / 22-10, 15:00 </th>
-                    <td>Centro / Sala 2</td>
-                    <td>200</td>
-                    <td>30</td>
-                    <td>50 %</td>
-                </tr>
-            </tbody>
-        </table>
-        </div>
-    }else
+        <div class="alert alert-danger" role="alert">@errorConsulta</div>
+    }
+    else if (cargandoConsulta)
     {
-        <div class="data-table-wrapper mt-3">
-        <table class="table table-bordered">
-            <thead class="table-light">
-                <tr>
-                    <th scope="col">Evento / fecha</th>
-                    <th scope="col">Sede/tipo</th>
-                    <th scope="col">Ingresos</th>
-                    <th scope="col">Asistentes</th>
-                    <th scope="col">Entradas canceladas</th>
-                </tr>
-            </thead>
-
-            <tbody>
-                <tr>
-                    <th scope="row" class="fw-normal">Evento A / 20-10 </th>
-                    <td>Centro / Película</td>
-                    <td>S/1200</td>
-                    <td>50</td>
-                    <td>0</td>
-                </tr>
-
-                <tr>
-                    <th scope="row" class="fw-normal">Evento B / 21-10</th>
-                    <td>Centro / Obra</td>
-                    <td>S/ 800</td>
-                    <td>30</td>
-                    <td>0</td>
-                </tr>
-                <tr>
-                    <th scope="row" class="fw-normal">Evento C / Actividad cultural </th>
-                    <td>Centro / Actividad cultural</td>
-                    <td>S/1000</td>
-                    <td>40</td>
-                    <td>0</td>
-                </tr>
-
-
-
-            </tbody>
-        </table>
-        </div>
+        <div class="alert alert-info" role="status">Cargando resultados...</div>
+    }
+    else if (tieneConsulta && resultados.Count == 0)
+    {
+        <div class="alert alert-secondary" role="status">No hay funciones para los filtros seleccionados.</div>
     }
 
+    @if (tieneConsulta && string.IsNullOrWhiteSpace(errorConsulta))
+    {
+        <div class="overflow-auto mb-4">
+            <div class="row flex-nowrap g-3 mx-0">
+                <div class="col" style="min-width: 220px">
+                    <SummeryCard Atribute="Entradas no canceladas"
+                                 Amount="@TotalEntradasNoCanceladas" Unit="entradas" />
+                </div>
+                <div class="col" style="min-width: 220px">
+                    <SummeryCard Atribute="Ingresos válidos"
+                                 Amount="@TotalIngresos" Unit="S/" />
+                </div>
+                <div class="col" style="min-width: 220px">
+                    <SummeryCard Atribute="Asistentes"
+                                 Amount="@TotalAsistentes"
+                                 AmountText="@(AsistenciaDisponible ? null : "No disponible")"
+                                 Unit="personas" />
+                </div>
+            </div>
+        </div>
 
+        <ul class="nav nav-tabs" role="tablist" aria-label="Tipos de reporte">
+            <li class="nav-item">
+                <button type="button" class="nav-link @(mostrarOcupacion ? "active" : "")" role="tab"
+                        aria-selected="@mostrarOcupacion" @onclick="() => mostrarOcupacion = true">
+                    Ocupación
+                </button>
+            </li>
+            <li class="nav-item">
+                <button type="button" class="nav-link @(!mostrarOcupacion ? "active" : "")" role="tab"
+                        aria-selected="@(!mostrarOcupacion)" @onclick="() => mostrarOcupacion = false">
+                    Ingresos y entradas
+                </button>
+            </li>
+        </ul>
 
-
-       
+        @if (mostrarOcupacion)
+        {
+            <div class="data-table-wrapper mt-3">
+                <table class="table table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Evento / Función</th>
+                            <th>Sede/Sala</th>
+                            <th>Aforo</th>
+                            <th>Entradas</th>
+                            <th>Ocupación</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (FuncionViewModel funcion in resultados)
+                        {
+                            <tr>
+                                <th scope="row" class="fw-normal">@TituloFuncion(funcion)</th>
+                                <td>@UbicacionFuncion(funcion)</td>
+                                <td>@funcion.Aforo</td>
+                                <td>@(funcion.EntradasNoCanceladas?.ToString() ?? "No disponible")</td>
+                                <td>@Porcentaje(funcion)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="data-table-wrapper mt-3">
+                <table class="table table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Evento / fecha</th>
+                            <th>Sede / tipo</th>
+                            <th>Ingresos</th>
+                            <th>Asistentes</th>
+                            <th>Entradas canceladas</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (FuncionViewModel funcion in resultados)
+                        {
+                            <tr>
+                                <th scope="row" class="fw-normal">@TituloFecha(funcion)</th>
+                                <td>@TipoSede(funcion)</td>
+                                <td>@(funcion.IngresosValidos is null ? "No disponible" : $"S/ {funcion.IngresosValidos:N2}")</td>
+                                <td>@(funcion.Asistentes?.ToString() ?? "No disponible")</td>
+                                <td>@(funcion.EntradasCanceladas?.ToString() ?? "No disponible")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    }
 </div>
+
 @code {
+    private DateOnly fechaDesde = DateOnly.FromDateTime(DateTime.Today);
+    private DateOnly fechaHasta = DateOnly.FromDateTime(DateTime.Today);
+    private DateOnly periodoDesde;
+    private DateOnly periodoHasta;
+    private int? sedeSeleccionada;
+    private int? salaSeleccionada;
+    private List<SedeViewModel> sedes = new();
+    private List<SalaViewModel> salas = new();
+    private List<FuncionViewModel> resultados = new();
+    private bool mostrarOcupacion = true;
+    private bool cargandoConsulta;
+    private bool cargandoCatalogos;
+    private bool cargandoSalas;
+    private bool tieneConsulta;
+    private string? errorCatalogos;
+    private string? errorConsulta;
 
-    private bool mostrarOcupacion = false;
-    private DateTime fechaDesde = DateTime.Today;
-    private DateTime fechaHasta = DateTime.Today;
+    private decimal TotalIngresos => resultados.Sum(x => x.IngresosValidos ?? 0m);
+    private int TotalEntradasNoCanceladas => resultados.Sum(x => x.EntradasNoCanceladas ?? 0);
+    private int TotalAsistentes => resultados.Sum(x => x.Asistentes ?? 0);
+    private bool AsistenciaDisponible => resultados.All(x => x.Asistentes.HasValue);
 
-    private void executeFindBySede()
+    protected override async Task OnInitializedAsync()
     {
-
+        cargandoCatalogos = true;
+        try
+        {
+            sedes = await SedesService.FindAll();
+            salas = await SalasService.FindAll();
+            await Consultar();
+        }
+        catch (Exception ex)
+        {
+            errorCatalogos = ex.Message;
+        }
+        finally
+        {
+            cargandoCatalogos = false;
+        }
     }
+
+    private async Task CambiarSede()
+    {
+        salaSeleccionada = null;
+        cargandoSalas = true;
+        try
+        {
+            salas = sedeSeleccionada.HasValue
+                ? await SalasService.FindBySede(sedeSeleccionada.Value)
+                : await SalasService.FindAll();
+        }
+        catch (Exception ex)
+        {
+            errorCatalogos = ex.Message;
+            salas = new List<SalaViewModel>();
+        }
+        finally
+        {
+            cargandoSalas = false;
+        }
+    }
+
+    private async Task Consultar()
+    {
+        if (cargandoConsulta)
+        {
+            return;
+        }
+        errorConsulta = null;
+        if (fechaDesde > fechaHasta)
+        {
+            resultados = new List<FuncionViewModel>();
+            tieneConsulta = false;
+            errorConsulta = "La fecha desde no puede ser posterior a hasta.";
+            return;
+        }
+
+        cargandoConsulta = true;
+        resultados = new List<FuncionViewModel>();
+        tieneConsulta = false;
+        try
+        {
+            List<FuncionViewModel> respuesta = await FuncionesService.FindReportes(
+                fechaDesde, fechaHasta, sedeSeleccionada, salaSeleccionada);
+            resultados = respuesta;
+            periodoDesde = fechaDesde;
+            periodoHasta = fechaHasta;
+            tieneConsulta = true;
+        }
+        catch (Exception ex)
+        {
+            errorConsulta = ex.Message;
+        }
+        finally
+        {
+            cargandoConsulta = false;
+        }
+    }
+
+    private static string TituloFuncion(FuncionViewModel funcion)
+        => $"{funcion.Evento?.Titulo ?? funcion.Titulo} / {funcion.Fecha:dd/MM}, {funcion.HoraInicio:HH\\:mm}";
+
+    private static string TituloFecha(FuncionViewModel funcion)
+        => $"{funcion.Evento?.Titulo ?? funcion.Titulo} / {funcion.Fecha:dd/MM/yyyy}";
+
+    private static string UbicacionFuncion(FuncionViewModel funcion)
+        => $"{funcion.SedeRelacionada?.RazonSocial ?? funcion.Sede} / {funcion.SalaRelacionada?.Nombre ?? funcion.Sala}";
+
+    private static string TipoSede(FuncionViewModel funcion)
+        => $"{funcion.SedeRelacionada?.RazonSocial ?? funcion.Sede} / {funcion.Evento?.Tipo ?? "No disponible"}";
+
+    private static string Porcentaje(FuncionViewModel funcion)
+        => funcion.PorcentajeOcupacion is null ? "No disponible" : $"{funcion.PorcentajeOcupacion:N2} %";
 }

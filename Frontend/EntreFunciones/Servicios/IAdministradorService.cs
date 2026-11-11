@@ -1,6 +1,6 @@
 using EntreFunciones.ViewModels;
 
-namespace EntreFunciones.Servicios.Rest
+namespace EntreFunciones.Servicios
 {
     public interface IAdministradorService
     {

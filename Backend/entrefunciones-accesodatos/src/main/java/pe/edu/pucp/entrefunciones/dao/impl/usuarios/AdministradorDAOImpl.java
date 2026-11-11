@@ -71,6 +71,7 @@ public class AdministradorDAOImpl extends UsuarioDAOImpl<Administrador> implemen
     protected String getProcedimientoEliminar() {
         return "eliminar_administrador";
     }
+    @Override
     public List<Administrador> findAllActiveAdmins() throws SQLException {
         String sql = "{call listar_responsables_activos_auditoria()}";
         try (Connection conn = DBManager.getInstance().getConnection();
@@ -78,10 +79,20 @@ public class AdministradorDAOImpl extends UsuarioDAOImpl<Administrador> implemen
              ResultSet rs = cmd.executeQuery()) {
             List<Administrador> responsables = new ArrayList<>();
             while (rs.next()) {
-                responsables.add(construir(rs));
+                responsables.add(construirResponsableAuditoria(rs));
             }
             return responsables;
         }
+    }
+
+    private Administrador construirResponsableAuditoria(ResultSet rs)
+            throws SQLException {
+        return new Administrador(
+                rs.getInt("responsable_id"),
+                rs.getString("responsable_nombres"),
+                rs.getString("responsable_apellidos"),
+                rs.getString("responsable_codigo_empleado"),
+                rs.getBoolean("responsable_activo"));
     }
     @Override
     public Administrador findByCodigoEmpleado(String codigoEmpleado)

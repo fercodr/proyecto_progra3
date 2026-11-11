@@ -35,10 +35,10 @@ namespace EntreFunciones.Servicios.Rest
 
         public async Task<AuditoriaViewModel> Insert(AuditoriaViewModel modelo)
         {
-            CrearAuditoriaDTO payload = new()
+            AuditoriaDTO payload = new()
             {
-                FuncionId = modelo.FuncionId,
-                ResponsableId = modelo.ResponsableId,
+                Funcion = new FuncionDTO { Id = modelo.FuncionId },
+                Responsable = new AdministradorDTO { Id = modelo.ResponsableId },
                 Descripcion = modelo.Descripcion
             };
             return await base.Insert(payload);
@@ -47,33 +47,18 @@ namespace EntreFunciones.Servicios.Rest
         public async Task<AuditoriaViewModel> Update(
             AuditoriaViewModel modelo)
         {
-            ActualizarAuditoriaDTO payload = new()
+            AuditoriaDTO payload = new()
             {
-                ResponsableId = modelo.ResponsableId,
+                Id = modelo.Id,
+                Funcion = ToFuncionDTO(modelo.Funcion),
+                Responsable = ToAdministradorDTO(modelo.Responsable),
+                Fecha = modelo.Fecha,
+                Descripcion = modelo.Descripcion,
                 Estado = modelo.EstadoAuditoria
             };
             return await base.Update(modelo.Id, payload);
         }
 
-<<<<<<< Updated upstream
-        public async Task<List<AdministradorViewModel>>
-            FindResponsablesActivos()
-        {
-            string url = ConstruirSubruta("opciones", "responsables");
-            List<AdministradorDTO> dtos =
-                await ConsultarLista<AdministradorDTO>(url);
-            return dtos.Select(ToAdministradorViewModel).ToList();
-        }
-
-        public async Task<List<FuncionViewModel>> FindFuncionesAsignables()
-        {
-            string url = ConstruirSubruta("opciones", "funciones");
-            List<FuncionResumenDTO> dtos = await ConsultarLista<FuncionResumenDTO>(url);
-            return dtos.Select(ToFuncionViewModel).ToList();
-        }
-
-=======
->>>>>>> Stashed changes
         protected override AuditoriaViewModel ToViewModel(
             AuditoriaDTO dto)
         {
@@ -92,34 +77,30 @@ namespace EntreFunciones.Servicios.Rest
                 EstadoAuditoria = dto.Estado
             };
         }
-<<<<<<< Updated upstream
 
-        private static AdministradorViewModel ToAdministradorViewModel(
-            AdministradorDTO dto)
+
+        private static FuncionDTO? ToFuncionDTO(FuncionViewModel? modelo)
         {
-            return new AdministradorViewModel
+            return modelo is null ? null : new FuncionDTO
             {
-                Id = dto.Id,
-                IsActivo = dto.Activo,
-                Nombres = dto.Nombres,
-                Apellidos = dto.Apellidos
+                Id = modelo.Id,
+                Fecha = modelo.Fecha.ToString("yyyy-MM-dd"),
+                HoraInicio = modelo.HoraInicio.ToString("HH:mm:ss"),
+                Estado = modelo.Estado
             };
         }
 
-        private static FuncionViewModel ToFuncionViewModel(FuncionResumenDTO dto)
+        private static AdministradorDTO? ToAdministradorDTO(
+            AdministradorViewModel? modelo)
         {
-            return new FuncionViewModel
+            return modelo is null ? null : new AdministradorDTO
             {
-                Id = dto.Id,
-                Titulo = dto.Titulo,
-                Fecha = dto.Fecha,
-                HoraInicio = dto.HoraInicio,
-                Sede = dto.Sede,
-                Sala = dto.Sala,
-                Estado = dto.Estado
+                Id = modelo.Id,
+                Nombres = modelo.Nombres,
+                Apellidos = modelo.Apellidos,
+                IsActivo = modelo.IsActivo
             };
         }
-=======
->>>>>>> Stashed changes
+
     }
 }

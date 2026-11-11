@@ -1,17 +1,21 @@
+using System.Text.Json.Serialization;
+
 namespace EntreFunciones.DTOSS
 {
-<<<<<<< Updated upstream
-    // Resumen de función que devuelve /auditorias (ver FuncionResumenDTO.java).
-    // Antes se llamaba FuncionDTO, pero chocaba con el FuncionDTO del Catálogo en el merge.
-=======
->>>>>>> Stashed changes
+
     public class FuncionResumenDTO : Dto
     {
+        [JsonPropertyName("tituloEvento")]
         public string Titulo { get; set; } = string.Empty;
+        [JsonPropertyName("fecha")]
         public DateOnly Fecha { get; set; }
+        [JsonPropertyName("horaInicio")]
         public TimeOnly HoraInicio { get; set; }
+        [JsonPropertyName("nombreSede")]
         public string Sede { get; set; } = string.Empty;
+        [JsonPropertyName("nombreSala")]
         public string Sala { get; set; } = string.Empty;
+        [JsonPropertyName("estado")]
         public string Estado { get; set; } = string.Empty;
     }
 }
