@@ -2,6 +2,7 @@ package pe.edu.pucp.entrefunciones.modelo.catalogo;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 
 import pe.edu.pucp.entrefunciones.modelo.espacios.Sala;
@@ -19,6 +20,14 @@ public class Funcion {
     private String idioma;
     private EstadoFuncion estado;
     private ArrayList<Entrada> entradas;
+
+    // Estadísticas calculadas por la consulta de reportes; no forman parte
+    // del alta ni de la actualización de una función.
+    private Integer entradasNoCanceladas;
+    private Integer entradasCanceladas;
+    private BigDecimal ingresosValidos;
+    private Integer asistentes;
+    private BigDecimal porcentajeOcupacion;
 
     // Constructor normal
     public Funcion(int id, Evento evento, Sala sala,
@@ -63,6 +72,11 @@ public class Funcion {
         setEstado(funcion.getEstado());
 
         this.entradas = new ArrayList<>(funcion.getEntradas());
+        this.entradasNoCanceladas = funcion.getEntradasNoCanceladas();
+        this.entradasCanceladas = funcion.getEntradasCanceladas();
+        this.ingresosValidos = funcion.getIngresosValidos();
+        this.asistentes = funcion.getAsistentes();
+        this.porcentajeOcupacion = funcion.getPorcentajeOcupacion();
 
         // Copia la misma referencia de contenido; no duplica el catálogo.
     }
@@ -242,5 +256,45 @@ public class Funcion {
         }
 
         this.entradas = entradas;
+    }
+
+    public Integer getEntradasNoCanceladas() {
+        return entradasNoCanceladas;
+    }
+
+    public void setEntradasNoCanceladas(Integer entradasNoCanceladas) {
+        this.entradasNoCanceladas = entradasNoCanceladas;
+    }
+
+    public Integer getEntradasCanceladas() {
+        return entradasCanceladas;
+    }
+
+    public void setEntradasCanceladas(Integer entradasCanceladas) {
+        this.entradasCanceladas = entradasCanceladas;
+    }
+
+    public BigDecimal getIngresosValidos() {
+        return ingresosValidos;
+    }
+
+    public void setIngresosValidos(BigDecimal ingresosValidos) {
+        this.ingresosValidos = ingresosValidos;
+    }
+
+    public Integer getAsistentes() {
+        return asistentes;
+    }
+
+    public void setAsistentes(Integer asistentes) {
+        this.asistentes = asistentes;
+    }
+
+    public BigDecimal getPorcentajeOcupacion() {
+        return porcentajeOcupacion;
+    }
+
+    public void setPorcentajeOcupacion(BigDecimal porcentajeOcupacion) {
+        this.porcentajeOcupacion = porcentajeOcupacion;
     }
 }

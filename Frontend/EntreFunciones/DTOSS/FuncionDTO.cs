@@ -45,5 +45,29 @@ namespace EntreFunciones.DTOSS
         // PROGRAMADA | CONFIRMADA | CANCELADA
         [JsonPropertyName("estado")]
         public string Estado { get; set; } = string.Empty;
+
+        [JsonPropertyName("evento")]
+        public EventoDTO? Evento { get; set; }
+
+        [JsonPropertyName("sala")]
+        public SalaDto? Sala { get; set; }
+
+        [JsonPropertyName("sede")]
+        public SedeDto? Sede { get; set; }
+
+        [JsonPropertyName("entradasNoCanceladas")]
+        public int? EntradasNoCanceladas { get; set; }
+
+        [JsonPropertyName("entradasCanceladas")]
+        public int? EntradasCanceladas { get; set; }
+
+        [JsonPropertyName("ingresosValidos")]
+        public decimal? IngresosValidos { get; set; }
+
+        [JsonPropertyName("asistentes")]
+        public int? Asistentes { get; set; }
+
+        [JsonPropertyName("porcentajeOcupacion")]
+        public decimal? PorcentajeOcupacion { get; set; }
     }
 }

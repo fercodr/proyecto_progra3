@@ -1,6 +1,8 @@
 package pe.edu.pucp.entrefunciones.rest.dto.catalogo;
 
-import pe.edu.pucp.entrefunciones.modelo.catalogo.Evento;
+import java.math.BigDecimal;
+import pe.edu.pucp.entrefunciones.rest.dto.espacios.SalaDTO;
+import pe.edu.pucp.entrefunciones.rest.dto.espacios.SedeDTO;
 
 public class FuncionDTO {
     private int id;
@@ -14,7 +16,25 @@ public class FuncionDTO {
         this.evento = evento;
     }
 
+    public SalaDTO getSala() {
+        return sala;
+    }
+
+    public void setSala(SalaDTO sala) {
+        this.sala = sala;
+    }
+
+    public SedeDTO getSede() {
+        return sede;
+    }
+
+    public void setSede(SedeDTO sede) {
+        this.sede = sede;
+    }
+
     private EventoDTO evento;
+    private SalaDTO sala;
+    private SedeDTO sede;
     private String tituloEvento;
     private int idSala;
     private String nombreSala;
@@ -26,6 +46,11 @@ public class FuncionDTO {
     private String horaFin;
     private String idioma;
     private String estado;
+    private Integer entradasNoCanceladas;
+    private Integer entradasCanceladas;
+    private BigDecimal ingresosValidos;
+    private Integer asistentes;
+    private BigDecimal porcentajeOcupacion;
 
     public FuncionDTO() {
     }
@@ -132,5 +157,45 @@ public class FuncionDTO {
 
     public void setEstado(String estado) {
         this.estado = estado;
+    }
+
+    public Integer getEntradasNoCanceladas() {
+        return entradasNoCanceladas;
+    }
+
+    public void setEntradasNoCanceladas(Integer entradasNoCanceladas) {
+        this.entradasNoCanceladas = entradasNoCanceladas;
+    }
+
+    public Integer getEntradasCanceladas() {
+        return entradasCanceladas;
+    }
+
+    public void setEntradasCanceladas(Integer entradasCanceladas) {
+        this.entradasCanceladas = entradasCanceladas;
+    }
+
+    public BigDecimal getIngresosValidos() {
+        return ingresosValidos;
+    }
+
+    public void setIngresosValidos(BigDecimal ingresosValidos) {
+        this.ingresosValidos = ingresosValidos;
+    }
+
+    public Integer getAsistentes() {
+        return asistentes;
+    }
+
+    public void setAsistentes(Integer asistentes) {
+        this.asistentes = asistentes;
+    }
+
+    public BigDecimal getPorcentajeOcupacion() {
+        return porcentajeOcupacion;
+    }
+
+    public void setPorcentajeOcupacion(BigDecimal porcentajeOcupacion) {
+        this.porcentajeOcupacion = porcentajeOcupacion;
     }
 }

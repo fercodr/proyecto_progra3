@@ -1,7 +1,7 @@
 using EntreFunciones.DTOSS;
 using EntreFunciones.ViewModels;
 
-namespace EntreFunciones.Servicios.Rest
+namespace EntreFunciones.Servicios
 {
     public interface IAuditoriaService
     {

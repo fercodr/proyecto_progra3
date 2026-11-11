@@ -2,7 +2,6 @@ package pe.edu.pucp.entrefunciones.bl;
 
 import pe.edu.pucp.entrefunciones.bl.error.BLException;
 
-import java.sql.SQLException;
 import java.util.List;
 
 public interface BL<T, ID> {

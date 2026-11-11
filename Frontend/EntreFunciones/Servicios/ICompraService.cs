@@ -1,6 +1,6 @@
 using EntreFunciones.DTOSS;
 
-namespace EntreFunciones.Servicios.Rest
+namespace EntreFunciones.Servicios
 {
     public interface ICompraService
     {

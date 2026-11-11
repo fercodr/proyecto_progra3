@@ -49,6 +49,11 @@ namespace EntreFunciones.Servicios.Rest
             }
             catch (TaskCanceledException ex)
             {
+                if (ex.CancellationToken.IsCancellationRequested)
+                {
+                    throw;
+                }
+
                 throw new ServiceException(
                     "El servicio REST no respondio dentro del tiempo esperado.",
                     ex);
@@ -65,7 +70,7 @@ namespace EntreFunciones.Servicios.Rest
                 int codigo = (int)respuesta.StatusCode;
                 string mensaje = await LeerMensajeError(respuesta, codigo);
                 respuesta.Dispose();
-                throw new ServiceException(mensaje);
+                throw new ServiceException(mensaje, codigo);
             }
 
             return respuesta;
@@ -278,34 +283,33 @@ namespace EntreFunciones.Servicios.Rest
 
         public static async Task<IReadOnlyDictionary<string, string>>
             CrearCabecerasAutenticadas(
-                IConfiguration config,
-                AuthenticationStateProvider auth)
+            IConfiguration config,
+            AuthenticationStateProvider auth)
         {
             AuthenticationState estadoAutenticacion =
                 await auth.GetAuthenticationStateAsync();
             ClaimsPrincipal usuario = estadoAutenticacion.User;
-            string? idUsuario = usuario
-                .FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            string? token = usuario.FindFirst("access_token")?.Value;
+            string? venceTexto = usuario.FindFirst("access_token_expires")?.Value;
 
             if (usuario.Identity?.IsAuthenticated != true
-                || !int.TryParse(idUsuario, out int cuentaId)
-                || cuentaId <= 0)
+                || string.IsNullOrWhiteSpace(token))
             {
                 throw new InvalidOperationException(
                     "Inicia sesion para continuar.");
             }
 
-            string? apiKey = config["Rest:ApiKey"];
-            if (string.IsNullOrWhiteSpace(apiKey))
+            if (long.TryParse(venceTexto, out long vence)
+                && DateTimeOffset.UtcNow.ToUnixTimeSeconds() >= vence)
             {
-                throw new InvalidOperationException(
-                    "Falta configurar el acceso al servicio REST.");
+                throw new ServiceException(
+                    "La sesion REST expiro. Inicia sesion nuevamente.",
+                    401);
             }
 
             return new Dictionary<string, string>
             {
-                ["X-Api-Key"] = apiKey,
-                ["X-Usuario-Id"] = cuentaId.ToString()
+                ["Authorization"] = $"Bearer {token}"
             };
         }
 
@@ -317,7 +321,14 @@ namespace EntreFunciones.Servicios.Rest
             [JsonPropertyName("mensaje")]
             public string? Mensaje { get; set; }
 
-            public string Texto => !string.IsNullOrWhiteSpace(Error) ? Error : Mensaje ?? string.Empty;
+            [JsonPropertyName("texto")]
+            public string? TextoRespuesta { get; set; }
+
+            public string Texto => !string.IsNullOrWhiteSpace(Mensaje)
+                ? Mensaje
+                : !string.IsNullOrWhiteSpace(TextoRespuesta)
+                    ? TextoRespuesta
+                    : Error ?? string.Empty;
         }
     }
 }

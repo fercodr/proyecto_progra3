@@ -1,4 +1,5 @@
 @page "/incidencias"
+@attribute [Authorize(Policy = "Incidencias")]
 @using EntreFunciones.DTOSS
 @using EntreFunciones.Servicios
 @using EntreFunciones.Servicios.Rest
@@ -179,7 +180,8 @@
                     <label for="nuevaFuncion" class="form-label">Función</label>
                     <select id="nuevaFuncion" class="form-select"
                             disabled="@(Procesando || CargandoOpciones)"
-                            @bind="Nueva.FuncionId">
+                            @bind="Nueva.FuncionId"
+                            @bind:after="AsociarNuevaFuncion">
                         <option value="0">Selecciona una función</option>
                         @foreach (FuncionViewModel funcion in Funciones)
                         {
@@ -201,7 +203,8 @@
                         <label for="nuevoResponsable" class="form-label">Responsable</label>
                         <select id="nuevoResponsable" class="form-select"
                                 disabled="@(Procesando || CargandoOpciones)"
-                                @bind="Nueva.ResponsableId">
+                                @bind="Nueva.ResponsableId"
+                                @bind:after="AsociarNuevoResponsable">
                             <option value="0">Selecciona un responsable</option>
                             @foreach (AdministradorViewModel responsable in Responsables)
                             {
@@ -284,7 +287,8 @@
                         <label for="editarResponsable" class="form-label">Responsable</label>
                         <select id="editarResponsable" class="form-select"
                                 disabled="@(Procesando || CargandoOpciones)"
-                                @bind="Atencion.ResponsableId">
+                                @bind="Atencion.ResponsableId"
+                                @bind:after="AsociarResponsableAtencion">
                             <option value="0">Selecciona un responsable activo</option>
                             @foreach (AdministradorViewModel responsable in Responsables)
                             {
@@ -442,6 +446,11 @@
             ReemplazarResultados(encontrados);
             ResultadosCargados = true;
         }
+        catch (ServiceException ex) when (ex.StatusCode == 404)
+        {
+            LimpiarResultados();
+            Error = "No se encontró la incidencia.";
+        }
         catch (Exception ex)
         {
             LimpiarResultados();
@@ -512,6 +521,24 @@
         LimpiarMensajes();
         Nueva = new AuditoriaViewModel();
         VistaActual = Vista.Nueva;
+    }
+
+    private void AsociarNuevaFuncion()
+    {
+        Nueva.Funcion = Funciones.FirstOrDefault(
+            funcion => funcion.Id == Nueva.FuncionId);
+    }
+
+    private void AsociarNuevoResponsable()
+    {
+        Nueva.Responsable = Responsables.FirstOrDefault(
+            responsable => responsable.Id == Nueva.ResponsableId);
+    }
+
+    private void AsociarResponsableAtencion()
+    {
+        Atencion.Responsable = Responsables.FirstOrDefault(
+            responsable => responsable.Id == Atencion.ResponsableId);
     }
 
     private async Task Registrar()
@@ -682,6 +709,11 @@
 
     private static string MensajeError(Exception ex)
     {
+        if (ex is ServiceException { StatusCode: 401 })
+        {
+            return "La sesiÃ³n REST expirÃ³. Inicie sesiÃ³n nuevamente.";
+        }
+
         return string.IsNullOrWhiteSpace(ex.Message)
             ? "No se pudo completar la operacion."
             : ex.Message;

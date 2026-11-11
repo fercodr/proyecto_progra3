@@ -1,70 +1,62 @@
 using EntreFunciones.DTOSS.Usuarios;
+using Microsoft.AspNetCore.Components.Authorization;
 
 namespace EntreFunciones.Servicios.Rest
 {
     public class CuentaService : ICuentaService
     {
         private readonly IConfiguration _config;
+        private readonly AuthenticationStateProvider _auth;
         private readonly string _baseUrl;
 
-        public CuentaService(IConfiguration config)
+        public CuentaService(IConfiguration config, AuthenticationStateProvider auth)
         {
             _config = config;
+            _auth = auth;
             _baseUrl = config["Rest:BaseUrl"]
                 ?? throw new InvalidOperationException("Falta configurar Rest:BaseUrl.");
         }
 
-        public async Task<bool> Autenticar(string correo, string contrasena)
+        public async Task<SesionDTO?> Autenticar(string correo, string contrasena)
         {
-            CredencialesDTO credenciales = new()
-            {
-                Correo = correo,
-                Contrasena = contrasena
-            };
-
+            CredencialesDTO credenciales = new() { Correo = correo, Contrasena = contrasena };
             try
             {
-                await HttpUtils.DoPost<CredencialesDTO>(
-                    _baseUrl + "cuentas/login", credenciales, cabeceras: CrearCabeceras());
-                return true;
+                return await HttpUtils.DoPost<CredencialesDTO, SesionDTO>(
+                    _baseUrl + "cuentas/login", credenciales);
             }
-            catch (ServiceException)
+            catch (ServiceException ex) when (ex.StatusCode == 401)
             {
-                return false;
+                return null;
             }
         }
 
-        // Buscar la cuenta por correo
         public async Task<CuentaUsuarioDTO> FindByCorreo(string correo)
         {
             return await HttpUtils.DoGet<CuentaUsuarioDTO>(
-                _baseUrl + $"cuentas/{correo}", cabeceras: CrearCabeceras());
+                _baseUrl + $"cuentas/{Uri.EscapeDataString(correo)}",
+                cabeceras: await CrearCabeceras());
         }
 
-        // Obtener el rol: se pregunta rol por rol; el que responda 200 es el rol
         public async Task<string?> ObtenerRol(string correo)
         {
             try
             {
                 await HttpUtils.DoGet<AdministradorDTO>(
-                    _baseUrl + $"cuentas/{correo}/administrador", cabeceras: CrearCabeceras());
+                    _baseUrl + $"cuentas/{Uri.EscapeDataString(correo)}/administrador",
+                    cabeceras: await CrearCabeceras());
                 return "Administrador";
             }
-            catch (ServiceException)
-            {
-
-            }
+            catch (ServiceException) { }
 
             try
             {
                 await HttpUtils.DoGet<ClienteDTO>(
-                    _baseUrl + $"cuentas/{correo}/cliente", cabeceras: CrearCabeceras());
+                    _baseUrl + $"cuentas/{Uri.EscapeDataString(correo)}/cliente",
+                    cabeceras: await CrearCabeceras());
                 return "Cliente";
             }
-            catch (ServiceException)
-            {
-
-            }
+            catch (ServiceException) { }
 
             return null;
         }
@@ -73,21 +65,15 @@ namespace EntreFunciones.Servicios.Rest
         {
             RecuperarContrasenaDTO dto = new()
             {
-                Correo = correo,
-                Dni = dni,
-                ContrasenaNueva = contrasenaNueva
+                Correo = correo, Dni = dni, ContrasenaNueva = contrasenaNueva
             };
             await HttpUtils.DoPost<RecuperarContrasenaDTO>(
-                _baseUrl + "cuentas/recuperar", dto, cabeceras: CrearCabeceras());
+                _baseUrl + "cuentas/recuperar", dto);
         }
 
-        private Dictionary<string, string> CrearCabeceras()
+        private async Task<IReadOnlyDictionary<string, string>> CrearCabeceras()
         {
-            return new Dictionary<string, string>
-            {
-                ["X-Api-Key"] = _config["Rest:ApiKey"]!,
-                ["X-Usuario-Id"] = _config["Rest:CuentaServicioId"]!
-            };
+            return await HttpUtils.CrearCabecerasAutenticadas(_config, _auth);
         }
     }
 }

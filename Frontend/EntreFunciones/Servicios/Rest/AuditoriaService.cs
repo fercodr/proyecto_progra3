@@ -35,10 +35,10 @@ namespace EntreFunciones.Servicios.Rest
 
         public async Task<AuditoriaViewModel> Insert(AuditoriaViewModel modelo)
         {
-            CrearAuditoriaDTO payload = new()
+            AuditoriaDTO payload = new()
             {
-                FuncionId = modelo.FuncionId,
-                ResponsableId = modelo.ResponsableId,
+                Funcion = new FuncionDTO { Id = modelo.FuncionId },
+                Responsable = new AdministradorDTO { Id = modelo.ResponsableId },
                 Descripcion = modelo.Descripcion
             };
             return await base.Insert(payload);
@@ -47,9 +47,13 @@ namespace EntreFunciones.Servicios.Rest
         public async Task<AuditoriaViewModel> Update(
             AuditoriaViewModel modelo)
         {
-            ActualizarAuditoriaDTO payload = new()
+            AuditoriaDTO payload = new()
             {
-                ResponsableId = modelo.ResponsableId,
+                Id = modelo.Id,
+                Funcion = ToFuncionDTO(modelo.Funcion),
+                Responsable = ToAdministradorDTO(modelo.Responsable),
+                Fecha = modelo.Fecha,
+                Descripcion = modelo.Descripcion,
                 Estado = modelo.EstadoAuditoria
             };
             return await base.Update(modelo.Id, payload);
@@ -73,5 +77,28 @@ namespace EntreFunciones.Servicios.Rest
                 EstadoAuditoria = dto.Estado
             };
         }
+        private static FuncionDTO? ToFuncionDTO(FuncionViewModel? modelo)
+        {
+            return modelo is null ? null : new FuncionDTO
+            {
+                Id = modelo.Id,
+                Fecha = modelo.Fecha.ToString("yyyy-MM-dd"),
+                HoraInicio = modelo.HoraInicio.ToString("HH:mm:ss"),
+                Estado = modelo.Estado
+            };
+        }
+
+        private static AdministradorDTO? ToAdministradorDTO(
+            AdministradorViewModel? modelo)
+        {
+            return modelo is null ? null : new AdministradorDTO
+            {
+                Id = modelo.Id,
+                Nombres = modelo.Nombres,
+                Apellidos = modelo.Apellidos,
+                IsActivo = modelo.IsActivo
+            };
+        }
+
     }
 }

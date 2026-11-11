@@ -9,6 +9,7 @@ public class Auditoria {
     private Funcion funcion;
     private LocalDateTime fecha;
     private Administrador responsable;
+    private String responsableTextoOriginal;
     private String descripcion;
     private EstadoAuditoria estado;
 
@@ -36,6 +37,7 @@ public class Auditoria {
         setId(auditoria.getId());
         setFecha(auditoria.getFecha());
         this.responsable = auditoria.getResponsable();
+        this.responsableTextoOriginal = auditoria.getResponsableTextoOriginal();
         setDescripcion(auditoria.getDescripcion());
         setFuncion(auditoria.getFuncion());
         setEstado(auditoria.getEstado());
@@ -96,6 +98,14 @@ public class Auditoria {
             throw new IllegalArgumentException("responsable no puede ser nulo");
         }
         this.responsable = responsable;
+    }
+
+    public String getResponsableTextoOriginal() {
+        return responsableTextoOriginal;
+    }
+
+    public void setResponsableTextoOriginal(String responsableTextoOriginal) {
+        this.responsableTextoOriginal = responsableTextoOriginal;
     }
 
 

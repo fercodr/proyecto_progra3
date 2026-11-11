@@ -4,6 +4,7 @@ public class SalaDTO {
     private int id;
     private boolean activo;
     private int idSede;
+    private SedeDTO sede;
     private String nombre;
     private int aforo;
     private String tipoSala;
@@ -33,6 +34,14 @@ public class SalaDTO {
 
     public void setIdSede(int idSede) {
         this.idSede = idSede;
+    }
+
+    public SedeDTO getSede() {
+        return sede;
+    }
+
+    public void setSede(SedeDTO sede) {
+        this.sede = sede;
     }
 
     public String getNombre() {
