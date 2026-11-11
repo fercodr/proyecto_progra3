@@ -1,8 +1,21 @@
-﻿<div class="card h-100 shadow-sm">
-    <img src="@Imagen" class="card-img-top event-summary-image" alt="Portada de @Titulo" />
+﻿<div class="card h-100 shadow-sm @(Inactivo ? "opacity-75" : "")">
+    @if (!string.IsNullOrWhiteSpace(IconoClase))
+    {
+        <div class="d-flex align-items-center justify-content-center bg-light event-summary-image">
+            <i class="@IconoClase text-secondary" style="font-size:2.5rem;"></i>
+        </div>
+    }
+    else
+    {
+        <img src="@Imagen" class="card-img-top event-summary-image" alt="Portada de @Titulo" />
+    }
 
     <div class="card-body">
         <span class="badge text-bg-secondary mb-2">@Tipo</span>
+        @if (Inactivo)
+        {
+            <span class="badge text-bg-secondary mb-2">Inactivo</span>
+        }
         <h2 class="card-title h5">@Titulo</h2>
         <p class="card-text small text-secondary mb-0">@Detalle</p>
     </div>
@@ -17,10 +30,17 @@
     public string Titulo { get; set; } = default!;
     [Parameter, EditorRequired] 
     public string Tipo { get; set; } = default!;
-    [Parameter, EditorRequired] 
-    public string Imagen { get; set; } = default!;
+    // Una tarjeta usa Imagen (ruta a un archivo) o IconoClase (clase de Bootstrap Icons,
+    // p. ej. "bi bi-film") como icono generico decorativo mientras no se resuelve como
+    // se van a manejar las imagenes reales de cada evento (ver decisiones-diseno-catalogo-rest.md).
+    [Parameter]
+    public string Imagen { get; set; } = "";
+    [Parameter]
+    public string? IconoClase { get; set; }
     [Parameter] 
     public string Detalle { get; set; } = "";
     [Parameter, EditorRequired] 
     public string Enlace { get; set; } = default!;
+    [Parameter]
+    public bool Inactivo { get; set; }
 }

@@ -78,9 +78,9 @@ namespace EntreFunciones.Servicios.Rest
             try
             {
                 ErrorRespuestaDto? error = await respuesta.Content.ReadFromJsonAsync<ErrorRespuestaDto>();
-                return string.IsNullOrWhiteSpace(error?.Mensaje)
+                return string.IsNullOrWhiteSpace(error?.Texto)
                     ? mensajePredeterminado
-                    : error.Mensaje;
+                    : error.Texto;
             }
             catch (JsonException)
             {

@@ -1,5 +1,8 @@
 ﻿@page "/admin/catalogo"
+@using EntreFunciones.DTOSS
+@using EntreFunciones.Servicios.Rest
 @inject NavigationManager Nav
+@inject ICatalogoService CatalogoServicio
 @attribute [Authorize(Policy = "Programacion")]
 <PageTitle>Catálogo</PageTitle>
 
@@ -14,34 +17,129 @@
     </button>
 </div>
 
-<div class="row g-3">
-    <div class="col-12 col-md-6 col-xl-3">
-        <TarjetaResumen Titulo="Coco"
-                       Tipo="Película"
-                       Imagen="img/eventos/coco.jpg"
-                       Detalle="Dir. Lee Unkrich · Animación · 105 min"
-                       Enlace="admin/catalogo/editar/1" />
+@if (Cargando)
+{
+    <div class="text-center my-5" role="status">
+        <div class="spinner-border" aria-hidden="true"></div>
+        <p class="text-muted mt-2">Cargando catálogo...</p>
     </div>
-    <div class="col-12 col-md-6 col-xl-3">
-        <TarjetaResumen Titulo="Interestelar"
-                       Tipo="Película"
-                       Imagen="img/eventos/interestelar.jpg"
-                       Detalle="Dir. Christopher Nolan · Drama · 169 min"
-                       Enlace="admin/catalogo/editar/2" />
+}
+else if (ErrorCarga is not null)
+{
+    <div class="alert alert-danger" role="alert">
+        No se pudo cargar el catálogo: @ErrorCarga
+        <button type="button" class="btn btn-sm btn-outline-danger ms-2" @onclick="Cargar">Reintentar</button>
     </div>
-    <div class="col-12 col-md-6 col-xl-3">
-        <TarjetaResumen Titulo="La casa de Bernarda Alba"
-                       Tipo="Obra de teatro"
-                       Imagen="img/eventos/bernarda-alba.jpg"
-                       Detalle="Dir. Lucía Ramos · Elenco: Ana Torres, Rosa Díaz"
-                       Enlace="admin/catalogo/editar/3" />
+}
+else if (!Eventos.Any())
+{
+    <div class="empty-state" role="status">Todavía no hay eventos registrados.</div>
+}
+else
+{
+    <div class="row g-3">
+        @foreach (EventoDTO evento in Eventos)
+        {
+            <div class="col-12 col-md-6 col-xl-3">
+                <TarjetaResumen Titulo="@evento.Titulo"
+                               Tipo="@TextoTipo(evento.Tipo)"
+                               IconoClase="@IconoTipo(evento.Tipo)"
+                               Detalle="@Detalle(evento)"
+                               Inactivo="@(!evento.Activo)"
+                               Enlace="@($"admin/catalogo/editar/{evento.Id}")" />
+            </div>
+        }
     </div>
-    <div class="col-12 col-md-6 col-xl-3">
-        <TarjetaResumen Titulo="Taller de fotografía urbana"
-                       Tipo="Actividad cultural"
-                       Imagen="img/eventos/taller-foto.jpg"
-                       Detalle="Taller · Expositora: Mario Quispe"
-                       Enlace="admin/catalogo/editar/4" />
-    </div>
+}
 </div>
-</div>
+
+@code {
+    private bool Cargando = true;
+    private string? ErrorCarga;
+    private List<EventoDTO> Eventos = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Cargar();
+    }
+
+    private async Task Cargar()
+    {
+        Cargando = true;
+        ErrorCarga = null;
+        try
+        {
+            // A diferencia de Cartelera (publica), el admin necesita ver tambien los eventos
+            // inactivos para poder reactivarlos editandolos.
+            Eventos = (await CatalogoServicio.ListarEventos())
+                .OrderByDescending(e => e.Activo)
+                .ThenBy(e => e.Titulo)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            ErrorCarga = ex.Message;
+        }
+        finally
+        {
+            Cargando = false;
+        }
+    }
+
+    private string Detalle(EventoDTO evento) => evento.Tipo switch
+    {
+        "PELICULA" => string.Join(" · ", new[]
+        {
+            string.IsNullOrWhiteSpace(evento.Director) ? null : $"Dir. {evento.Director}",
+            TextoGenero(evento.Genero),
+            evento.DuracionMinutos is null ? null : $"{evento.DuracionMinutos} min"
+        }.Where(parte => !string.IsNullOrWhiteSpace(parte))),
+        "OBRA_TEATRO" => string.Join(" · ", new[]
+        {
+            string.IsNullOrWhiteSpace(evento.NombreDirector) ? null : $"Dir. {evento.NombreDirector}",
+            string.IsNullOrWhiteSpace(evento.Elenco) ? null : $"Elenco: {evento.Elenco}"
+        }.Where(parte => !string.IsNullOrWhiteSpace(parte))),
+        "ACTIVIDAD_CULTURAL" => string.Join(" · ", new[]
+        {
+            TextoTipoActividad(evento.TipoActividad),
+            string.IsNullOrWhiteSpace(evento.Expositor) ? null : $"Expositor: {evento.Expositor}"
+        }.Where(parte => !string.IsNullOrWhiteSpace(parte))),
+        _ => ""
+    };
+
+    private string IconoTipo(string tipo) => tipo switch
+    {
+        "PELICULA" => "bi bi-film",
+        "OBRA_TEATRO" => "bi bi-emoji-smile",
+        "ACTIVIDAD_CULTURAL" => "bi bi-people",
+        _ => "bi bi-calendar-event"
+    };
+
+    private string TextoTipo(string tipo) => tipo switch
+    {
+        "PELICULA" => "Película",
+        "OBRA_TEATRO" => "Obra de teatro",
+        "ACTIVIDAD_CULTURAL" => "Actividad cultural",
+        _ => tipo
+    };
+
+    private string TextoGenero(string? genero) => genero switch
+    {
+        "ACCION" => "Acción",
+        "COMEDIA" => "Comedia",
+        "DRAMA" => "Drama",
+        "TERROR" => "Terror",
+        "ANIMACION" => "Animación",
+        "DOCUMENTAL" => "Documental",
+        _ => genero ?? ""
+    };
+
+    private string TextoTipoActividad(string? tipo) => tipo switch
+    {
+        "CHARLA" => "Charla",
+        "TALLER" => "Taller",
+        "EXPOSICION" => "Exposición",
+        "CONVERSATORIO" => "Conversatorio",
+        _ => tipo ?? ""
+    };
+}

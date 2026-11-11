@@ -2,6 +2,14 @@
 @page "/admin/funciones/editar/{Id:int}"
 @attribute [Authorize(Policy = "Programacion")]
 @inject NavigationManager Nav
+@inject ICatalogoService Catalogo
+@inject ISedeService SedeServicio
+@inject ISalaService SalaServicio
+@using EntreFunciones.DTOSS
+@using EntreFunciones.Servicios
+@using EntreFunciones.Servicios.Rest
+@using EntreFunciones.ViewModels
+@rendermode InteractiveServer
 
 <PageTitle>@(Id == null ? "Programar función" : "Editar función")</PageTitle>
 
@@ -9,24 +17,38 @@
 <div class="page-header">
     <div>
         <h1 class="page-title">@(Id == null ? "Programar función" : "Editar función")</h1>
-        <p class="page-description">Define el contenido, lugar, horario y precio de la función.</p>
+        <p class="page-description">Define el contenido, lugar y horario de la función.</p>
     </div>
 </div>
 
+@if (Cargando)
+{
+    <div class="text-center my-5" role="status">
+        <div class="spinner-border" aria-hidden="true"></div>
+        <p class="text-muted mt-2">Cargando...</p>
+    </div>
+}
+else
+{
 <div class="row g-4">
 
     <div class="col-lg-8">
         <EditForm Model="Formulario" OnSubmit="Guardar">
 
+            @if (MensajeError != null)
+            {
+                <div class="alert alert-danger" role="alert" aria-live="assertive">@MensajeError</div>
+            }
+
             <h5 class="mb-3">Contenido</h5>
             <div class="row g-3 mb-3">
                 <div class="col-md-8">
                     <label for="evento" class="form-label">Evento</label>
-                    <InputSelect id="evento" class="form-select" @bind-Value="Formulario.Evento">
-                        <option value="">Seleccione un evento del catálogo...</option>
-                        @foreach (string evento in Eventos)
+                    <InputSelect id="evento" class="form-select" @bind-Value="Formulario.IdEvento">
+                        <option value="0">Seleccione un evento del catálogo...</option>
+                        @foreach (EventoDTO evento in Eventos)
                         {
-                            <option value="@evento">@evento</option>
+                            <option value="@evento.Id">@evento.Titulo</option>
                         }
                     </InputSelect>
                 </div>
@@ -45,19 +67,21 @@
             <div class="row g-3 mb-3">
                 <div class="col-md-6">
                     <label for="sede" class="form-label">Sede</label>
-                    <InputSelect id="sede" class="form-select" @bind-Value="Formulario.Sede">
-                        @foreach (string sede in Sedes)
+                    <InputSelect id="sede" class="form-select" TValue="int" Value="IdSedeSeleccionada" ValueChanged="CambiarSede" ValueExpression="() => IdSedeSeleccionada">
+                        <option value="0">Seleccione una sede...</option>
+                        @foreach (SedeViewModel sede in Sedes)
                         {
-                            <option value="@sede">@sede</option>
+                            <option value="@sede.Id">@sede.RazonSocial · @sede.Ciudad</option>
                         }
                     </InputSelect>
                 </div>
                 <div class="col-md-6">
                     <label for="sala" class="form-label">Sala</label>
-                    <InputSelect id="sala" class="form-select" @bind-Value="Formulario.Sala">
-                        @foreach (string sala in Salas)
+                    <InputSelect id="sala" class="form-select" @bind-Value="Formulario.IdSala" disabled="@(!Salas.Any())">
+                        <option value="0">@(Salas.Any() ? "Seleccione una sala..." : "Seleccione primero una sede")</option>
+                        @foreach (SalaViewModel sala in Salas)
                         {
-                            <option value="@sala">@sala</option>
+                            <option value="@sala.Id">@sala.Nombre (aforo @sala.Aforo)</option>
                         }
                     </InputSelect>
                 </div>
@@ -74,80 +98,163 @@
                     <input id="horaFin" type="time" class="form-control" @bind="Formulario.HoraFin" />
                 </div>
             </div>
-            <div class="alert alert-danger" role="alert">
-                <p class="mb-0">
-                    la Sala 2 ya tiene la función “Coco”
-                    confirmada de 18:00 a 19:45 ese día.
-                </p>
-            </div>
-            
 
-            <h5 class="mb-3">Venta</h5>
-            <div class="row g-3 mb-3">
-                <div class="col-md-6">
-                    <label for="precio" class="form-label">Precio (S/)</label>
-                    <InputNumber id="precio" class="form-control" @bind-Value="Formulario.Precio" />
-                </div>
-             
-
-            </div>
-
-            <button type="submit" class="btn btn-primary">Guardar</button>
+            <button type="submit" class="btn btn-primary" disabled="@Guardando">
+                @(Guardando ? "Guardando..." : "Guardar")
+            </button>
             <a class="btn btn-outline-secondary" href="admin/funciones">Cancelar</a>
         </EditForm>
     </div>
 </div>
+}
 </div>
 
 @code {
     [Parameter]
     public int? Id { get; set; }
 
+    private bool Cargando = true;
+    private bool Guardando;
+    private string? MensajeError;
+    private string? EstadoActual;
+
+    private List<EventoDTO> Eventos = new();
+    private List<SedeViewModel> Sedes = new();
+    private List<SalaViewModel> Salas = new();
+    private int IdSedeSeleccionada;
 
     private class FuncionFormulario
     {
-        public string Evento { get; set; } = "";
+        public int IdEvento { get; set; }
         public string Idioma { get; set; } = "Español";
-        public string Sede { get; set; } = "Sede Miraflores";
-        public string Sala { get; set; } = "Sala 1";
-        public DateTime Fecha { get; set; } = DateTime.Today;
+        public int IdSala { get; set; }
+        public DateOnly Fecha { get; set; } = DateOnly.FromDateTime(DateTime.Today);
         public TimeOnly HoraInicio { get; set; } = new TimeOnly(18, 0);
         public TimeOnly HoraFin { get; set; } = new TimeOnly(20, 0);
-        public double Precio { get; set; }
     }
 
     private FuncionFormulario Formulario { get; set; } = new();
 
+    private readonly string[] Idiomas = { "Español", "Subtitulada", "Doblada" };
 
-    private string[] Eventos = { "Coco", "Interestelar", "La casa de Bernarda Alba", "Taller de fotografía urbana" };
-    private string[] Idiomas = { "Español", "Subtitulada", "Doblada" };
-    private string[] Sedes = { "Sede Miraflores", "Sede Barranco" };
-    private string[] Salas = { "Sala 1", "Sala 2", "Sala 3" };
-
-    protected override void OnParametersSet()
+    protected override async Task OnParametersSetAsync()
     {
-        if (Id == null)
+        Cargando = true;
+        MensajeError = null;
+        try
         {
-            Formulario = new FuncionFormulario();  
-            return;
+            // Solo eventos activos: no tiene sentido programar una funcion de un evento dado de baja.
+            Eventos = (await Catalogo.ListarEventos()).Where(e => e.Activo).OrderBy(e => e.Titulo).ToList();
+            Sedes = (await SedeServicio.FindAll()).OrderBy(s => s.RazonSocial).ToList();
+
+            if (Id != null)
+            {
+                FuncionDTO funcion = (await Catalogo.ListarFunciones()).FirstOrDefault(f => f.Id == Id)
+                    ?? throw new ServiceException($"No se encontró la función {Id}.");
+
+                Formulario = new FuncionFormulario
+                {
+                    IdEvento = funcion.IdEvento,
+                    Idioma = funcion.Idioma,
+                    IdSala = funcion.IdSala,
+                    Fecha = DateOnly.TryParse(funcion.Fecha, out DateOnly fecha) ? fecha : DateOnly.FromDateTime(DateTime.Today),
+                    HoraInicio = TimeOnly.TryParse(funcion.HoraInicio, out TimeOnly horaInicio) ? horaInicio : new TimeOnly(18, 0),
+                    HoraFin = TimeOnly.TryParse(funcion.HoraFin, out TimeOnly horaFin) ? horaFin : new TimeOnly(20, 0)
+                };
+
+                IdSedeSeleccionada = funcion.IdSede;
+                EstadoActual = funcion.Estado;
+                await CargarSalas(funcion.IdSede);
+            }
         }
-   
-        Formulario = new FuncionFormulario
+        catch (Exception ex)
         {
-            Evento = "Coco",
-            Idioma = "Español",
-            Sede = "Sede Miraflores",
-            Sala = "Sala 2",
-            Fecha = new DateTime(2026, 11, 7),
-            HoraInicio = new TimeOnly(18, 0),
-            HoraFin = new TimeOnly(19, 45),
-            Precio = 18.00
-        };
+            MensajeError = ex.Message;
+        }
+        finally
+        {
+            Cargando = false;
+        }
     }
 
-    private void Guardar()
+    private async Task CambiarSede(int idSede)
     {
-     
-        Nav.NavigateTo("/admin/funciones");
+        IdSedeSeleccionada = idSede;
+        Formulario.IdSala = 0;
+        await CargarSalas(idSede);
+    }
+
+    private async Task CargarSalas(int idSede)
+    {
+        if (idSede <= 0)
+        {
+            Salas = new();
+            return;
+        }
+
+        try
+        {
+            Salas = (await SalaServicio.FindBySede(idSede)).OrderBy(s => s.Nombre).ToList();
+        }
+        catch (Exception ex)
+        {
+            MensajeError = ex.Message;
+            Salas = new();
+        }
+    }
+
+    private async Task Guardar()
+    {
+        if (Formulario.IdEvento <= 0)
+        {
+            MensajeError = "Seleccione un evento.";
+            return;
+        }
+        if (Formulario.IdSala <= 0)
+        {
+            MensajeError = "Seleccione una sala.";
+            return;
+        }
+        if (Formulario.HoraFin <= Formulario.HoraInicio)
+        {
+            MensajeError = "La hora de fin debe ser posterior a la hora de inicio.";
+            return;
+        }
+
+        Guardando = true;
+        MensajeError = null;
+        try
+        {
+            FuncionDTO funcion = new FuncionDTO
+            {
+                Id = Id ?? 0,
+                IdEvento = Formulario.IdEvento,
+                IdSala = Formulario.IdSala,
+                Fecha = Formulario.Fecha.ToString("yyyy-MM-dd"),
+                HoraInicio = Formulario.HoraInicio.ToString("HH:mm"),
+                HoraFin = Formulario.HoraFin.ToString("HH:mm"),
+                Idioma = Formulario.Idioma,
+                Estado = EstadoActual!
+            };
+
+            if (Id == null)
+            {
+                await Catalogo.ProgramarFuncion(funcion);
+            }
+            else
+            {
+                await Catalogo.ActualizarFuncion(funcion);
+            }
+
+            Nav.NavigateTo("/admin/funciones");
+        }
+        catch (Exception ex)
+        {
+            MensajeError = ex.Message;
+        }
+        finally
+        {
+            Guardando = false;
+        }
     }
 }
