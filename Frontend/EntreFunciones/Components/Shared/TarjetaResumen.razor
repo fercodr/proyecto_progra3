@@ -20,8 +20,14 @@
         <p class="card-text small text-secondary mb-0">@Detalle</p>
     </div>
 
-    <div class="card-footer bg-transparent">
+    <div class="card-footer bg-transparent d-flex gap-2">
         <a class="btn btn-outline-primary btn-sm" href="@Enlace" aria-label="Editar @Titulo">Editar</a>
+        @if (!string.IsNullOrWhiteSpace(AccionSecundariaTexto))
+        {
+            <button type="button" class="btn btn-@AccionSecundariaVariante btn-sm" @onclick="OnAccionSecundaria">
+                @AccionSecundariaTexto
+            </button>
+        }
     </div>
 </div>
 
@@ -43,4 +49,11 @@
     public string Enlace { get; set; } = default!;
     [Parameter]
     public bool Inactivo { get; set; }
+    // Boton secundario opcional ademas de "Editar" (p. ej. "Desactivar"/"Reactivar").
+    [Parameter]
+    public string? AccionSecundariaTexto { get; set; }
+    [Parameter]
+    public string AccionSecundariaVariante { get; set; } = "outline-danger";
+    [Parameter]
+    public EventCallback OnAccionSecundaria { get; set; }
 }

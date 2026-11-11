@@ -1,5 +1,5 @@
 ﻿@page "/admin/funciones"
-@using System.Globalization
+@using Microsoft.AspNetCore.Components.QuickGrid
 @using EntreFunciones.DTOSS
 @using EntreFunciones.Servicios.Rest
 @attribute [Authorize(Policy = "Programacion")]
@@ -43,76 +43,109 @@ else
 
     <div class="filter-panel">
         <div class="row g-3 align-items-end">
-            <div class="col-12 col-md">
+            <div class="col-12 col-md-4">
                 <label for="filtroEvento" class="form-label">Evento</label>
-                <input id="filtroEvento" class="form-control" placeholder="Ingrese el nombre del evento" @bind="FiltroEvento" @bind:event="oninput" />
+                <input id="filtroEvento" class="form-control" placeholder="Ingrese el nombre del evento" @bind="FiltroEvento" />
+            </div>
+            <div class="col-12 col-md-3">
+                <label for="filtroSede" class="form-label">Sede</label>
+                <select id="filtroSede" class="form-select" @bind="FiltroSede">
+                    <option value="">Todas</option>
+                    @foreach (string sede in Sedes)
+                    {
+                        <option value="@sede">@sede</option>
+                    }
+                </select>
+            </div>
+            <div class="col-12 col-md-3">
+                <label for="filtroEstado" class="form-label">Estado</label>
+                <select id="filtroEstado" class="form-select" @bind="FiltroEstado">
+                    <option value="">Todos</option>
+                    <option value="PROGRAMADA">Programada</option>
+                    <option value="CONFIRMADA">Confirmada</option>
+                    <option value="CANCELADA">Cancelada</option>
+                </select>
             </div>
             <div class="col-12 col-md-auto d-flex gap-2">
-                <button type="button" class="btn btn-outline-secondary" @onclick="() => FiltroEvento = string.Empty">Limpiar</button>
+                <button type="button" class="btn btn-primary" @onclick="AplicarFiltros">Filtrar</button>
+                <button type="button" class="btn btn-outline-secondary" @onclick="LimpiarFiltros">Limpiar</button>
             </div>
         </div>
     </div>
 
-    <div class="data-table-wrapper">
-    <table class="table table-striped table-hover align-middle">
-        <thead>
-            <tr>
-                <th>Id</th>
-                <th>Evento</th>
-                <th>Sede / Sala</th>
-                <th>Fecha</th>
-                <th>Horario</th>
-                <th>Idioma</th>
-                <th>Estado</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (FuncionDTO funcion in FuncionesFiltradas)
-            {
-                <tr>
-                    <td>@funcion.Id</td>
-                    <td>@funcion.TituloEvento</td>
-                    <td>@funcion.NombreSede · @funcion.NombreSala</td>
-                    <td>@FormatearFecha(funcion.Fecha)</td>
-                    <td>@FormatearHora(funcion.HoraInicio) – @FormatearHora(funcion.HoraFin)</td>
-                    <td>@funcion.Idioma</td>
-                    <td>@EstadoBadge(funcion.Estado)</td>
-                    <td>
-                        @if (funcion.Estado == "PROGRAMADA")
-                        {
-                            <button type="button" class="btn btn-success btn-sm" disabled="@(Procesando == funcion.Id)" @onclick="() => Confirmar(funcion)">Confirmar</button>
-                            <button type="button" class="btn btn-outline-danger btn-sm" disabled="@(Procesando == funcion.Id)" @onclick="() => Cancelar(funcion.Id)">Cancelar</button>
-                        }
-                        else if (funcion.Estado == "CONFIRMADA")
-                        {
-                            <button type="button" class="btn btn-outline-danger btn-sm" disabled="@(Procesando == funcion.Id)" @onclick="() => Cancelar(funcion.Id)">Cancelar</button>
-                        }
-                        else
-                        {
-                            <span class="text-muted small">Sin acciones</span>
-                        }
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-    @if (!FuncionesFiltradas.Any())
+    @if (!FuncionesVisibles.Any())
     {
         <div class="empty-state" role="status">No hay funciones que coincidan con el filtro.</div>
     }
-    </div>
+    else
+    {
+        <div class="data-table-wrapper">
+        <QuickGrid Items="FuncionesVisibles" Pagination="Paginacion" Class="table table-striped table-hover">
+            <PropertyColumn Title="Id" Property="f => f.Id" Sortable="true" />
+            <PropertyColumn Title="Evento" Property="f => f.TituloEvento" Sortable="true" />
+            <TemplateColumn Title="Sede / Sala">
+                @context.NombreSede · @context.NombreSala
+            </TemplateColumn>
+            <TemplateColumn Title="Fecha" Sortable="true" SortBy="@(GridSort<FuncionDTO>.ByAscending(f => f.Fecha))">
+                @FormatearFecha(context.Fecha)
+            </TemplateColumn>
+            <TemplateColumn Title="Horario">
+                @FormatearHora(context.HoraInicio) – @FormatearHora(context.HoraFin)
+            </TemplateColumn>
+            <PropertyColumn Title="Idioma" Property="f => f.Idioma" />
+            <TemplateColumn Title="Estado" Sortable="true" SortBy="@(GridSort<FuncionDTO>.ByAscending(f => f.Estado))">
+                @EstadoBadge(context.Estado)
+            </TemplateColumn>
+            <TemplateColumn Title="Acciones">
+                @if (context.Estado == "PROGRAMADA")
+                {
+                    <button type="button" class="btn btn-success btn-sm" @onclick="() => Confirmar(context)">Confirmar</button>
+                    <button type="button" class="btn btn-outline-danger btn-sm" @onclick="() => PedirConfirmacionCancelar(context)">Cancelar</button>
+                }
+                else if (context.Estado == "CONFIRMADA")
+                {
+                    <button type="button" class="btn btn-outline-danger btn-sm" @onclick="() => PedirConfirmacionCancelar(context)">Cancelar</button>
+                }
+                else
+                {
+                    <span class="text-muted small">Sin acciones</span>
+                }
+            </TemplateColumn>
+        </QuickGrid>
+        </div>
+        <Paginator State="Paginacion"></Paginator>
+    }
 }
 </div>
+
+<ModalConfirmacion Visible="FuncionACancelar != null" Titulo="¿Cancelar función?" Variante="danger"
+                   Icono="bi-exclamation-triangle" TextoConfirmar="Sí, cancelar" Procesando="Procesando"
+                   OnConfirmar="ConfirmarCancelacion" OnCancelar="() => FuncionACancelar = null">
+    @if (FuncionACancelar != null)
+    {
+        <p class="mb-0">
+            Se cancelará la función de <strong>@FuncionACancelar.TituloEvento</strong> del
+            @FormatearFecha(FuncionACancelar.Fecha) a las @FormatearHora(FuncionACancelar.HoraInicio).
+            Esta acción no se puede deshacer.
+        </p>
+    }
+</ModalConfirmacion>
 
 @code {
     private bool Cargando = true;
     private string? ErrorCarga;
     private string? MensajeAccion;
-    private int? Procesando;
-    private string FiltroEvento = "";
+    private bool Procesando;
 
-    private List<FuncionDTO> ListaFunciones = new();
+    private FuncionDTO? FuncionACancelar;
+    private readonly PaginationState Paginacion = new() { ItemsPerPage = 10 };
+
+    private string FiltroEvento = "";
+    private string FiltroSede = "";
+    private string FiltroEstado = "";
+
+    private List<FuncionDTO> Todas = new();
+    private IQueryable<FuncionDTO> FuncionesVisibles = Enumerable.Empty<FuncionDTO>().AsQueryable();
 
     protected override async Task OnInitializedAsync()
     {
@@ -125,9 +158,10 @@ else
         ErrorCarga = null;
         try
         {
-            ListaFunciones = (await Catalogo.ListarFunciones())
+            Todas = (await Catalogo.ListarFunciones())
                 .OrderBy(f => f.Fecha).ThenBy(f => f.HoraInicio)
                 .ToList();
+            AplicarFiltros();
         }
         catch (Exception ex)
         {
@@ -139,13 +173,27 @@ else
         }
     }
 
-    private IEnumerable<FuncionDTO> FuncionesFiltradas => ListaFunciones.Where(f =>
-        string.IsNullOrWhiteSpace(FiltroEvento) ||
-        (f.TituloEvento ?? "").Contains(FiltroEvento, StringComparison.OrdinalIgnoreCase));
+    private List<string> Sedes => Todas.Select(f => f.NombreSede ?? "").Where(s => s != "").Distinct().OrderBy(s => s).ToList();
+
+    private void AplicarFiltros()
+    {
+        FuncionesVisibles = Todas.Where(f =>
+            (string.IsNullOrWhiteSpace(FiltroEvento) || (f.TituloEvento ?? "").Contains(FiltroEvento, StringComparison.OrdinalIgnoreCase)) &&
+            (string.IsNullOrEmpty(FiltroSede) || f.NombreSede == FiltroSede) &&
+            (string.IsNullOrEmpty(FiltroEstado) || f.Estado == FiltroEstado))
+            .AsQueryable();
+    }
+
+    private void LimpiarFiltros()
+    {
+        FiltroEvento = "";
+        FiltroSede = "";
+        FiltroEstado = "";
+        AplicarFiltros();
+    }
 
     private async Task Confirmar(FuncionDTO funcion)
     {
-        Procesando = funcion.Id;
         MensajeAccion = null;
         try
         {
@@ -157,28 +205,33 @@ else
         {
             MensajeAccion = ex.Message;
         }
-        finally
-        {
-            Procesando = null;
-        }
     }
 
-    private async Task Cancelar(int id)
+    private void PedirConfirmacionCancelar(FuncionDTO funcion)
     {
-        Procesando = id;
         MensajeAccion = null;
+        FuncionACancelar = funcion;
+    }
+
+    private async Task ConfirmarCancelacion()
+    {
+        if (FuncionACancelar == null) return;
+
+        Procesando = true;
         try
         {
-            await Catalogo.CancelarFuncion(id);
+            await Catalogo.CancelarFuncion(FuncionACancelar.Id);
+            FuncionACancelar = null;
             await Cargar();
         }
         catch (Exception ex)
         {
             MensajeAccion = ex.Message;
+            FuncionACancelar = null;
         }
         finally
         {
-            Procesando = null;
+            Procesando = false;
         }
     }
 

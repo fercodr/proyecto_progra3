@@ -4,6 +4,7 @@
 @inject NavigationManager Nav
 @inject ICatalogoService CatalogoServicio
 @attribute [Authorize(Policy = "Programacion")]
+@rendermode InteractiveServer
 <PageTitle>Catálogo</PageTitle>
 
 <div class="page-shell">
@@ -31,32 +32,94 @@ else if (ErrorCarga is not null)
         <button type="button" class="btn btn-sm btn-outline-danger ms-2" @onclick="Cargar">Reintentar</button>
     </div>
 }
-else if (!Eventos.Any())
-{
-    <div class="empty-state" role="status">Todavía no hay eventos registrados.</div>
-}
 else
 {
-    <div class="row g-3">
-        @foreach (EventoDTO evento in Eventos)
-        {
-            <div class="col-12 col-md-6 col-xl-3">
-                <TarjetaResumen Titulo="@evento.Titulo"
-                               Tipo="@TextoTipo(evento.Tipo)"
-                               IconoClase="@IconoTipo(evento.Tipo)"
-                               Detalle="@Detalle(evento)"
-                               Inactivo="@(!evento.Activo)"
-                               Enlace="@($"admin/catalogo/editar/{evento.Id}")" />
-            </div>
-        }
+    @if (MensajeAccion is not null)
+    {
+        <div class="alert alert-danger" role="alert" aria-live="assertive">@MensajeAccion</div>
+    }
+
+    <div class="filter-panel row g-3 align-items-end mx-0">
+        <div class="col-6 col-md-3">
+            <label for="filtroTipo" class="form-label">Tipo</label>
+            <select id="filtroTipo" class="form-select" @bind="FiltroTipo">
+                <option value="">Todos</option>
+                <option value="PELICULA">Película</option>
+                <option value="OBRA_TEATRO">Obra de teatro</option>
+                <option value="ACTIVIDAD_CULTURAL">Actividad cultural</option>
+            </select>
+        </div>
+        <div class="col-6 col-md-3">
+            <label for="filtroEstado" class="form-label">Estado</label>
+            <select id="filtroEstado" class="form-select" @bind="FiltroActivo">
+                <option value="">Todos</option>
+                <option value="activos">Activos</option>
+                <option value="inactivos">Inactivos</option>
+            </select>
+        </div>
     </div>
+
+    @if (!EventosFiltrados.Any())
+    {
+        <div class="empty-state" role="status">No hay eventos que coincidan con los filtros.</div>
+    }
+    else
+    {
+        <div class="row g-3">
+            @foreach (EventoDTO evento in EventosFiltrados)
+            {
+                <div class="col-12 col-md-6 col-xl-3">
+                    <TarjetaResumen Titulo="@evento.Titulo"
+                                   Tipo="@TextoTipo(evento.Tipo)"
+                                   IconoClase="@IconoTipo(evento.Tipo)"
+                                   Detalle="@Detalle(evento)"
+                                   Inactivo="@(!evento.Activo)"
+                                   Enlace="@($"admin/catalogo/editar/{evento.Id}")"
+                                   AccionSecundariaTexto="@(evento.Activo ? "Desactivar" : "Reactivar")"
+                                   AccionSecundariaVariante="@(evento.Activo ? "outline-danger" : "outline-success")"
+                                   OnAccionSecundaria="() => PedirConfirmacion(evento)" />
+                </div>
+            }
+        </div>
+    }
 }
 </div>
+
+<ModalConfirmacion Visible="EventoAConfirmar != null"
+                   Titulo="@(EventoAConfirmar != null && EventoAConfirmar.Activo ? "¿Desactivar evento?" : "¿Reactivar evento?")"
+                   Variante="@(EventoAConfirmar != null && EventoAConfirmar.Activo ? "danger" : "success")"
+                   Icono="@(EventoAConfirmar != null && EventoAConfirmar.Activo ? "bi-exclamation-triangle" : "bi-check-circle")"
+                   TextoConfirmar="@(EventoAConfirmar != null && EventoAConfirmar.Activo ? "Sí, desactivar" : "Sí, reactivar")"
+                   Procesando="Procesando"
+                   OnConfirmar="ConfirmarCambioEstado"
+                   OnCancelar="() => EventoAConfirmar = null">
+    @if (EventoAConfirmar != null)
+    {
+        @if (EventoAConfirmar.Activo)
+        {
+            <p class="mb-0">
+                <strong>@EventoAConfirmar.Titulo</strong> dejará de mostrarse en la Cartelera para los clientes.
+                Las funciones ya programadas no se cancelan automáticamente.
+            </p>
+        }
+        else
+        {
+            <p class="mb-0"><strong>@EventoAConfirmar.Titulo</strong> volverá a mostrarse en la Cartelera.</p>
+        }
+    }
+</ModalConfirmacion>
 
 @code {
     private bool Cargando = true;
     private string? ErrorCarga;
+    private string? MensajeAccion;
     private List<EventoDTO> Eventos = new();
+
+    private string FiltroTipo = "";
+    private string FiltroActivo = "";
+
+    private EventoDTO? EventoAConfirmar;
+    private bool Procesando;
 
     protected override async Task OnInitializedAsync()
     {
@@ -70,7 +133,7 @@ else
         try
         {
             // A diferencia de Cartelera (publica), el admin necesita ver tambien los eventos
-            // inactivos para poder reactivarlos editandolos.
+            // inactivos para poder reactivarlos.
             Eventos = (await CatalogoServicio.ListarEventos())
                 .OrderByDescending(e => e.Activo)
                 .ThenBy(e => e.Titulo)
@@ -83,6 +146,50 @@ else
         finally
         {
             Cargando = false;
+        }
+    }
+
+    private IEnumerable<EventoDTO> EventosFiltrados => Eventos.Where(e =>
+        (string.IsNullOrEmpty(FiltroTipo) || e.Tipo == FiltroTipo) &&
+        (FiltroActivo == "" || (FiltroActivo == "activos") == e.Activo));
+
+    private void PedirConfirmacion(EventoDTO evento)
+    {
+        MensajeAccion = null;
+        EventoAConfirmar = evento;
+    }
+
+    private async Task ConfirmarCambioEstado()
+    {
+        if (EventoAConfirmar == null) return;
+
+        Procesando = true;
+        try
+        {
+            if (EventoAConfirmar.Activo)
+            {
+                await CatalogoServicio.EliminarEvento(EventoAConfirmar.Id);
+            }
+            else
+            {
+                // Reactivar: ActualizarEvento reconstruye el evento completo desde el DTO, asi que
+                // se trae el evento completo primero y solo se cambia Activo, para no perder datos.
+                EventoDTO completo = await CatalogoServicio.ObtenerEvento(EventoAConfirmar.Id);
+                completo.Activo = true;
+                await CatalogoServicio.ActualizarEvento(completo);
+            }
+
+            EventoAConfirmar = null;
+            await Cargar();
+        }
+        catch (Exception ex)
+        {
+            MensajeAccion = ex.Message;
+            EventoAConfirmar = null;
+        }
+        finally
+        {
+            Procesando = false;
         }
     }
 
