@@ -9,11 +9,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class AdministradorMapper {
+    private AdministradorMapper() { }
 
-    private AdministradorMapper() {
-    }
-
-    //contraseña NO se copia.
     public static AdministradorDTO toDTO(Administrador administrador) {
         if (administrador == null) {
             return null;
@@ -37,7 +34,6 @@ public final class AdministradorMapper {
         return dtos;
     }
 
-    //El DTO debe traer la contraseña
     public static Administrador toModelo(AdministradorDTO dto) throws BLException {
         try {
             Administrador administrador = new Administrador(dto.getId(), dto.getNombres(), dto.getApellidos(),

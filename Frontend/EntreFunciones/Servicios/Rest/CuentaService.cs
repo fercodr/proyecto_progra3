@@ -9,9 +9,7 @@ namespace EntreFunciones.Servicios.Rest
         private readonly AuthenticationStateProvider _auth;
         private readonly string _baseUrl;
 
-        public CuentaService(
-            IConfiguration config,
-            AuthenticationStateProvider auth)
+        public CuentaService(IConfiguration config, AuthenticationStateProvider auth)
         {
             _config = config;
             _auth = auth;
@@ -19,16 +17,9 @@ namespace EntreFunciones.Servicios.Rest
                 ?? throw new InvalidOperationException("Falta configurar Rest:BaseUrl.");
         }
 
-        // Autenticar: 200 -> true
-        // 401 -> false
         public async Task<SesionDTO?> Autenticar(string correo, string contrasena)
         {
-            CredencialesDTO credenciales = new()
-            {
-                Correo = correo,
-                Contrasena = contrasena
-            };
-
+            CredencialesDTO credenciales = new() { Correo = correo, Contrasena = contrasena };
             try
             {
                 return await HttpUtils.DoPost<CredencialesDTO, SesionDTO>(
@@ -40,7 +31,6 @@ namespace EntreFunciones.Servicios.Rest
             }
         }
 
-        // Buscar la cuenta por correo
         public async Task<CuentaUsuarioDTO> FindByCorreo(string correo)
         {
             return await HttpUtils.DoGet<CuentaUsuarioDTO>(
@@ -48,7 +38,6 @@ namespace EntreFunciones.Servicios.Rest
                 cabeceras: await CrearCabeceras());
         }
 
-        // Obtener el rol: se pregunta rol por rol; el que responda 200 es el rol
         public async Task<string?> ObtenerRol(string correo)
         {
             try
@@ -58,10 +47,7 @@ namespace EntreFunciones.Servicios.Rest
                     cabeceras: await CrearCabeceras());
                 return "Administrador";
             }
-            catch (ServiceException)
-            {
-
-            }
+            catch (ServiceException) { }
 
             try
             {
@@ -70,10 +56,7 @@ namespace EntreFunciones.Servicios.Rest
                     cabeceras: await CrearCabeceras());
                 return "Cliente";
             }
-            catch (ServiceException)
-            {
-
-            }
+            catch (ServiceException) { }
 
             return null;
         }
@@ -82,9 +65,7 @@ namespace EntreFunciones.Servicios.Rest
         {
             RecuperarContrasenaDTO dto = new()
             {
-                Correo = correo,
-                Dni = dni,
-                ContrasenaNueva = contrasenaNueva
+                Correo = correo, Dni = dni, ContrasenaNueva = contrasenaNueva
             };
             await HttpUtils.DoPost<RecuperarContrasenaDTO>(
                 _baseUrl + "cuentas/recuperar", dto);
@@ -92,9 +73,7 @@ namespace EntreFunciones.Servicios.Rest
 
         private async Task<IReadOnlyDictionary<string, string>> CrearCabeceras()
         {
-            return await HttpUtils.CrearCabecerasAutenticadas(
-                _config,
-                _auth);
+            return await HttpUtils.CrearCabecerasAutenticadas(_config, _auth);
         }
     }
 }
