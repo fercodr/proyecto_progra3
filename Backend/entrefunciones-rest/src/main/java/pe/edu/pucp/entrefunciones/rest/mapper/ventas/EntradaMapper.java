@@ -30,7 +30,7 @@ public final class EntradaMapper {
         }
 
         if (entrada.getButaca() != null) {
-            dto.setButacaIdentificador(entrada.getButaca().getIdentificador());
+            dto.setButacaIdentificador(entrada.getButaca().getFila() + entrada.getButaca().getColumna());
         }
 
         return dto;

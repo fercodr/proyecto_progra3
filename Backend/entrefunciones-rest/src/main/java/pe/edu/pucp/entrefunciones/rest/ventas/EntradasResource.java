@@ -10,6 +10,9 @@ import pe.edu.pucp.entrefunciones.bl.error.NoEncontradoException;
 import pe.edu.pucp.entrefunciones.bl.error.ValidacionException;
 import pe.edu.pucp.entrefunciones.bl.ventas.EntradaBL;
 import pe.edu.pucp.entrefunciones.bl.impl.ventas.EntradaBLImpl;
+import pe.edu.pucp.entrefunciones.dao.impl.ventas.EntradaDAOImpl;
+import pe.edu.pucp.entrefunciones.dao.impl.ventas.ReservaDAOImpl;
+import pe.edu.pucp.entrefunciones.dao.impl.espacios.ButacaDAOImpl;
 import pe.edu.pucp.entrefunciones.rest.dto.ventas.EntradaDTO;
 import pe.edu.pucp.entrefunciones.rest.mapper.ventas.EntradaMapper;
 
@@ -28,7 +31,7 @@ public class EntradasResource {
     private SecurityContext securityContext;
 
     public EntradasResource() {
-        entradaBL = new EntradaBLImpl();
+        entradaBL = new EntradaBLImpl(new EntradaDAOImpl(new ReservaDAOImpl(), new ButacaDAOImpl()));
     }
 
     // GET /entradas | /entradas?idReserva=5
