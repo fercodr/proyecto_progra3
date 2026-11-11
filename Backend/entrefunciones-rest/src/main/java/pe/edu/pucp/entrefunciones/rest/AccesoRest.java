@@ -110,6 +110,11 @@ public class AccesoRest implements ContainerRequestFilter {
                 && "cuentas/login".equals(ruta)) {
             return true;
         }
+        if ("POST".equalsIgnoreCase(request.getMethod())
+                && ("cuentas/recuperar".equals(ruta)
+                    || "clientes".equals(ruta))) {
+            return true;
+        }
         if (!"GET".equalsIgnoreCase(request.getMethod())) {
             return false;
         }

@@ -77,8 +77,6 @@ namespace EntreFunciones.Servicios.Rest
                 EstadoAuditoria = dto.Estado
             };
         }
-
-
         private static FuncionDTO? ToFuncionDTO(FuncionViewModel? modelo)
         {
             return modelo is null ? null : new FuncionDTO

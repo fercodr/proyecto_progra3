@@ -54,7 +54,7 @@ namespace EntreFunciones.Seguridad
 
         // Opciones del menú desplegable del nombre de usuario.
         public static readonly List<OpcionMenu> MenuCuenta = [
-            // new OpcionMenu { Texto = "Mi perfil", Href = "perfil", Permiso = "PerfilCliente" }
+            new OpcionMenu { Texto = "Mi perfil", Href = "perfil", Permiso = "PerfilCliente" }
         ];
 
         private static bool TienePermiso(ClaimsPrincipal usuario, string permiso)

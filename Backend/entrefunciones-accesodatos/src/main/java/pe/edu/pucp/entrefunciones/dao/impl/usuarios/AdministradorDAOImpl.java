@@ -150,11 +150,7 @@ public class AdministradorDAOImpl extends UsuarioDAOImpl<Administrador> implemen
 
             cmd.registerOutParameter("p_id", Types.INTEGER);
 
-            if (cmd.executeUpdate() == 0) {
-                throw new SQLException(
-                        "No se pudo insertar el administrador"
-                );
-            }
+            cmd.executeUpdate();
 
             administrador.setId(cmd.getInt("p_id"));
         }
@@ -190,11 +186,7 @@ public class AdministradorDAOImpl extends UsuarioDAOImpl<Administrador> implemen
             );
             cmd.setInt("p_id", administrador.getId());
 
-            if (cmd.executeUpdate() == 0) {
-                throw new SQLException(
-                        "No se pudo actualizar el administrador"
-                );
-            }
+            cmd.executeUpdate();
         }
     }
 }

@@ -5,6 +5,8 @@ namespace EntreFunciones.ViewModels
         public string Titulo { get; set; } = string.Empty;
         public DateOnly Fecha { get; set; }
         public TimeOnly HoraInicio { get; set; }
+        public TimeOnly HoraFin { get; set; }
+        public string Idioma { get; set; } = string.Empty;
         public string Sede { get; set; } = string.Empty;
         public string Sala { get; set; } = string.Empty;
         public string Estado { get; set; } = string.Empty;
@@ -19,6 +21,6 @@ namespace EntreFunciones.ViewModels
         public decimal? PorcentajeOcupacion { get; set; }
 
         public string Presentacion =>
-            $"{Titulo} · {Fecha:dd/MM}, {HoraInicio:HH\\:mm} · {Sede} / {Sala}";
+            $"{Titulo} · {Fecha:dd/MM}, {HoraInicio:HH\\:mm}-{HoraFin:HH\\:mm} · {Sede} / {Sala}";
     }
 }

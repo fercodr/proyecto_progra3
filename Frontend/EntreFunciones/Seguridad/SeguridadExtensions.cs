@@ -29,6 +29,8 @@ namespace EntreFunciones.Seguridad
             services.AddHttpContextAccessor();
             services.AddScoped<ICuentaService, CuentaService>();
             services.AddScoped<ISesionService, SesionServiceImpl>();
+            services.AddScoped<IClienteService, ClienteService>();
+            services.AddScoped<IGestionAdministradorService, GestionAdministradorService>();
         }
 
         public static void MapSesionEndpoints(this IEndpointRouteBuilder app)

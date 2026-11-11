@@ -102,7 +102,7 @@
                     <SummeryCard Atribute="Asistentes"
                                  Amount="@TotalAsistentes"
                                  AmountText="@(AsistenciaDisponible ? null : "No disponible")"
-                                 Unit="personas" />
+                                 Unit="@(AsistenciaDisponible ? "personas" : string.Empty)" />
                 </div>
             </div>
         </div>
@@ -202,10 +202,11 @@
     private decimal TotalIngresos => resultados.Sum(x => x.IngresosValidos ?? 0m);
     private int TotalEntradasNoCanceladas => resultados.Sum(x => x.EntradasNoCanceladas ?? 0);
     private int TotalAsistentes => resultados.Sum(x => x.Asistentes ?? 0);
-    private bool AsistenciaDisponible => resultados.All(x => x.Asistentes.HasValue);
+    private bool AsistenciaDisponible => resultados.Count > 0 && resultados.All(x => x.Asistentes.HasValue);
 
     protected override async Task OnInitializedAsync()
     {
+        errorCatalogos = null;
         cargandoCatalogos = true;
         try
         {
@@ -226,6 +227,7 @@
     private async Task CambiarSede()
     {
         salaSeleccionada = null;
+        errorCatalogos = null;
         cargandoSalas = true;
         try
         {
@@ -282,7 +284,7 @@
     }
 
     private static string TituloFuncion(FuncionViewModel funcion)
-        => $"{funcion.Evento?.Titulo ?? funcion.Titulo} / {funcion.Fecha:dd/MM}, {funcion.HoraInicio:HH\\:mm}";
+        => $"{funcion.Evento?.Titulo ?? funcion.Titulo} / {funcion.Fecha:dd/MM}, {funcion.HoraInicio:HH\\:mm}-{funcion.HoraFin:HH\\:mm}";
 
     private static string TituloFecha(FuncionViewModel funcion)
         => $"{funcion.Evento?.Titulo ?? funcion.Titulo} / {funcion.Fecha:dd/MM/yyyy}";

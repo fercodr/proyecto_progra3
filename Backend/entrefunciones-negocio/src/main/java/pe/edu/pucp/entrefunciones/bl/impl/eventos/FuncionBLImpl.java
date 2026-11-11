@@ -15,6 +15,8 @@ import pe.edu.pucp.entrefunciones.modelo.catalogo.Funcion;
 
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 
 public class FuncionBLImpl implements FuncionBL {
@@ -88,7 +90,20 @@ public class FuncionBLImpl implements FuncionBL {
                     throw new ValidacionException("La sala no pertenece a la sede indicada");
                 }
             }
-            return funcionDAO.findReportes(desde, hasta, idSede, idSala);
+            List<Funcion> resultados = funcionDAO.findReportes(desde, hasta, idSede, idSala);
+            for (Funcion funcion : resultados) {
+                int aforo = funcion.getSala() == null ? 0 : funcion.getSala().getAforo();
+                Integer entradas = funcion.getEntradasNoCanceladas();
+                if (aforo <= 0 || entradas == null) {
+                    funcion.setPorcentajeOcupacion(null);
+                } else {
+                    funcion.setPorcentajeOcupacion(
+                            BigDecimal.valueOf(entradas)
+                                    .multiply(BigDecimal.valueOf(100))
+                                    .divide(BigDecimal.valueOf(aforo), 2, RoundingMode.HALF_UP));
+                }
+            }
+            return resultados;
         } catch (SQLException e) {
             throw new BLException("No se pudo consultar el reporte de funciones", e);
         }

@@ -263,7 +263,7 @@ public class FuncionDAOImpl implements FuncionDAO {
         funcion.setEntradasCanceladas(rs.getInt("entradas_canceladas"));
         BigDecimal ingresos = rs.getBigDecimal("ingresos_validos");
         funcion.setIngresosValidos(ingresos == null ? BigDecimal.ZERO : ingresos);
-        funcion.setAsistentes(rs.getInt("asistentes"));
+        funcion.setAsistentes((Integer) rs.getObject("asistentes"));
         funcion.setPorcentajeOcupacion(
                 rs.getBigDecimal("porcentaje_ocupacion"));
 

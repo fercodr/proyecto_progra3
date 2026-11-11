@@ -588,12 +588,9 @@ BEGIN
            se.activo AS sede_activo,
            COALESCE(ent.entradas_no_canceladas, 0) AS entradas_no_canceladas,
            COALESCE(ent.entradas_canceladas, 0) AS entradas_canceladas,
-           COALESCE(ent.asistentes, 0) AS asistentes,
+           ent.asistentes AS asistentes,
            COALESCE(pg.ingresos_validos, 0.00) AS ingresos_validos,
-           CASE WHEN s.aforo > 0
-                THEN ROUND(COALESCE(ent.entradas_no_canceladas, 0) * 100.0 / s.aforo, 2)
-                ELSE NULL
-           END AS porcentaje_ocupacion
+           CAST(NULL AS DECIMAL(8,2)) AS porcentaje_ocupacion
     FROM funcion f
     JOIN evento e ON e.id = f.evento_id
     LEFT JOIN v_eventos v ON v.id = e.id

@@ -60,7 +60,7 @@ namespace EntreFunciones.Servicios.Rest
             }
             catch (ServiceException)
             {
-             
+
             }
 
             try
@@ -72,11 +72,24 @@ namespace EntreFunciones.Servicios.Rest
             }
             catch (ServiceException)
             {
-                
+
             }
 
             return null;
         }
+
+        public async Task Recuperar(string correo, string dni, string contrasenaNueva)
+        {
+            RecuperarContrasenaDTO dto = new()
+            {
+                Correo = correo,
+                Dni = dni,
+                ContrasenaNueva = contrasenaNueva
+            };
+            await HttpUtils.DoPost<RecuperarContrasenaDTO>(
+                _baseUrl + "cuentas/recuperar", dto);
+        }
+
         private async Task<IReadOnlyDictionary<string, string>> CrearCabeceras()
         {
             return await HttpUtils.CrearCabecerasAutenticadas(

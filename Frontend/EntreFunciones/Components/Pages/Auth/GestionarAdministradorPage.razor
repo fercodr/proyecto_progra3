@@ -1,7 +1,11 @@
 ﻿@page "/admin/usuarios/administradores/nuevo"
 @attribute [Authorize(Policy = "UsuariosRoles")]
 @using System.Text.RegularExpressions
+@using EntreFunciones.DTOSS.Usuarios
+@using EntreFunciones.Servicios
+@using EntreFunciones.Servicios.Rest
 @inject NavigationManager Nav
+@inject IGestionAdministradorService AdministradorService
 
 <PageTitle>Nuevo administrador</PageTitle>
 
@@ -18,6 +22,10 @@
 {
     <div class="alert alert-danger" role="alert" aria-live="assertive">Revisa los campos marcados en rojo.</div>
 }
+@if (!string.IsNullOrEmpty(ErrorServidor))
+{
+    <div class="alert alert-danger" role="alert" aria-live="assertive">@ErrorServidor</div>
+}
 
 <form @onsubmit="Guardar">
     <div class="mb-3">
@@ -25,6 +33,11 @@
         <input id="codigoEmpleado" class="form-control @Clase("CodigoEmpleado")" placeholder="EMP-0000"
                @bind="CodigoEmpleado" @bind:event="oninput" />
         <div class="invalid-feedback">@Errores.GetValueOrDefault("CodigoEmpleado")</div>
+    </div>
+    <div class="mb-3">
+        <label for="dniAdministrador" class="form-label">DNI</label>
+        <input id="dniAdministrador" inputmode="numeric" maxlength="8" class="form-control @Clase("Dni")" @bind="Dni" @bind:event="oninput" />
+        <div class="invalid-feedback">@Errores.GetValueOrDefault("Dni")</div>
     </div>
     <div class="mb-3">
         <label for="nombresAdministrador" class="form-label">Nombres</label>
@@ -59,12 +72,14 @@
 
 @code {
     private string CodigoEmpleado { get; set; } = string.Empty;
+    private string Dni { get; set; } = string.Empty;
     private string Nombres { get; set; } = string.Empty;
     private string Apellidos { get; set; } = string.Empty;
     private string Correo { get; set; } = string.Empty;
     private string Password { get; set; } = string.Empty;
     private bool IsActivo { get; set; } = true;
     private Dictionary<string, string> Errores { get; set; } = new();
+    private string? ErrorServidor { get; set; }
 
     private string Clase(string campo) => Errores.ContainsKey(campo) ? "is-invalid" : "";
 
@@ -74,6 +89,10 @@
         if (!Regex.IsMatch(CodigoEmpleado, @"^EMP-\d{4}$"))
         {
             Errores["CodigoEmpleado"] = "Formato esperado: EMP-0000";
+        }
+        if (!Regex.IsMatch(Dni, @"^\d{8}$"))
+        {
+            Errores["Dni"] = "El DNI debe tener 8 dígitos";
         }
         if (string.IsNullOrWhiteSpace(Nombres))
         {
@@ -102,22 +121,34 @@
         return Errores.Count == 0;
     }
 
-    private void Guardar()
+    private async Task Guardar()
     {
+        ErrorServidor = null;
         if (!Validar())
         {
             return;
         }
-        // Simulación: se agrega a la lista en memoria (se pierde al reiniciar la app).
-        DatosDemo.Administradores.Add(new AdministradorDemo
+
+        AdministradorDTO nuevo = new()
         {
-            Id = DatosDemo.Administradores.Max(a => a.Id) + 1,
-            CodigoEmpleado = CodigoEmpleado,
-            Nombres = Nombres,
-            Apellidos = Apellidos,
-            Correo = Correo,
-            IsActivo = IsActivo
-        });
-        Nav.NavigateTo("/admin/usuarios?pestana=administradores");
+            CodigoEmpleado = CodigoEmpleado.Trim(),
+            Dni = Dni,
+            Nombres = Nombres.Trim(),
+            Apellidos = Apellidos.Trim(),
+            Correo = Correo.Trim(),
+            Contrasena = Password,
+            Activo = IsActivo
+        };
+
+        try
+        {
+            // POST /administradores: Java valida, cifra la contraseña y guarda
+            await AdministradorService.Registrar(nuevo);
+            Nav.NavigateTo("/admin/usuarios?pestana=administradores");
+        }
+        catch (ServiceException ex)
+        {
+            ErrorServidor = ex.Message;   // p. ej. "Ya existe una cuenta con ese correo"
+        }
     }
 }

@@ -77,7 +77,7 @@ public class FuncionesResource {
             List<FuncionDTO> resultado = FuncionMapper.toDTOs(
                     funcionBL.findReportes(desde, hasta, sedeId, salaId));
             return Response.ok(resultado).build();
-        } catch (DateTimeParseException | IllegalArgumentException ex) {
+        } catch (DateTimeParseException ex) {
             return error(Response.Status.BAD_REQUEST,
                     new BLException("Las fechas deben tener formato yyyy-MM-dd"));
         } catch (ValidacionException ex) {
@@ -183,7 +183,7 @@ public class FuncionesResource {
 
     private Response error(Response.Status status, Exception ex) {
         return Response.status(status)
-                .entity(Map.of("error", ex.getMessage()))
+                .entity(Map.of("mensaje", ex.getMessage()))
                 .build();
     }
 }

@@ -32,6 +32,7 @@ namespace EntreFunciones.Servicios.Rest
                 Titulo = dto.Titulo,
                 Fecha = dto.Fecha,
                 HoraInicio = dto.HoraInicio,
+                HoraFin = TimeOnly.MinValue,
                 Sede = dto.Sede,
                 Sala = dto.Sala,
                 Estado = dto.Estado
@@ -48,6 +49,14 @@ namespace EntreFunciones.Servicios.Rest
             {
                 throw new ArgumentException(
                     "La fecha desde no puede ser posterior a hasta.");
+            }
+            if (idSede is <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(idSede));
+            }
+            if (idSala is <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(idSala));
             }
 
             Dictionary<string, string?> parametros = new()
@@ -70,12 +79,15 @@ namespace EntreFunciones.Servicios.Rest
         {
             DateOnly.TryParse(dto.Fecha, out DateOnly fecha);
             TimeOnly.TryParse(dto.HoraInicio, out TimeOnly horaInicio);
+            TimeOnly.TryParse(dto.HoraFin, out TimeOnly horaFin);
             FuncionViewModel modelo = new FuncionViewModel
             {
                 Id = dto.Id,
                 Titulo = dto.TituloEvento ?? string.Empty,
                 Fecha = fecha,
                 HoraInicio = horaInicio,
+                HoraFin = horaFin,
+                Idioma = dto.Idioma ?? string.Empty,
                 Sede = dto.NombreSede ?? string.Empty,
                 Sala = dto.NombreSala ?? string.Empty,
                 Estado = dto.Estado ?? string.Empty
