@@ -137,6 +137,57 @@ public class ButacaDAOImpl implements ButacaDAO {
         }
     }
 
+    /**
+     * Inserta todas las butacas de una sala en un solo batch, dentro de la transacción activa.
+     * Pensado para ser llamado desde SalaDAOImpl.insert una vez que la sala ya tiene su id.
+     */
+    @Override
+    public void insertButacas(int salaId, List<Butaca> butacas) throws SQLException {
+        validarId(salaId);
+        if (butacas == null || butacas.isEmpty()) {
+            return;
+        }
+        String sql = """
+                INSERT INTO butaca (sala_id, fila, columna, tipo_butaca, activo)
+                VALUES (?, ?, ?, ?, ?)
+                """;
+        Connection conn = TransactionsManager.getConnection();
+        try (PreparedStatement cmd = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            for (Butaca butaca : butacas) {
+                if (butaca == null) {
+                    throw new IllegalArgumentException("La butaca no puede ser nula");
+                }
+                cmd.setInt(1, salaId);
+                cmd.setString(2, butaca.getFila());
+                cmd.setInt(3, butaca.getColumna());
+                cmd.setString(4, butaca.getTipoButaca());
+                cmd.setBoolean(5, butaca.estaActivo());
+                cmd.addBatch();
+            }
+            cmd.executeBatch();
+
+            // Los ids se devuelven en el mismo orden en que se agregaron al batch
+            try (ResultSet keys = cmd.getGeneratedKeys()) {
+                int i = 0;
+                while (i < butacas.size() && keys.next()) {
+                    butacas.get(i++).setId(keys.getInt(1));
+                }
+            }
+        }
+    }
+
+    /** Elimina todas las butacas de una sala (dentro de la transacción activa). */
+    @Override
+    public void deleteButacas(int salaId) throws SQLException {
+        validarId(salaId);
+        String sql = "DELETE FROM butaca WHERE sala_id = ?";
+        Connection conn = TransactionsManager.getConnection();
+        try (PreparedStatement cmd = conn.prepareStatement(sql)) {
+            cmd.setInt(1, salaId);
+            cmd.executeUpdate();
+        }
+    }
+
     @Override
     public void update(Butaca butaca) throws SQLException {
         validarButaca(butaca);

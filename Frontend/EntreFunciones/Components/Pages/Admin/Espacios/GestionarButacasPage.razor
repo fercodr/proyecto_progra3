@@ -13,98 +13,105 @@
 <PageTitle>Butacas</PageTitle>
 
 <div class="page-shell">
-<div class="page-header">
-    <div>
-        <h1 class="page-title">Butacas · @Sala.Nombre</h1>
-        <p class="page-description">@Sala.NombreSede · @Sala.TipoSala · Aforo @Sala.Aforo · @Butacas.Count(b => b.IsActivo) butacas activas</p>
-    </div>
-    <div class="d-flex flex-wrap gap-2 align-items-start">
-        <a class="btn btn-outline-secondary" href="admin/salas">Volver</a>
-        <button type="button" class="btn btn-primary" @onclick="NuevaButaca">Nueva butaca</button>
-    </div>
-</div>
-
-@if (MensajeError != null) {
-    <div class="alert alert-danger" role="alert" aria-live="assertive">@MensajeError</div>
-}
-
-<div class="row g-4">
-    <div class="col-lg-8">
-        <div class="card">
-            <div class="card-body">
-                <div class="pantalla">PANTALLA / ESCENARIO</div>
-                <div class="mapa">
-                    @foreach (string fila in Filas) {
-                        <div class="fila">
-                            <span class="etiqueta-fila">@fila</span>
-                            @foreach (ButacaViewModel butaca in Butacas.Where(b => b.Fila == fila).OrderBy(b => b.Columna)) {
-                                <button type="button" class="@ClaseButaca(butaca)" title="@butaca.Codigo"
-                                        aria-label="@DescripcionButaca(butaca)" aria-pressed="@(butaca.Id == IdSeleccionada)"
-                                        @onclick="() => SeleccionarButaca(butaca)">
-                                    @butaca.Columna
-                                </button>
-                                @if (butaca.Columna == ColumnaPasillo) {
-                                    <span class="pasillo"></span>
-                                }
-                            }
-                            <span class="etiqueta-fila">@fila</span>
-                        </div>
-                    }
-                </div>
-                <div class="d-flex flex-wrap gap-3 justify-content-center mt-4 small">
-                    <span><span class="muestra general"></span> General</span>
-                    <span><span class="muestra preferencial"></span> Preferencial</span>
-                    <span><span class="muestra accesible"></span> Accesible</span>
-                    <span><span class="muestra inactiva"></span> Inactiva</span>
-                    <span><span class="muestra seleccionada"></span> Seleccionada</span>
-                </div>
-            </div>
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Butacas · @Sala.Nombre</h1>
+            <p class="page-description">@Sala.NombreSede · @Sala.TipoSala · Aforo @Sala.Aforo · @Butacas.Count(b => b.IsActivo) butacas activas</p>
+        </div>
+        <div class="d-flex flex-wrap gap-2 align-items-start">
+            <a class="btn btn-outline-secondary" href="admin/salas">Volver</a>
+            <button type="button" class="btn btn-primary" @onclick="NuevaButaca">Nueva butaca</button>
         </div>
     </div>
 
-    <div class="col-lg-4">
-        @if (ViewModel == null) {
-            <div class="alert alert-info" role="status">Selecciona una butaca del mapa para editarla o presiona <strong>Nueva butaca</strong>.</div>
-        }
-        else {
-            <h2 class="h5 mb-3">@(EsNueva ? "Nueva butaca" : $"Editar butaca {ViewModel.Codigo}")</h2>
+    @if (MensajeError != null)
+    {
+        <div class="alert alert-danger" role="alert" aria-live="assertive">@MensajeError</div>
+    }
 
-            <EditForm Model="ViewModel" OnValidSubmit="Guardar">
-                <DataAnnotationsValidator />
-                <ValidationSummary />
-
-                <div class="row">
-                    <div class="col-6 mb-3">
-                        <label for="filaButaca" class="form-label">Fila</label>
-                        <InputText id="filaButaca" class="form-control" @bind-Value="ViewModel.Fila" />
-                        <ValidationMessage For="() => ViewModel.Fila" />
-                    </div>
-                    <div class="col-6 mb-3">
-                        <label for="columnaButaca" class="form-label">Columna</label>
-                        <InputNumber id="columnaButaca" class="form-control" @bind-Value="ViewModel.Columna" />
-                        <ValidationMessage For="() => ViewModel.Columna" />
-                    </div>
-                </div>
-                <div class="mb-3">
-                    <label for="tipoButaca" class="form-label">Tipo de butaca</label>
-                    <InputSelect id="tipoButaca" class="form-select" @bind-Value="ViewModel.TipoButaca">
-                        @foreach (string tipo in DatosEspaciosDemo.TiposButaca) {
-                            <option value="@tipo">@tipo</option>
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-body">
+                    <div class="pantalla">PANTALLA / ESCENARIO</div>
+                    <div class="mapa">
+                        @foreach (string fila in Filas)
+                        {
+                            <div class="fila">
+                                <span class="etiqueta-fila">@fila</span>
+                                @foreach (ButacaViewModel butaca in Butacas.Where(b => b.Fila == fila).OrderBy(b => b.Columna))
+                                {
+                                    <button type="button" class="@ClaseButaca(butaca)" title="@butaca.Codigo"
+                                            aria-label="@DescripcionButaca(butaca)" aria-pressed="@(butaca.Id == IdSeleccionada)"
+                                            @onclick="() => SeleccionarButaca(butaca)">
+                                        @butaca.Columna
+                                    </button>
+                                    @if (butaca.Columna == ColumnaPasillo)
+                                    {
+                                        <span class="pasillo"></span>
+                                    }
+                                }
+                                <span class="etiqueta-fila">@fila</span>
+                            </div>
                         }
-                    </InputSelect>
-                    <ValidationMessage For="() => ViewModel.TipoButaca" />
+                    </div>
+                    <div class="d-flex flex-wrap gap-3 justify-content-center mt-4 small">
+                        <span><span class="muestra general"></span> General</span>
+                        <span><span class="muestra preferencial"></span> Preferencial</span>
+                        <span><span class="muestra accesible"></span> Accesible</span>
+                        <span><span class="muestra inactiva"></span> Inactiva</span>
+                        <span><span class="muestra seleccionada"></span> Seleccionada</span>
+                    </div>
                 </div>
-                <div class="form-check mb-3">
-                    <InputCheckbox id="butacaActiva" class="form-check-input" @bind-Value="ViewModel.IsActivo" />
-                    <label for="butacaActiva" class="form-check-label">Activo</label>
-                </div>
+            </div>
+        </div>
 
-                <button type="submit" class="btn btn-primary">Guardar</button>
-                <button type="button" class="btn btn-outline-secondary" @onclick="Cancelar">Cancelar</button>
-            </EditForm>
-        }
+        <div class="col-lg-4">
+            @if (ViewModel == null)
+            {
+                <div class="alert alert-info" role="status">Selecciona una butaca del mapa para editarla o presiona <strong>Nueva butaca</strong>.</div>
+            }
+            else
+            {
+                <h2 class="h5 mb-3">@(EsNueva ? "Nueva butaca" : $"Editar butaca {ViewModel.Codigo}")</h2>
+
+                <EditForm Model="ViewModel" OnValidSubmit="Guardar">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label for="filaButaca" class="form-label">Fila</label>
+                            <InputText id="filaButaca" class="form-control" @bind-Value="ViewModel.Fila" />
+                            <ValidationMessage For="() => ViewModel.Fila" />
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label for="columnaButaca" class="form-label">Columna</label>
+                            <InputNumber id="columnaButaca" class="form-control" @bind-Value="ViewModel.Columna" />
+                            <ValidationMessage For="() => ViewModel.Columna" />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="tipoButaca" class="form-label">Tipo de butaca</label>
+                        <InputSelect id="tipoButaca" class="form-select" @bind-Value="ViewModel.TipoButaca">
+                            @foreach (string tipo in DatosEspaciosDemo.TiposButaca)
+                            {
+                                <option value="@tipo">@tipo</option>
+                            }
+                        </InputSelect>
+                        <ValidationMessage For="() => ViewModel.TipoButaca" />
+                    </div>
+                    <div class="form-check mb-3">
+                        <InputCheckbox id="butacaActiva" class="form-check-input" @bind-Value="ViewModel.IsActivo" />
+                        <label for="butacaActiva" class="form-check-label">Activo</label>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                    <button type="button" class="btn btn-outline-secondary" @onclick="Cancelar">Cancelar</button>
+                </EditForm>
+            }
+        </div>
     </div>
-</div>
 </div>
 
 @code {
@@ -122,60 +129,77 @@
     private string? MensajeError { get; set; }
     private bool EsNueva => ViewModel != null && IdSeleccionada == null;
 
-    protected override async Task OnParametersSetAsync() {
-        try {
+    protected override async Task OnParametersSetAsync()
+    {
+        try
+        {
             Sala = await SalaService.FindById(IdSala);
             Butacas = await ButacaService.FindBySala(IdSala);
-        } catch (ServiceException) {
+        }
+        catch (ServiceException)
+        {
             Nav.NavigateTo("/admin/salas");
             return;
         }
-
         ViewModel = null;
         IdSeleccionada = null;
         MensajeError = null;
     }
 
-    private void SeleccionarButaca(ButacaViewModel butaca) {
+    private void SeleccionarButaca(ButacaViewModel butaca)
+    {
         // Se trabaja sobre una copia para no modificar el mapa mientras se edita
         ViewModel = butaca.Clonar();
         IdSeleccionada = butaca.Id;
         MensajeError = null;
     }
 
-    private void NuevaButaca() {
+    private void NuevaButaca()
+    {
         ViewModel = new ButacaViewModel { IdSala = IdSala };
         IdSeleccionada = null;
         MensajeError = null;
     }
 
-    private async Task Guardar() {
-        try {
-            if (EsNueva) {
+    private async Task Guardar()
+    {
+        try
+        {
+            if (EsNueva)
+            {
                 await ButacaService.Insert(ViewModel!);
-            } else {
+            }
+            else
+            {
                 await ButacaService.Update(ViewModel!);
             }
             Butacas = await ButacaService.FindBySala(IdSala);
             Cancelar();
-        } catch (ServiceException ex) {
+        }
+        catch (ServiceException ex)
+        {
             MensajeError = ex.Message;
         }
     }
 
-    private void Cancelar() {
+    private void Cancelar()
+    {
         ViewModel = null;
         IdSeleccionada = null;
     }
 
-    private string ClaseButaca(ButacaViewModel butaca) {
-        if (butaca.Id == IdSeleccionada) {
+    private string ClaseButaca(ButacaViewModel butaca)
+    {
+        if (butaca.Id == IdSeleccionada)
+        {
             return "butaca seleccionada";
         }
-        if (!butaca.IsActivo) {
+        if (!butaca.IsActivo)
+        {
             return "butaca inactiva";
         }
-        return butaca.TipoButaca switch {
+        return butaca.TipoButaca switch
+        {
             "Preferencial" => "butaca preferencial",
             "Accesible" => "butaca accesible",
             _ => "butaca general"

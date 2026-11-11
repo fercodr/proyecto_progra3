@@ -71,8 +71,9 @@ else {
             <button type="button" class="btn btn-primary btn-sm" @onclick="() => EditarSala(context.Id)">
                 Editar
             </button>
-            <button type="button" class="btn btn-danger btn-sm" @onclick="() => DesactivarSala(context.Id)">
-                Desactivar
+            <button type="button" class="@(context.IsActivo ? "btn btn-danger btn-sm" : "btn btn-success btn-sm")"
+                    @onclick="() => CambiarEstado(context)">
+                @(context.IsActivo ? "Desactivar" : "Activar")
             </button>
         </TemplateColumn>
     </QuickGrid>
@@ -117,9 +118,15 @@ else {
         Nav.NavigateTo($"/admin/salas/{idSala}/butacas");
     }
 
-    private async Task DesactivarSala(int id) {
+    private async Task CambiarEstado(SalaViewModel sala) {
         try {
-            await SalaService.Delete(id);
+            if (sala.IsActivo) {
+                await SalaService.Delete(sala.Id);
+            } else {
+                SalaViewModel copia = sala.Clonar();
+                copia.IsActivo = true;
+                await SalaService.Update(copia);
+            }
         } catch (ServiceException ex) {
             MensajeError = ex.Message;
             return;
@@ -147,3 +154,4 @@ else {
         await FiltrarSalas();
     }
 }
+

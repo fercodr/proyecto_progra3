@@ -8,4 +8,6 @@ import java.util.List;
 public interface ButacaDAO extends DAO<Butaca, Integer> {
     List<Butaca> findBySalaId(int salaId) throws SQLException;
     List<Butaca> findByReservaId(int reservaId) throws SQLException;
+    void insertButacas(int salaId, List<Butaca> butacas) throws SQLException;
+    void deleteButacas(int salaId) throws SQLException;
 }

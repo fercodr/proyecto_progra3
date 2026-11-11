@@ -60,8 +60,9 @@ else {
             <button type="button" class="btn btn-primary btn-sm" @onclick="() => EditarSede(context.Id)">
                 Editar
             </button>
-            <button type="button" class="btn btn-danger btn-sm" @onclick="() => DesactivarSede(context.Id)">
-                Desactivar
+            <button type="button" class="@(context.IsActivo ? "btn btn-danger btn-sm" : "btn btn-success btn-sm")"
+                    @onclick="() => CambiarEstado(context)">
+                @(context.IsActivo ? "Desactivar" : "Activar")
             </button>
         </TemplateColumn>
     </QuickGrid>
@@ -103,9 +104,15 @@ else {
         Nav.NavigateTo($"/admin/salas?sede={idSede}");
     }
 
-    private async Task DesactivarSede(int id) {
+    private async Task CambiarEstado(SedeViewModel sede) {
         try {
-            await SedeService.Delete(id);
+            if (sede.IsActivo) {
+                await SedeService.Delete(sede.Id);
+            } else {
+                SedeViewModel copia = sede.Clonar();
+                copia.IsActivo = true;
+                await SedeService.Update(copia);
+            }
         } catch (ServiceException ex) {
             MensajeError = ex.Message;
             return;
