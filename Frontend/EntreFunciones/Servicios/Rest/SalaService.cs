@@ -49,6 +49,23 @@ namespace EntreFunciones.Servicios.Rest
             await base.Insert(ToDto(modelo));
         }
 
+        // Registra la sala y sus butacas en una sola llamada; devuelve la sala creada (con su Id)
+        public async Task<SalaViewModel> InsertConButacas(SalaViewModel modelo, List<ButacaViewModel> butacas)
+        {
+            SalaDto dto = ToDto(modelo);
+            dto.Butacas = butacas
+                .Select(b => new ButacaDto
+                {
+                    IsActivo = b.IsActivo,
+                    Fila = b.Fila,
+                    Columna = b.Columna,
+                    TipoButaca = b.TipoButaca
+                })
+                .ToList();
+            return await base.Insert(dto);
+        }
+
+
         public async Task Update(SalaViewModel modelo)
         {
             await base.Update(modelo.Id, ToDto(modelo));

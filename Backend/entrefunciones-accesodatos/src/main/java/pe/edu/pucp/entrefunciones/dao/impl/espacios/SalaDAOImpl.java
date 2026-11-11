@@ -1,5 +1,6 @@
 package pe.edu.pucp.entrefunciones.dao.impl.espacios;
 
+import pe.edu.pucp.entrefunciones.dao.espacios.ButacaDAO;
 import pe.edu.pucp.entrefunciones.dao.espacios.SalaDAO;
 import pe.edu.pucp.entrefunciones.dao.transacciones.ConnectionScope;
 import pe.edu.pucp.entrefunciones.dao.transacciones.TransactionsManager;
@@ -94,7 +95,10 @@ public class SalaDAOImpl implements SalaDAO {
             }
         }
     }
-
+    /**
+     * Inserta la sala y, en la misma transacción, las butacas que tenga cargadas
+     * (sala.getButacas()). Si alguna butaca falla, el BL hace rollback de todo.
+     */
     @Override
     public void insert(Sala sala) throws SQLException {
         validarSala(sala);
@@ -109,6 +113,9 @@ public class SalaDAOImpl implements SalaDAO {
                 throw new SQLException("No se obtuvo el id de la sala insertada");
             }
         }
+
+        ButacaDAO butacaDAO = new ButacaDAOImpl();
+        butacaDAO.insertButacas(sala.getId(), sala.getButacas());
     }
 
     @Override
@@ -128,6 +135,14 @@ public class SalaDAOImpl implements SalaDAO {
             if (!existe(conn, sala.getId())) {
                 throw new SQLException("No se pudo actualizar la sala con id " + sala.getId());
             }
+        }
+
+        // Si el modelo trae butacas, se reemplazan todas: se borran y se vuelven a insertar
+        // (igual que las líneas de una orden). Si la lista viene vacía, no se tocan.
+        if (!sala.getButacas().isEmpty()) {
+            ButacaDAO butacaDAO = new ButacaDAOImpl();
+            butacaDAO.deleteButacas(sala.getId());
+            butacaDAO.insertButacas(sala.getId(), sala.getButacas());
         }
     }
 

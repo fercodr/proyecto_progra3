@@ -8,7 +8,9 @@
 @using EntreFunciones.Servicios
 @using EntreFunciones.ViewModels
 
-@* 11. Salas · RF-M2-01 *@
+@* 11. Salas · RF-M2-01
+   Al registrar una sala se genera el mapa de butacas según el aforo y la cantidad de filas.
+   El admin marca las butacas accesibles y luego puede editar o agregar desde la pantalla Butacas. *@
 
 <PageTitle>@(Id == null ? "Nueva sala" : "Editar sala")</PageTitle>
 
@@ -47,7 +49,7 @@
     <div class="row">
         <div class="col-md-6 mb-3">
             <label for="aforoSala" class="form-label">Aforo</label>
-            <InputNumber id="aforoSala" class="form-control" @bind-Value="ViewModel.Aforo" />
+            <InputNumber id="aforoSala" class="form-control" @bind-Value="ViewModel.Aforo" @bind-Value:after="AlCambiarAforo" />
             <ValidationMessage For="() => ViewModel.Aforo" />
         </div>
         <div class="col-md-6 mb-3">
@@ -61,10 +63,64 @@
             <ValidationMessage For="() => ViewModel.TipoSala" />
         </div>
     </div>
+
+    @if (Id == null) {
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="filasSala" class="form-label">Cantidad de filas</label>
+                <InputNumber id="filasSala" class="form-control" @bind-Value="CantidadFilas" @bind-Value:after="AlCambiarFilas" />
+                <div class="form-text">Las butacas del aforo se reparten por igual entre las filas.</div>
+            </div>
+        </div>
+    }
+
     <div class="form-check mb-3">
         <InputCheckbox id="salaActiva" class="form-check-input" @bind-Value="ViewModel.IsActivo" />
         <label for="salaActiva" class="form-check-label">Activo</label>
     </div>
+
+    @if (Id == null) {
+        <hr />
+        <h2 class="h5">Distribución de butacas</h2>
+        <p class="text-muted small mb-2">
+            Haz clic en una butaca para marcarla o desmarcarla como <strong>accesible</strong> (personas con discapacidad).
+            Después de guardar podrás editar o agregar butacas desde la pantalla Butacas.
+        </p>
+
+        @if (AvisoDistribucion != null) {
+            <div class="text-danger small mb-2" role="alert">@AvisoDistribucion</div>
+        }
+
+        @if (Butacas.Count == 0) {
+            <div class="alert alert-info" role="status">Indica el aforo para ver el mapa de butacas.</div>
+        }
+        else {
+            <p class="small mb-3">@ResumenDistribucion</p>
+            <div class="pantalla">PANTALLA / ESCENARIO</div>
+            <div class="mapa">
+                @foreach (string fila in Filas) {
+                    <div class="fila">
+                        <span class="etiqueta-fila">@fila</span>
+                        @foreach (ButacaViewModel butaca in Butacas.Where(b => b.Fila == fila)) {
+                            <button type="button" class="@ClaseButaca(butaca)" title="@butaca.Codigo"
+                                    aria-label="@DescripcionButaca(butaca)" aria-pressed="@(butaca.TipoButaca == "Accesible")"
+                                    @onclick="() => AlternarAccesible(butaca)">
+                                @butaca.Columna
+                            </button>
+                            @if (butaca.Columna == ColumnaPasillo) {
+                                <span class="pasillo"></span>
+                            }
+                        }
+                        <span class="etiqueta-fila">@fila</span>
+                    </div>
+                }
+            </div>
+            <div class="d-flex flex-wrap gap-3 justify-content-center mt-3 mb-3 small">
+                <span><span class="muestra general"></span> General</span>
+                <span><span class="muestra accesible"></span> Accesible</span>
+            </div>
+        }
+    }
 
     <button type="submit" class="btn btn-primary">Guardar</button>
     <a class="btn btn-outline-secondary" href="admin/salas">Cancelar</a>
@@ -76,15 +132,35 @@
     [Parameter]
     public int? Id { get; set; }
 
+    private const int ColumnaPasillo = 6;
+    private const int MaxColumnas = 50;
+    private const int MaxFilas = 40;
+    private const int ButacasPorFilaSugeridas = 12;
+
     private SalaViewModel ViewModel { get; set; } = new();
     private List<SedeViewModel> Sedes { get; set; } = [];
     private string? MensajeError { get; set; }
+
+    private int CantidadFilas { get; set; }
+    private bool FilasManual { get; set; }
+    private List<ButacaViewModel> Butacas { get; set; } = [];
+    private HashSet<string> Accesibles { get; set; } = [];
+    private string? AvisoDistribucion { get; set; }
+    private List<string> Filas => Butacas.Select(b => b.Fila).Distinct().ToList();
+
+    private string ResumenDistribucion =>
+        $"{Filas.Count} filas · {Butacas.Count} butacas · {Butacas.Count(b => b.TipoButaca == "Accesible")} accesibles";
 
     protected override async Task OnParametersSetAsync() {
         try {
             Sedes = await SedeService.FindAll();
             if (Id == null) {
                 ViewModel = new SalaViewModel();
+                CantidadFilas = 0;
+                FilasManual = false;
+                Butacas = [];
+                Accesibles = [];
+                AvisoDistribucion = null;
                 return;
             }
             ViewModel = await SalaService.FindById(Id.Value);
@@ -95,16 +171,101 @@
                 Nav.NavigateTo("/admin/salas");
             }
         }
-
     }
+
+    private void AlCambiarAforo() {
+        if (Id != null) {
+            return;
+        }
+        if (!FilasManual) {
+            CantidadFilas = FilasSugeridas(ViewModel.Aforo);
+        }
+        Regenerar();
+    }
+
+    private void AlCambiarFilas() {
+        FilasManual = true;
+        Regenerar();
+    }
+
+    private static int FilasSugeridas(int aforo) {
+        if (aforo <= 0) {
+            return 0;
+        }
+        int filas = (int)Math.Ceiling(aforo / (double)ButacasPorFilaSugeridas);
+        return Math.Min(filas, Math.Min(MaxFilas, aforo));
+    }
+
+    // Reparte el aforo por igual entre las filas (las primeras filas reciben la butaca sobrante)
+    private void Regenerar() {
+        Butacas = [];
+        AvisoDistribucion = null;
+
+        int aforo = ViewModel.Aforo;
+        if (aforo <= 0) {
+            return;
+        }
+        if (CantidadFilas < 1 || CantidadFilas > MaxFilas || CantidadFilas > aforo) {
+            AvisoDistribucion = $"La cantidad de filas debe estar entre 1 y {Math.Min(MaxFilas, aforo)}.";
+            return;
+        }
+
+        int porFila = aforo / CantidadFilas;
+        int sobrantes = aforo % CantidadFilas;
+        int maxColumnas = porFila + (sobrantes > 0 ? 1 : 0);
+        if (maxColumnas > MaxColumnas) {
+            AvisoDistribucion = $"Con {CantidadFilas} filas habría {maxColumnas} columnas; el máximo es {MaxColumnas}. Aumenta la cantidad de filas.";
+            return;
+        }
+
+        for (int f = 0; f < CantidadFilas; f++) {
+            string fila = NombreFila(f);
+            int columnas = porFila + (f < sobrantes ? 1 : 0);
+            for (int c = 1; c <= columnas; c++) {
+                Butacas.Add(new ButacaViewModel {
+                    Fila = fila,
+                    Columna = c,
+                    TipoButaca = Accesibles.Contains($"{fila}{c}") ? "Accesible" : "General",
+                    IsActivo = true
+                });
+            }
+        }
+    }
+
+    // A..Z, luego AA, AB, ...
+    private static string NombreFila(int indice) =>
+        indice < 26
+            ? ((char)('A' + indice)).ToString()
+            : $"{(char)('A' + indice / 26 - 1)}{(char)('A' + indice % 26)}";
+
+    private void AlternarAccesible(ButacaViewModel butaca) {
+        if (Accesibles.Remove(butaca.Codigo)) {
+            butaca.TipoButaca = "General";
+        } else {
+            Accesibles.Add(butaca.Codigo);
+            butaca.TipoButaca = "Accesible";
+        }
+    }
+
+    private string ClaseButaca(ButacaViewModel butaca) =>
+        butaca.TipoButaca == "Accesible" ? "butaca accesible" : "butaca general";
+
+    private string DescripcionButaca(ButacaViewModel butaca) =>
+        $"Butaca {butaca.Codigo}: {butaca.TipoButaca.ToLowerInvariant()}";
 
     private async Task Guardar() {
         try {
             if (Id == null) {
-                await SalaService.Insert(ViewModel);
-            } else {
-                await SalaService.Update(ViewModel);
+                if (Butacas.Count == 0 || Butacas.Count != ViewModel.Aforo) {
+                    MensajeError = AvisoDistribucion ?? "Define la cantidad de filas para generar las butacas.";
+                    return;
+                }
+                SalaViewModel creada = await SalaService.InsertConButacas(ViewModel, Butacas);
+                // Se abre el mapa de la sala para revisar, editar o agregar butacas
+                Nav.NavigateTo($"/admin/salas/{creada.Id}/butacas");
+                return;
             }
+            await SalaService.Update(ViewModel);
             Nav.NavigateTo("/admin/salas");
         } catch (ServiceException ex) {
             MensajeError = ex.Message;
