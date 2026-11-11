@@ -1,1 +1,72 @@
+package pe.edu.pucp.entrefunciones.rest.dto;
 
+import java.time.LocalDateTime;
+
+public class EntradaDTO {
+    private int id;
+    private LocalDateTime fechaEmision;
+    private String codigoQR;
+    private double precioFinal;
+    private String estado; // VIGENTE, UTILIZADA, CANCELADA
+    private int reservaId;
+    private String butacaIdentificador;
+
+    public EntradaDTO() {
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public LocalDateTime getFechaEmision() {
+        return fechaEmision;
+    }
+
+    public void setFechaEmision(LocalDateTime fechaEmision) {
+        this.fechaEmision = fechaEmision;
+    }
+
+    public String getCodigoQR() {
+        return codigoQR;
+    }
+
+    public void setCodigoQR(String codigoQR) {
+        this.codigoQR = codigoQR;
+    }
+
+    public double getPrecioFinal() {
+        return precioFinal;
+    }
+
+    public void setPrecioFinal(double precioFinal) {
+        this.precioFinal = precioFinal;
+    }
+
+    public String getEstado() {
+        return estado;
+    }
+
+    public void setEstado(String estado) {
+        this.estado = estado;
+    }
+
+    public int getReservaId() {
+        return reservaId;
+    }
+
+    public void setReservaId(int reservaId) {
+        this.reservaId = reservaId;
+    }
+
+    public String getButacaIdentificador() {
+        return butacaIdentificador;
+    }
+
+    public void setButacaIdentificador(String butacaIdentificador) {
+        this.butacaIdentificador = butacaIdentificador;
+    }
+}
