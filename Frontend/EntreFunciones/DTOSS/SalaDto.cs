@@ -18,5 +18,10 @@ namespace EntreFunciones.DTOSS
 
         [JsonPropertyName("tipoSala")]
         public string TipoSala { get; set; } = string.Empty;
+
+        // Solo al registrar una sala nueva con su distribución de butacas
+        [JsonPropertyName("butacas")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public List<ButacaDto>? Butacas { get; set; }
     }
 }
