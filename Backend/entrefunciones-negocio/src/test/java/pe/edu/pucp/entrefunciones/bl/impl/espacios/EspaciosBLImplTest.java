@@ -16,9 +16,11 @@ import java.lang.reflect.Proxy;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -217,6 +219,9 @@ class EspaciosBLImplTest {
         @Override public List<Sede> findAll() throws SQLException { return new ArrayList<>(sedes.values()); }
         @Override public Sede findById(Integer id) throws SQLException { return sedes.get(id); }
         @Override public Sede findByIdCompleto(Integer id) throws SQLException { return sedes.get(id); }
+        @Override public List<Sede> findByIds(Collection<Integer> ids) throws SQLException {
+            return ids.stream().map(sedes::get).filter(Objects::nonNull).toList();
+        }
         @Override public void insert(Sede sede) throws SQLException { sede.setId(secuencia++); guardar(sede); }
         @Override public void update(Sede sede) throws SQLException { guardar(sede); }
         @Override public void delete(Integer id) throws SQLException { sedes.get(id).desactivar(); eliminaciones++; }
@@ -238,6 +243,9 @@ class EspaciosBLImplTest {
         @Override public List<Sala> findAll() { return new ArrayList<>(salas.values()); }
         @Override public List<Sala> findBySedeId(int sedeId) {
             return salas.values().stream().filter(s -> s.getSede().getId() == sedeId).toList();
+        }
+        @Override public List<Sala> findByIds(Collection<Integer> ids) {
+            return ids.stream().map(salas::get).filter(Objects::nonNull).toList();
         }
         @Override public Sala findById(Integer id) { return salas.get(id); }
         @Override public void insert(Sala sala) { sala.setId(secuencia++); guardar(sala); }
