@@ -1,5 +1,4 @@
-
-package pe.edu.pucp.entrefunciones.rest.dto.ventas;
+package pe.edu.pucp.entrefunciones.rest.dto;
 
 import java.time.LocalDateTime;
 
