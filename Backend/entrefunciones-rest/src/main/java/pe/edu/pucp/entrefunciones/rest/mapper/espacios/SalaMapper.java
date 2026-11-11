@@ -5,8 +5,10 @@ import pe.edu.pucp.entrefunciones.bl.error.NoEncontradoException;
 import pe.edu.pucp.entrefunciones.bl.error.ValidacionException;
 import pe.edu.pucp.entrefunciones.bl.espacios.SedeBL;
 import pe.edu.pucp.entrefunciones.bl.impl.espacios.SedeBLImpl;
+import pe.edu.pucp.entrefunciones.modelo.espacios.Butaca;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Sala;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Sede;
+import pe.edu.pucp.entrefunciones.rest.dto.espacios.ButacaDTO;
 import pe.edu.pucp.entrefunciones.rest.dto.espacios.SalaDTO;
 
 import java.util.ArrayList;
@@ -53,6 +55,20 @@ public final class SalaMapper {
         }
         if (!dto.isActivo()) {
             sala.desactivar();
+        }
+
+        // Butacas que vienen junto con la sala (al crearla con su mapa).
+        // SalaDAOImpl.insert las guarda con insertButacas, una vez que la sala ya tiene id.
+        if (dto.getButacas() != null) {
+            for (ButacaDTO b : dto.getButacas()) {
+                try {
+                    // Se crean activas: C# manda "isActivo" y Java espera "activo",
+                    // así que ese dato no llega y quedarían todas inactivas.
+                    sala.agregarButaca(new Butaca(0, sala, b.getFila(), b.getColumna(), b.getTipoButaca()));
+                } catch (IllegalArgumentException e) {
+                    throw new ValidacionException("Butaca " + b.getFila() + b.getColumna() + ": " + e.getMessage());
+                }
+            }
         }
         return sala;
     }

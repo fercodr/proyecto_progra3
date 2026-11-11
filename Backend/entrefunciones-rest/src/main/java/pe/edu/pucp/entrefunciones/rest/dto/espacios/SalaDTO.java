@@ -1,5 +1,7 @@
 package pe.edu.pucp.entrefunciones.rest.dto.espacios;
 
+import java.util.List;
+
 public class SalaDTO {
     private int id;
     private boolean activo;
@@ -8,6 +10,8 @@ public class SalaDTO {
     private String nombre;
     private int aforo;
     private String tipoSala;
+    // Solo al crear una sala con su mapa de butacas (InsertConButacas en C#)
+    private List<ButacaDTO> butacas;
 
     public SalaDTO() {
     }
@@ -66,5 +70,13 @@ public class SalaDTO {
 
     public void setTipoSala(String tipoSala) {
         this.tipoSala = tipoSala;
+    }
+
+    public List<ButacaDTO> getButacas() {
+        return butacas;
+    }
+
+    public void setButacas(List<ButacaDTO> butacas) {
+        this.butacas = butacas;
     }
 }
