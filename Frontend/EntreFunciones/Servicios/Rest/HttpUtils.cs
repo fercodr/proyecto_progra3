@@ -323,7 +323,7 @@ namespace EntreFunciones.Servicios.Rest
 
             [JsonPropertyName("texto")]
             public string? TextoRespuesta { get; set; }
-
+            [JsonIgnore]
             public string Texto => !string.IsNullOrWhiteSpace(Mensaje)
                 ? Mensaje
                 : !string.IsNullOrWhiteSpace(TextoRespuesta)
