@@ -273,6 +273,8 @@ class EspaciosBLImplTest {
         @Override public void insert(Butaca butaca) { inserciones++; butaca.setId(secuencia++); guardar(butaca); }
         @Override public void update(Butaca butaca) { actualizaciones++; guardar(butaca); }
         @Override public void delete(Integer id) { butacas.get(id).desactivar(); }
+        @Override public void insertButacas(int salaId, List<Butaca> lista) { lista.forEach(this::insert); }
+        @Override public void deleteButacas(int salaId) { butacas.values().removeIf(b -> b.getSala() != null && b.getSala().getId() == salaId); }
     }
 
 }
