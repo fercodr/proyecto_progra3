@@ -13,6 +13,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public class SalaDAOImpl implements SalaDAO {
@@ -57,6 +58,39 @@ public class SalaDAOImpl implements SalaDAO {
             cmd.setInt(1, id);
             try (ResultSet rs = cmd.executeQuery()) {
                 return rs.next() ? mapear(rs) : null;
+            }
+        }
+    }
+
+    @Override
+    public List<Sala> findByIds(Collection<Integer> ids) throws SQLException {
+        List<Integer> validos = ids == null ? List.of() : ids.stream()
+                .filter(id -> id != null && id > 0)
+                .distinct()
+                .toList();
+        if (validos.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        String placeholders = String.join(",", java.util.Collections.nCopies(validos.size(), "?"));
+        String sql = "SELECT sa.id, sa.nombre, sa.aforo, sa.tipo_sala, sa.activo, "
+                + "sa.sede_id, se.razon_social AS sede_razon_social, "
+                + "se.direccion AS sede_direccion, se.ciudad AS sede_ciudad, "
+                + "se.telefono_contacto AS sede_telefono_contacto, "
+                + "se.activo AS sede_activo "
+                + "FROM sala sa INNER JOIN sede se ON se.id = sa.sede_id "
+                + "WHERE sa.id IN (" + placeholders + ") ORDER BY sa.id";
+        try (ConnectionScope scope = ConnectionScope.openForRead();
+             PreparedStatement cmd = scope.connection().prepareStatement(sql)) {
+            for (int i = 0; i < validos.size(); i++) {
+                cmd.setInt(i + 1, validos.get(i));
+            }
+            try (ResultSet rs = cmd.executeQuery()) {
+                List<Sala> salas = new ArrayList<>();
+                while (rs.next()) {
+                    salas.add(mapear(rs));
+                }
+                return salas;
             }
         }
     }

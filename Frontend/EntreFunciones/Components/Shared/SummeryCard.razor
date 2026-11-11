@@ -5,7 +5,7 @@
         
         <h6 class="small fw-semibold text-secondary mb-1">@Atribute</h6>
         <h5 class="fs-2 fw-bold text-dark mb-0">@Unit</h5>
-        <h5 class="fs-2 fw-bold text-dark mb-0">@Amount</h5>
+        <h5 class="fs-2 fw-bold text-dark mb-0">@(AmountText ?? Amount.ToString("N2"))</h5>
 
     </div>
 </div>
@@ -14,9 +14,12 @@
     public string Atribute { get; set; } = default!;
 
     [Parameter, EditorRequired]
-    public int Amount { get; set; } = default!;
+    public decimal Amount { get; set; }
 
     [Parameter]
     public string Unit { get; set; } = default!;
+
+    [Parameter]
+    public string? AmountText { get; set; }
 
 }

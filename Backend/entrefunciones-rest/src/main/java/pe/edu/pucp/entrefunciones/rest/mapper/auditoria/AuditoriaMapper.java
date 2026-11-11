@@ -18,9 +18,11 @@ public final class AuditoriaMapper {
         if (auditoria == null) return null;
         AuditoriaDTO dto = new AuditoriaDTO();
         dto.setId(auditoria.getId());
-        dto.setFuncion(FuncionMapper.toDTO(auditoria.getFuncion()));
+        dto.setFuncion(auditoria.getFuncion() == null
+                ? null : FuncionMapper.toDTO(auditoria.getFuncion()));
         dto.setFecha(auditoria.getFecha());
         dto.setResponsable(AdministradorMapper.toDTO(auditoria.getResponsable()));
+        dto.setResponsableTextoOriginal(auditoria.getResponsableTextoOriginal());
         dto.setDescripcion(auditoria.getDescripcion());
         dto.setEstado(auditoria.getEstado().name());
         return dto;

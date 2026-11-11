@@ -4,6 +4,9 @@
 <dependencies>
 <dependency><groupId>pe.edu.pucp.entrefunciones</groupId><artifactId>entrefunciones-negocio</artifactId><version>1.0-SNAPSHOT</version></dependency>
 <dependency><groupId>jakarta.platform</groupId><artifactId>jakarta.jakartaee-api</artifactId><version>10.0.0</version><scope>provided</scope></dependency>
+<dependency><groupId>io.jsonwebtoken</groupId><artifactId>jjwt-api</artifactId><version>0.13.0</version></dependency>
+<dependency><groupId>io.jsonwebtoken</groupId><artifactId>jjwt-impl</artifactId><version>0.13.0</version><scope>runtime</scope></dependency>
+<dependency><groupId>io.jsonwebtoken</groupId><artifactId>jjwt-jackson</artifactId><version>0.13.0</version><scope>runtime</scope></dependency>
 </dependencies>
 <build><finalName>entrefunciones-rest</finalName><plugins><plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-war-plugin</artifactId><version>3.4.0</version></plugin></plugins></build>
 </project>

@@ -4,6 +4,7 @@ namespace EntreFunciones.DTOSS
 {
     public abstract class Dto
     {
+        [JsonPropertyName("id")]
         public int Id { get; set; }
 
         [JsonPropertyName("activo")]

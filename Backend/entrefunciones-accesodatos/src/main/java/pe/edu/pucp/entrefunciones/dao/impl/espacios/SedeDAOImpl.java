@@ -14,6 +14,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,6 +57,34 @@ public class SedeDAOImpl implements SedeDAO {
             Map<Integer, Sala> salas = cargarSalas(connection, sede);
             cargarButacas(connection, sede.getId(), salas);
             return sede;
+        }
+    }
+
+    @Override
+    public List<Sede> findByIds(Collection<Integer> ids) throws SQLException {
+        List<Integer> validos = ids == null ? List.of() : ids.stream()
+                .filter(id -> id != null && id > 0)
+                .distinct()
+                .toList();
+        if (validos.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        String placeholders = String.join(",", java.util.Collections.nCopies(validos.size(), "?"));
+        String sql = "SELECT id, razon_social, direccion, ciudad, telefono_contacto, activo "
+                + "FROM sede WHERE id IN (" + placeholders + ") ORDER BY id";
+        try (ConnectionScope scope = ConnectionScope.openForRead();
+             PreparedStatement cmd = scope.connection().prepareStatement(sql)) {
+            for (int i = 0; i < validos.size(); i++) {
+                cmd.setInt(i + 1, validos.get(i));
+            }
+            try (ResultSet rs = cmd.executeQuery()) {
+                List<Sede> sedes = new ArrayList<>();
+                while (rs.next()) {
+                    sedes.add(mapearSede(rs));
+                }
+                return sedes;
+            }
         }
     }
 

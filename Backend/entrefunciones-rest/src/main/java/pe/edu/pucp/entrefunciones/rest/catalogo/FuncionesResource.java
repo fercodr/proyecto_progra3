@@ -4,7 +4,9 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
+import jakarta.ws.rs.core.SecurityContext;
 import pe.edu.pucp.entrefunciones.bl.error.BLException;
+import pe.edu.pucp.entrefunciones.bl.error.ValidacionException;
 import pe.edu.pucp.entrefunciones.bl.eventos.EventoBL;
 import pe.edu.pucp.entrefunciones.bl.eventos.FuncionBL;
 import pe.edu.pucp.entrefunciones.bl.impl.eventos.EventoBLImpl;
@@ -15,6 +17,9 @@ import pe.edu.pucp.entrefunciones.rest.dto.catalogo.FuncionDTO;
 import pe.edu.pucp.entrefunciones.rest.mapper.catalogo.FuncionMapper;
 
 import java.net.URI;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -33,6 +38,9 @@ public class FuncionesResource {
     @Context
     private UriInfo uriInfo;
 
+    @Context
+    private SecurityContext securityContext;
+
     public FuncionesResource() {
         funcionBL = new FuncionBLImpl();
         eventoBL = new EventoBLImpl();
@@ -45,6 +53,38 @@ public class FuncionesResource {
                     .build();
         } catch (BLException ex) {
             return error(Response.Status.INTERNAL_SERVER_ERROR, ex);
+        }
+    }
+
+    @GET
+    @Path("reportes")
+    public Response reportes(@QueryParam("desde") String desdeTexto,
+                             @QueryParam("hasta") String hastaTexto,
+                             @QueryParam("sedeId") Integer sedeId,
+                             @QueryParam("salaId") Integer salaId) {
+        if (securityContext == null
+                || !securityContext.isUserInRole("Administrador")) {
+            return error(Response.Status.FORBIDDEN,
+                    new BLException("Se requiere administrador"));
+        }
+        try {
+            if (desdeTexto == null || hastaTexto == null) {
+                return error(Response.Status.BAD_REQUEST,
+                        new BLException("Los parámetros desde y hasta son obligatorios"));
+            }
+            LocalDate desde = LocalDate.parse(desdeTexto);
+            LocalDate hasta = LocalDate.parse(hastaTexto);
+            List<FuncionDTO> resultado = FuncionMapper.toDTOs(
+                    funcionBL.findReportes(desde, hasta, sedeId, salaId));
+            return Response.ok(resultado).build();
+        } catch (DateTimeParseException ex) {
+            return error(Response.Status.BAD_REQUEST,
+                    new BLException("Las fechas deben tener formato yyyy-MM-dd"));
+        } catch (ValidacionException ex) {
+            return error(Response.Status.BAD_REQUEST, ex);
+        } catch (BLException ex) {
+            return error(Response.Status.INTERNAL_SERVER_ERROR,
+                    new BLException("No se pudo consultar el reporte de funciones", ex));
         }
     }
 
@@ -143,7 +183,7 @@ public class FuncionesResource {
 
     private Response error(Response.Status status, Exception ex) {
         return Response.status(status)
-                .entity(Map.of("error", ex.getMessage()))
+                .entity(Map.of("mensaje", ex.getMessage()))
                 .build();
     }
 }

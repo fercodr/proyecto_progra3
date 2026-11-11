@@ -6,6 +6,8 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
 import pe.edu.pucp.entrefunciones.bl.error.BLException;
+import pe.edu.pucp.entrefunciones.bl.error.NoEncontradoException;
+import pe.edu.pucp.entrefunciones.bl.error.ValidacionException;
 import pe.edu.pucp.entrefunciones.bl.auditoria.AuditoriaBL;
 import pe.edu.pucp.entrefunciones.dao.auditoria.AuditoriaDAO;
 import pe.edu.pucp.entrefunciones.dao.impl.auditoria.AuditoriaDAOImpl;
@@ -53,7 +55,12 @@ public class AuditoriaBLImpl implements AuditoriaBL {
     public Auditoria findById(Integer id) throws BLException {
         validarId(id, "auditoria");
         try {
-            return auditoriaDAO.findById(id);
+            Auditoria auditoria = auditoriaDAO.findById(id);
+            if (auditoria == null) {
+                throw new NoEncontradoException(
+                        "No existe una auditoria con id " + id);
+            }
+            return auditoria;
         } catch (SQLException e) {
             throw new BLException("No se pudo recuperar la auditoria", e);
         }
@@ -72,7 +79,7 @@ public class AuditoriaBLImpl implements AuditoriaBL {
     public List<Administrador> findResponsablesActivos()
             throws BLException {
         try {
-            return administradorDAO.findAll();
+            return administradorDAO.findAllActiveAdmins();
         } catch (SQLException e) {
             throw new BLException(
                     "No se pudo listar los responsables disponibles", e);
@@ -95,8 +102,8 @@ public class AuditoriaBLImpl implements AuditoriaBL {
         validarDescripcion(descripcion);
 
         try {
-            Funcion funcion = funcionDAO.findById(funcionId);
-            Administrador responsable = administradorDAO.findById(responsableId);
+            Funcion funcion = buscarFuncionAsignable(funcionId);
+            Administrador responsable = buscarResponsableActivo(responsableId);
             LocalDateTime fechaServidor = LocalDateTime.ofInstant(reloj.instant(), ZONA_NEGOCIO);
             Auditoria auditoria = new Auditoria(
                     0,
@@ -120,13 +127,16 @@ public class AuditoriaBLImpl implements AuditoriaBL {
         validarId(auditoriaId, "auditoria");
         validarId(responsableId, "responsable");
         if (estado == null) {
-            throw new BLException("El estado es obligatorio");
+            throw new ValidacionException("El estado es obligatorio");
         }
 
         try {
             Auditoria existente = auditoriaDAO.findById(auditoriaId);
-            if (existente == null)throw new BLException("No existe una auditoria con id " + auditoriaId);
-            Administrador responsable = administradorDAO.findById(responsableId);
+            if (existente == null) {
+                throw new NoEncontradoException(
+                        "No existe una auditoria con id " + auditoriaId);
+            }
+            Administrador responsable = buscarResponsableActivo(responsableId);
             existente.setResponsable(responsable);
             existente.setEstado(estado);
             auditoriaDAO.update(existente);
@@ -166,17 +176,38 @@ public class AuditoriaBLImpl implements AuditoriaBL {
 
     private void validarDescripcion(String descripcion) throws BLException {
         if (descripcion == null || descripcion.isBlank()) {
-            throw new BLException("La descripcion es obligatoria");
+            throw new ValidacionException("La descripcion es obligatoria");
         }
         if (descripcion.trim().length() > 500) {
-            throw new BLException(
+            throw new ValidacionException(
                     "La descripcion no puede superar 500 caracteres");
         }
     }
 
+    private Funcion buscarFuncionAsignable(Integer funcionId)
+            throws BLException, SQLException {
+        for (Funcion funcion : funcionDAO.findAllActiveFunctions()) {
+            if (funcion.getId() == funcionId) {
+                return funcion;
+            }
+        }
+        throw new ValidacionException("La funcion no existe o no es asignable");
+    }
+
+    private Administrador buscarResponsableActivo(Integer responsableId)
+            throws BLException, SQLException {
+        for (Administrador responsable : administradorDAO.findAllActiveAdmins()) {
+            if (responsable.getId() == responsableId) {
+                return responsable;
+            }
+        }
+        throw new ValidacionException(
+                "El responsable no existe o no esta activo");
+    }
+
     private void validarId(Integer id, String entidad) throws BLException {
         if (id == null || id <= 0) {
-            throw new BLException(
+            throw new ValidacionException(
                     "El id de " + entidad + " debe ser positivo");
         }
     }

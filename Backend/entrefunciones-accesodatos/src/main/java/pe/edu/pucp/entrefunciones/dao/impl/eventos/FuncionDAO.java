@@ -6,6 +6,7 @@ import pe.edu.pucp.entrefunciones.modelo.catalogo.Evento;
 import pe.edu.pucp.entrefunciones.modelo.catalogo.Funcion;
 
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.List;
 public interface FuncionDAO extends DAO<Funcion, Integer> {
     public List<Funcion> findAllActiveFunctions() throws SQLException ;
@@ -18,4 +19,8 @@ public interface FuncionDAO extends DAO<Funcion, Integer> {
     List<Funcion> findByEvento(Evento evento) throws SQLException;
 
     List<Funcion> findBySalaId(int idSala) throws SQLException;
+
+    List<Funcion> findReportes(LocalDate desde, LocalDate hasta,
+                               Integer idSede, Integer idSala)
+            throws SQLException;
 }

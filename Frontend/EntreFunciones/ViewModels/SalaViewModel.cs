@@ -20,6 +20,8 @@ namespace EntreFunciones.ViewModels {
         [Required(ErrorMessage = "Seleccione el tipo de sala")]
         public string TipoSala { get; set; } = "";
 
+        public SedeViewModel? Sede { get; set; }
+
 
         public SalaViewModel Clonar() => (SalaViewModel)MemberwiseClone();
     }

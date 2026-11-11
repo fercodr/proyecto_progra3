@@ -2,13 +2,13 @@ package pe.edu.pucp.entrefunciones.rest.mapper.catalogo;
 
 import pe.edu.pucp.entrefunciones.bl.error.BLException;
 import pe.edu.pucp.entrefunciones.bl.error.ValidacionException;
-import pe.edu.pucp.entrefunciones.bl.eventos.EventoBL;
-import pe.edu.pucp.entrefunciones.bl.impl.eventos.EventoBLImpl;
 import pe.edu.pucp.entrefunciones.modelo.catalogo.Evento;
 import pe.edu.pucp.entrefunciones.modelo.catalogo.Funcion;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Sala;
 import pe.edu.pucp.entrefunciones.modelo.funciones.EstadoFuncion;
 import pe.edu.pucp.entrefunciones.rest.dto.catalogo.FuncionDTO;
+import pe.edu.pucp.entrefunciones.rest.dto.espacios.SalaDTO;
+import pe.edu.pucp.entrefunciones.rest.dto.espacios.SedeDTO;
 
 import java.time.DateTimeException;
 import java.time.LocalDate;
@@ -24,8 +24,6 @@ import java.util.List;
  * el nombre de la sala en Cartelera/Detalle.
  */
 public final class FuncionMapper {
-    private EventoBL eventoBL = new EventoBLImpl();
-
     private FuncionMapper() {
     }
 
@@ -51,6 +49,34 @@ public final class FuncionMapper {
         dto.setHoraFin(funcion.getHoraFin() == null ? null : funcion.getHoraFin().toString());
         dto.setIdioma(funcion.getIdioma());
         dto.setEstado(funcion.getEstado() == null ? null : funcion.getEstado().name());
+        dto.setEvento(funcion.getEvento() == null ? null : EventoMapper.toDTO(funcion.getEvento()));
+        dto.setEntradasNoCanceladas(funcion.getEntradasNoCanceladas());
+        dto.setEntradasCanceladas(funcion.getEntradasCanceladas());
+        dto.setIngresosValidos(funcion.getIngresosValidos());
+        dto.setAsistentes(funcion.getAsistentes());
+        dto.setPorcentajeOcupacion(funcion.getPorcentajeOcupacion());
+
+        if (sala != null) {
+            SalaDTO salaDTO = new SalaDTO();
+            salaDTO.setId(sala.getId());
+            salaDTO.setActivo(sala.estaActivo());
+            salaDTO.setNombre(sala.getNombre());
+            salaDTO.setAforo(sala.getAforo());
+            salaDTO.setTipoSala(sala.getTipoSala());
+            if (sala.getSede() != null) {
+                SedeDTO sedeDTO = new SedeDTO();
+                sedeDTO.setId(sala.getSede().getId());
+                sedeDTO.setActivo(sala.getSede().estaActivo());
+                sedeDTO.setRazonSocial(sala.getSede().getRazonSocial());
+                sedeDTO.setDireccion(sala.getSede().getDireccion());
+                sedeDTO.setCiudad(sala.getSede().getCiudad());
+                sedeDTO.setTelefonoContacto(sala.getSede().getTelefonoContacto());
+                salaDTO.setIdSede(sedeDTO.getId());
+                salaDTO.setSede(sedeDTO);
+                dto.setSede(sedeDTO);
+            }
+            dto.setSala(salaDTO);
+        }
         return dto;
     }
 

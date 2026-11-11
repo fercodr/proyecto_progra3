@@ -22,7 +22,7 @@ namespace EntreFunciones.Servicios.Rest
         public async Task<ClienteDTO> Registrar(ClienteDTO cliente)
         {
             return await HttpUtils.DoPost<ClienteDTO, ClienteDTO>(
-                _baseUrl + "clientes", cliente, cabeceras: CabecerasSinSesion());
+                _baseUrl + "clientes", cliente);
         }
 
         // con sesion
@@ -68,19 +68,6 @@ namespace EntreFunciones.Servicios.Rest
                 _baseUrl + $"clientes/{id}/activar", cabeceras: await CabecerasConSesion());
         }
 
-        // ---------- Headers que exige AccesoRest.java ----------
-
-        // Registro: aún no hay sesión, se usa la cuenta de servicio
-        private Dictionary<string, string> CabecerasSinSesion()
-        {
-            return new Dictionary<string, string>
-            {
-                ["X-Api-Key"] = _config["Rest:ApiKey"]!,
-                ["X-Usuario-Id"] = _config["Rest:CuentaServicioId"]!
-            };
-        }
-
-        // Resto: el id del usuario que inició sesión (igual que CompraService)
         private async Task<IReadOnlyDictionary<string, string>> CabecerasConSesion()
         {
             return await HttpUtils.CrearCabecerasAutenticadas(_config, _auth);

@@ -14,6 +14,7 @@ namespace EntreFunciones.Seguridad
                     opciones.LoginPath = "/login";
                     opciones.AccessDeniedPath = "/acceso-denegado";
                     opciones.ExpireTimeSpan = TimeSpan.FromHours(8);
+                    opciones.SlidingExpiration = false;
                 });
 
             services.AddAuthorization(opciones => {
