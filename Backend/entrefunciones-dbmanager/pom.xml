@@ -19,4 +19,16 @@
         </dependency>
     </dependencies>
 
+    <build>
+        <resources>
+            <resource>
+                <directory>${project.basedir}/../../ConfiguracionCompartida</directory>
+                <filtering>false</filtering>
+                <includes>
+                    <include>db.properties</include>
+                </includes>
+            </resource>
+        </resources>
+    </build>
+
 </project>

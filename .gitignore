@@ -22,6 +22,8 @@ coverage.*
 !.env.example
 *.local
 **/db.properties
+# Esta copia es compartida intencionalmente por el equipo.
+!ConfiguracionCompartida/db.properties
 **/settings.xml
 *.key
 *.pem
