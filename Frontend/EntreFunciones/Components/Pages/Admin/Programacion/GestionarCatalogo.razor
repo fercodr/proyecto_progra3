@@ -2,6 +2,7 @@
 @page "/admin/catalogo/editar/{Id:int}"
 @inject NavigationManager Nav
 @inject ICatalogoService Catalogo
+@inject IImagenService ImagenService
 @rendermode InteractiveServer
 @using Microsoft.AspNetCore.Components.Forms
 @using EntreFunciones.DTOSS
@@ -74,9 +75,8 @@
                         <label for="imagenEvento" class="form-label">Seleccione una imagen</label>
                         <InputFile id="imagenEvento" class="form-control" accept="image/*" OnChange="CargarImagen" />
                         <div class="form-text">
-                            Formatos: JPG o PNG. Máximo 2 MB. El equipo todavía no definió cómo se van a
-                            guardar las imágenes reales (S3 vs. base de datos), así que por ahora esta
-                            vista previa no se envía al servidor.
+                            Formatos: JPG, PNG o WEBP. Máximo 2 MB. Al pulsar "Guardar", el póster se sube
+                            a Amazon S3 y su URL queda en el evento.
                         </div>
 
                         @if (ImagenPreview != null)
@@ -169,6 +169,11 @@
     private string? MensajeError { get; set; }
     private string? ImagenPreview { get; set; }
 
+    // Póster: el que ya tiene el evento (URL de S3) y el nuevo elegido (aún sin subir)
+    private string? ImagenUrlActual;
+    private byte[]? ImagenBytes;
+    private string ImagenTipo = "";
+
     private string Titulo = "";
     private double Precio;
     private bool Activo = true;
@@ -212,6 +217,12 @@
             Elenco = evento.Elenco;
             Expositor = evento.Expositor;
             TipoActividad = evento.TipoActividad ?? "CONVERSATORIO";
+
+            ImagenUrlActual = evento.ImagenUrl;
+            if (ImagenUrlActual != null && ImagenUrlActual.StartsWith("http"))
+            {
+                ImagenPreview = ImagenUrlActual;   // póster actual guardado en S3
+            }
         }
         catch (Exception ex)
         {
@@ -240,6 +251,8 @@
         await stream.CopyToAsync(memoria);
 
         ImagenPreview = $"data:{archivo.ContentType};base64,{Convert.ToBase64String(memoria.ToArray())}";
+        ImagenBytes = memoria.ToArray();      // se sube a S3 al pulsar "Guardar"
+        ImagenTipo = archivo.ContentType;
         MensajeError = null;
     }
 
@@ -266,7 +279,9 @@
                 Tipo = TipoEvento,
                 Titulo = Titulo,
                 Precio = Precio,
-                Activo = Activo
+                Activo = Activo,
+                // Se reenvía la URL actual: si no, al editar se borraría el póster (imagen_url = NULL)
+                ImagenUrl = ImagenUrlActual
             };
 
             switch (TipoEvento)
@@ -287,13 +302,21 @@
                     break;
             }
 
+            EventoDTO guardado;
             if (Id == null)
             {
-                await Catalogo.CrearEvento(evento);
+                guardado = await Catalogo.CrearEvento(evento);
             }
             else
             {
-                await Catalogo.ActualizarEvento(evento);
+                guardado = await Catalogo.ActualizarEvento(evento);
+            }
+
+            // Si se eligió un póster nuevo, se sube después de guardar (así ya existe el id del evento)
+            if (ImagenBytes != null)
+            {
+                int idEvento = Id ?? guardado.Id;
+                await ImagenService.SubirPosterEvento(idEvento, ImagenBytes, ImagenTipo);
             }
 
             Nav.NavigateTo("admin/catalogo");

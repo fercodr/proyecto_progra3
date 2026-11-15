@@ -83,9 +83,17 @@ else
 
                     <div class="col-12 col-sm-6 col-lg-4">
                         <div class="card h-100 shadow-sm">
-                            <div class="d-flex align-items-center justify-content-center bg-light" style="height:140px;">
-                                <i class="@IconoTipo(evento.Tipo) text-secondary" style="font-size:3rem;"></i>
-                            </div>
+                            @if (TienePoster(evento.ImagenUrl))
+                            {
+                                @* Póster guardado en Amazon S3 *@
+                                <img src="@evento.ImagenUrl" alt="Póster de @evento.Titulo" class="card-img-top" style="height:140px; object-fit:cover;" />
+                            }
+                            else
+                            {
+                                <div class="d-flex align-items-center justify-content-center bg-light" style="height:140px;">
+                                    <i class="@IconoTipo(evento.Tipo) text-secondary" style="font-size:3rem;"></i>
+                                </div>
+                            }
                             <div class="card-body d-flex flex-column">
                                 <span class="badge text-bg-secondary align-self-start mb-2">@TextoTipo(evento.Tipo)</span>
                                 <h3 class="card-title h5">@evento.Titulo</h3>
@@ -176,6 +184,9 @@ else
     // Icono generico por tipo mientras el equipo decide como se van a manejar las imagenes
     // reales de cada evento (ver decisiones-diseno-catalogo-rest.md). No depende de esa decision:
     // es un icono decorativo de Bootstrap Icons, no una imagen propia del evento.
+    // Solo las URLs completas (de S3) son imágenes reales; las rutas viejas de datos-demo no existen
+    private static bool TienePoster(string? url) => url != null && url.StartsWith("http");
+
     private string IconoTipo(string tipo) => tipo switch
     {
         "PELICULA" => "bi bi-film",

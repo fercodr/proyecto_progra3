@@ -40,9 +40,17 @@ else
 
     <div class="row g-4">
         <div class="col-12 col-md-7">
-            <div class="d-flex align-items-center justify-content-center bg-light rounded mb-3" style="height:220px;">
-                <i class="@IconoTipo(Evento.Tipo) text-secondary" style="font-size:5rem;"></i>
-            </div>
+            @if (Evento.ImagenUrl != null && Evento.ImagenUrl.StartsWith("http"))
+            {
+                @* Póster guardado en Amazon S3 *@
+                <img src="@Evento.ImagenUrl" alt="Póster de @Evento.Titulo" class="rounded mb-3 w-100" style="height:220px; object-fit:cover;" />
+            }
+            else
+            {
+                <div class="d-flex align-items-center justify-content-center bg-light rounded mb-3" style="height:220px;">
+                    <i class="@IconoTipo(Evento.Tipo) text-secondary" style="font-size:5rem;"></i>
+                </div>
+            }
             <span class="badge text-bg-secondary mb-2">@TextoTipo(Evento.Tipo)</span>
             <h1 class="page-title mb-2">@Evento.Titulo</h1>
             @if (Evento.DuracionMinutos is not null)

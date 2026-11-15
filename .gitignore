@@ -68,3 +68,6 @@ Thumbs.db
 docs/entregas/LAB06/Informe_Tarea_Academica.docx
 docs/entregas/LAB06/Reporte_de_Avances.docx
 docs/entregas/LAB06/Rubrica_18_de_20.pdf
+
+# Credenciales de AWS S3 (cada uno tiene las suyas)
+**/s3.properties
