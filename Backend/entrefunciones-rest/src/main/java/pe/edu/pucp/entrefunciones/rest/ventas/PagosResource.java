@@ -9,6 +9,7 @@ import pe.edu.pucp.entrefunciones.bl.error.BLException;
 import pe.edu.pucp.entrefunciones.bl.error.NoEncontradoException;
 import pe.edu.pucp.entrefunciones.bl.error.ValidacionException;
 import pe.edu.pucp.entrefunciones.bl.ventas.PagoBL;
+import pe.edu.pucp.entrefunciones.modelo.ventas.Pago;
 import pe.edu.pucp.entrefunciones.bl.impl.ventas.PagoBLImpl;
 import pe.edu.pucp.entrefunciones.rest.dto.ventas.PagoDTO;
 import pe.edu.pucp.entrefunciones.rest.mapper.ventas.PagoMapper;
@@ -57,7 +58,23 @@ public class PagosResource {
         }
     }
 
-    @PUT
+    @POST
+    @Path("/{id}/registrar")
+    public Response registrar(@PathParam("id") int id) {
+        try {
+            Pago pago = pagoBL.findById(id);
+            pagoBL.procesarPago(id, pago.getMonto());
+            return Response.ok(Map.of("mensaje", "Pago registrado correctamente")).build();
+        }
+        catch (NoEncontradoException ex) {
+            return error(Response.Status.NOT_FOUND, ex);
+        }
+        catch (BLException ex) {
+            return error(Response.Status.INTERNAL_SERVER_ERROR, ex);
+        }
+    }
+
+    @POST
     @Path("/{id}/validar")
     public Response validar(@PathParam("id") int id) {
         Response prohibido = soloAdministrador();
@@ -79,7 +96,7 @@ public class PagosResource {
         }
     }
 
-    @PUT
+    @POST
     @Path("/{id}/rechazar")
     public Response rechazar(@PathParam("id") int id) {
         Response prohibido = soloAdministrador();

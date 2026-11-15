@@ -97,6 +97,18 @@ namespace EntreFunciones.Servicios.Rest
                 cabeceras: cabeceras);
         }
 
+        public async Task<List<EntradaDto>> ListarEntradas(int reservaId)
+        {
+            IReadOnlyDictionary<string, string> cabeceras =
+                await CrearCabeceras();
+            string url = HttpUtils.AgregarParametrosConsulta(
+                CrearUrl("entradas"),
+                new Dictionary<string, string?> { ["idReserva"] = reservaId.ToString() });
+            return await HttpUtils.DoGetList<EntradaDto>(
+                url,
+                cabeceras: cabeceras);
+        }
+
         public async Task<List<PagoDto>> ListarPagos()
         {
             IReadOnlyDictionary<string, string> cabeceras =

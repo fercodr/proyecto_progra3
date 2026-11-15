@@ -83,7 +83,7 @@
                             <td><span class="badge @compra.EstadoClase">@compra.Estado</span></td>
                             <td class="text-end text-nowrap">
                                 <button type="button" class="btn btn-outline-secondary btn-sm" aria-label="Ver detalle de @compra.Codigo"
-                                        @onclick="() => Detalle = compra">
+                                        @onclick="() => VerDetalle(compra)">
                                     <i class="bi bi-eye" aria-hidden="true"></i>
                                 </button>
                                 @if (compra.Pendiente)
@@ -125,6 +125,42 @@
             <dt class="col-5 text-muted fw-normal">Estado</dt>
             <dd class="col-7 mb-0"><span class="badge @Detalle.EstadoClase">@Detalle.Estado</span></dd>
         </dl>
+
+        @if (Detalle.Estado == "Confirmada")
+        {
+            <hr class="my-3" />
+            <h3 class="h6">Tus entradas</h3>
+            @if (CargandoEntradas)
+            {
+                <div class="d-flex align-items-center gap-2 text-secondary" role="status" aria-live="polite">
+                    <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                    Generando tus códigos QR...
+                </div>
+            }
+            else if (!string.IsNullOrEmpty(ErrorEntradas))
+            {
+                <div class="alert alert-warning py-2 px-3 mb-0" role="alert">@ErrorEntradas</div>
+            }
+            else if (EntradasDetalle.Count == 0)
+            {
+                <p class="text-muted small mb-0">Todavía no se generaron entradas para esta compra.</p>
+            }
+            else
+            {
+                <div class="d-flex flex-wrap gap-3">
+                    @foreach (EntradaDto entrada in EntradasDetalle)
+                    {
+                        <div class="text-center">
+                            <img src="@UrlQr(entrada.CodigoQR)" alt="Código QR de la entrada @entrada.Id" width="140" height="140" />
+                            @if (!string.IsNullOrEmpty(entrada.ButacaIdentificador))
+                            {
+                                <div class="small text-muted mt-1">Butaca @entrada.ButacaIdentificador</div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        }
     }
 </ModalConfirmacion>
 
@@ -143,6 +179,9 @@
     private IEnumerable<CompraClienteViewModel> ComprasFiltradas =>
         string.IsNullOrEmpty(FiltroEstado) ? Compras : Compras.Where(c => c.Estado == FiltroEstado);
     private CompraClienteViewModel? Detalle;
+    private List<EntradaDto> EntradasDetalle = [];
+    private bool CargandoEntradas;
+    private string ErrorEntradas = string.Empty;
     private CompraClienteViewModel? PorCancelar;
     private bool Cargando;
     private bool Enviando;
@@ -174,6 +213,32 @@
             Cargando = false;
         }
     }
+
+    private async Task VerDetalle(CompraClienteViewModel compra)
+    {
+        Detalle = compra;
+        EntradasDetalle = [];
+        ErrorEntradas = string.Empty;
+        if (compra.Estado != "Confirmada") return;
+        CargandoEntradas = true;
+        try
+        {
+            EntradasDetalle = await Api.ListarEntradas(compra.Id);
+        }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException or ServiceException or TaskCanceledException)
+        {
+            ErrorEntradas = "No se pudieron cargar tus entradas: " + e.Message;
+        }
+        finally
+        {
+            CargandoEntradas = false;
+        }
+    }
+
+    // Genera la imagen del QR en el navegador a partir del texto guardado en Entrada.CodigoQR;
+    // el backend solo guarda el texto (ver EntradaBLImpl), no una imagen.
+    private static string UrlQr(string codigoQR) =>
+        $"https://api.qrserver.com/v1/create-qr-code/?size=140x140&data={Uri.EscapeDataString(codigoQR)}";
 
     private async Task CancelarAsync()
     {
