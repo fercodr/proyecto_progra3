@@ -12,6 +12,8 @@ namespace EntreFunciones.Servicios
         Task Cancelar(int reservaId);
         Task<List<ReservaDto>> ListarReservas();
         Task<List<EntradaDto>> ListarEntradas(int reservaId);
+        Task ValidarIngreso(string codigoQR);
+        Task CancelarEntrada(int entradaId);
         Task<List<PagoDto>> ListarPagos();
         Task Validar(int pagoId);
         Task Rechazar(int pagoId);

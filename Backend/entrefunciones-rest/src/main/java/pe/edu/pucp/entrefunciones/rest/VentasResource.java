@@ -64,16 +64,6 @@ public class VentasResource {
     }
     @DELETE @Path("reservas/{id}") public Response cancelar(@PathParam("id")int id)throws Exception{propia(id);reservas.delete(id);return Response.noContent().build();}
     @POST @Path("reservas/{id}/pago") public JsonObject generar(@PathParam("id")int id)throws Exception{Reserva r=propia(id);return pagoDto(pagos.generarPago(r,0));}
-    @POST @Path("pagos/{id}/registrar") public Response registrar(@PathParam("id")int id)throws Exception{
-        Pago p=pagos.findById(id);if(p==null)throw new NotFoundException("No se encontró el pago");propia(p.getReserva().getId());pagos.procesarPago(id,p.getMonto());return Response.noContent().build();
-    }
-    @GET @Path("pagos") public JsonArray listarPagos()throws Exception{
-        exigirAdmin();reservas.expirarVencidas();JsonArrayBuilder b=Json.createArrayBuilder();for(Pago p:pagos.findAll())b.add(pagoDto(p));return b.build();
-    }
-    @POST @Path("pagos/{id}/validar") public JsonArray validar(@PathParam("id")int id)throws Exception{
-        exigirAdmin();JsonArrayBuilder b=Json.createArrayBuilder();for(Entrada e:pagos.validar(id))b.add(Json.createObjectBuilder().add("id",e.getId()).add("codigoQR",e.getCodigoQR()).add("estado",e.getEstado().name()));return b.build();
-    }
-    @POST @Path("pagos/{id}/rechazar") public Response rechazar(@PathParam("id")int id)throws Exception{exigirAdmin();pagos.rechazar(id);return Response.noContent().build();}
     private JsonObject reservaDto(Reserva r){
         return Json.createObjectBuilder().add("id",r.getId()).add("codigoOId","RES-"+r.getId()).add("funcionId",r.getFuncion().getId()).add("funcionNombre",titulo(r.getFuncion()))
           .add("fechaFuncion",r.getFuncion().getFecha().atTime(r.getFuncion().getHoraInicio()).toString()).add("cliente",r.getCliente().getNombres()+" "+r.getCliente().getApellidos()).add("dni",r.getCliente().getDni())

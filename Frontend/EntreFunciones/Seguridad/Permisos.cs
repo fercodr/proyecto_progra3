@@ -24,39 +24,6 @@ namespace EntreFunciones.Seguridad
             ["UsuariosRoles"] = ["Administrador"]   // 20 Usuarios y roles
         };
 
-        // Grupo del menú -> opciones. Solo se muestran las que el rol del usuario permite.
-        // Las líneas comentadas se activan cuando exista la página correspondiente (si no, el enlace da "no encontrado").
-        public static readonly IReadOnlyDictionary<string, List<OpcionMenu>> Menu = new Dictionary<string, List<OpcionMenu>>
-        {
-            // ["Mis compras"] = [
-            //     new OpcionMenu { Texto = "Mis compras", Href = "mis-compras", Permiso = "Compras" }
-            // ],
-            // ["Reportes"] = [
-            //     new OpcionMenu { Texto = "Reportes", Href = "admin", Permiso = "Reportes" }
-            // ],
-            ["Espacios"] = [
-                new OpcionMenu { Texto = "Sedes", Href = "admin/sedes", Permiso = "Espacios" },
-                new OpcionMenu { Texto = "Salas", Href = "admin/salas", Permiso = "Espacios" }
-            ],
-            // ["Programación"] = [
-            //     new OpcionMenu { Texto = "Catálogo", Href = "admin/catalogo", Permiso = "Programacion" },
-            //     new OpcionMenu { Texto = "Funciones", Href = "admin/funciones", Permiso = "Programacion" }
-            // ],
-            // ["Ventas"] = [
-            //     new OpcionMenu { Texto = "Ventas", Href = "admin/ventas", Permiso = "Ventas" },
-            //     new OpcionMenu { Texto = "Validación de ingreso", Href = "admin/validar-ingreso", Permiso = "Ventas" }
-            // ],
-            ["Control"] = [
-                // new OpcionMenu { Texto = "Incidencias", Href = "admin/incidencias", Permiso = "Incidencias" },
-                new OpcionMenu { Texto = "Usuarios y roles", Href = "admin/usuarios", Permiso = "UsuariosRoles" }
-            ]
-        };
-
-        // Opciones del menú desplegable del nombre de usuario.
-        public static readonly List<OpcionMenu> MenuCuenta = [
-            new OpcionMenu { Texto = "Mi perfil", Href = "perfil", Permiso = "PerfilCliente" }
-        ];
-
         private static bool TienePermiso(ClaimsPrincipal usuario, string permiso)
         {
             string[] rolesPermitidos = RolesPorPermiso[permiso];
@@ -68,33 +35,6 @@ namespace EntreFunciones.Seguridad
                 }
             }
             return false;
-        }
-
-        public static List<OpcionMenu> OpcionesDelUsuario(List<OpcionMenu> opciones, ClaimsPrincipal usuario)
-        {
-            List<OpcionMenu> opcionesPermitidas = [];
-            foreach (OpcionMenu opcion in opciones)
-            {
-                if (TienePermiso(usuario, opcion.Permiso))
-                {
-                    opcionesPermitidas.Add(opcion);
-                }
-            }
-            return opcionesPermitidas;
-        }
-
-        public static Dictionary<string, List<OpcionMenu>> MenuDelUsuario(ClaimsPrincipal usuario)
-        {
-            Dictionary<string, List<OpcionMenu>> menu = [];
-            foreach (KeyValuePair<string, List<OpcionMenu>> grupo in Menu)
-            {
-                List<OpcionMenu> opciones = OpcionesDelUsuario(grupo.Value, usuario);
-                if (opciones.Count > 0)
-                {
-                    menu[grupo.Key] = opciones;
-                }
-            }
-            return menu;
         }
     }
 }

@@ -109,6 +109,30 @@ namespace EntreFunciones.Servicios.Rest
                 cabeceras: cabeceras);
         }
 
+        // RF-M6-01: valida el ingreso con el codigoQR de la entrada (ya conocido por el admin,
+        // no lo escribe a mano: viene de la lista que ya trajo ListarEntradas).
+        public async Task ValidarIngreso(string codigoQR)
+        {
+            IReadOnlyDictionary<string, string> cabeceras =
+                await CrearCabeceras();
+            string url = CrearUrl("entradas/validar-ingreso");
+            await HttpUtils.DoPut(
+                url,
+                new Dictionary<string, string> { ["codigoQR"] = codigoQR },
+                cabeceras: cabeceras);
+        }
+
+        public async Task CancelarEntrada(int entradaId)
+        {
+            IReadOnlyDictionary<string, string> cabeceras =
+                await CrearCabeceras();
+            string url = CrearUrl($"entradas/{entradaId}/cancelar");
+            await HttpUtils.DoPut(
+                url,
+                new Dictionary<string, string>(),
+                cabeceras: cabeceras);
+        }
+
         public async Task<List<PagoDto>> ListarPagos()
         {
             IReadOnlyDictionary<string, string> cabeceras =
