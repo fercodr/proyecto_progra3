@@ -19,6 +19,7 @@ builder.Services.AddScoped<ICatalogoService, CatalogoService>();
 builder.Services.AddScoped<ISedeService, SedeService>();
 builder.Services.AddScoped<ISalaService, SalaService>();
 builder.Services.AddScoped<IButacaService, ButacaService>();
+builder.Services.AddScoped<IImagenService, ImagenService>();
 
 // Construir la aplicación con los servicios registrados.
 WebApplication app = builder.Build();

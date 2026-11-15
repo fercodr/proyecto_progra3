@@ -1,0 +1,10 @@
+# Copia este archivo como "s3.properties" (en esta misma carpeta) y llena tus datos.
+# s3.properties NO se sube a GitHub (tiene credenciales).
+#
+# AWS Academy -> Learner Lab -> "AWS Details" -> "AWS CLI: Show"
+# Las credenciales cambian cada vez que inicias el lab: vuelve a copiarlas y redespliega.
+bucket=entrefunciones-posters
+region=us-east-1
+accessKeyId=TU_ACCESS_KEY
+secretAccessKey=TU_SECRET_KEY
+sessionToken=TU_SESSION_TOKEN
