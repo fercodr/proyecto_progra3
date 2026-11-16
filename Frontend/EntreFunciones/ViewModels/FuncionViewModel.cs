@@ -14,10 +14,10 @@ namespace EntreFunciones.ViewModels
         public SalaViewModel? SalaRelacionada { get; set; }
         public SedeViewModel? SedeRelacionada { get; set; }
         public int Aforo { get; set; }
-        public int? EntradasNoCanceladas { get; set; }
+        public int? EntradasVigentes { get; set; }
+        public int? EntradasEmitidas { get; set; }
         public int? EntradasCanceladas { get; set; }
-        public decimal? IngresosValidos { get; set; }
-        public int? Asistentes { get; set; }
+        public decimal? IngresosConfirmados { get; set; }
         public decimal? PorcentajeOcupacion { get; set; }
 
         public string Presentacion =>

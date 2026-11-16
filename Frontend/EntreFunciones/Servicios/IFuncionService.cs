@@ -9,6 +9,7 @@ namespace EntreFunciones.Servicios
             DateOnly desde,
             DateOnly hasta,
             int? idSede = null,
-            int? idSala = null);
+            int? idSala = null,
+            string? tipoEvento = null);
     }
 }

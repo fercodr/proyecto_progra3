@@ -7,7 +7,9 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import pe.edu.pucp.entrefunciones.dao.espacios.ButacaDAO;
 import pe.edu.pucp.entrefunciones.dao.ventas.EntradaDAO;
 import pe.edu.pucp.entrefunciones.dao.ventas.ReservaDAO;
@@ -71,6 +73,16 @@ public class EntradaDAOImpl implements EntradaDAO {
 
     @Override
     public List<Entrada> findByReserva(int reservaId) throws SQLException {
+        Reserva reserva = reservaDAO.findById(reservaId);
+        if (reserva == null) {
+            return new ArrayList<>();
+        }
+
+        Map<Integer, Butaca> butacasPorId = new HashMap<>();
+        for (Butaca butaca : reserva.getButacas()) {
+            butacasPorId.put(butaca.getId(), butaca);
+        }
+
         String sql = "{call buscar_entrada_por_reserva(?)}";
         try (
                 ConnectionScope scope = ConnectionScope.openForRead();
@@ -81,7 +93,7 @@ public class EntradaDAOImpl implements EntradaDAO {
             try (ResultSet rs = cmd.executeQuery()) {
                 List<Entrada> entradas = new ArrayList<>();
                 while (rs.next()) {
-                    entradas.add(mapear(rs));
+                    entradas.add(mapearDeReserva(rs, reserva, butacasPorId));
                 }
                 return entradas;
             }
@@ -206,6 +218,35 @@ public class EntradaDAOImpl implements EntradaDAO {
                 butaca,
                 reserva);
 
+        entrada.setEstado(EstadoEntrada.valueOf(rs.getString("estado")));
+        return entrada;
+    }
+
+    /**
+     * Variante para listar las entradas de una misma reserva. Reutiliza el
+     * agregado ya cargado y evita repetir todas sus consultas por cada fila.
+     */
+    private Entrada mapearDeReserva(ResultSet rs, Reserva reserva,
+                                    Map<Integer, Butaca> butacasPorId)
+            throws SQLException {
+        int butacaId = rs.getInt("butaca_id");
+        boolean general = rs.wasNull();
+        Butaca butaca = general ? null : butacasPorId.get(butacaId);
+        if (!general && butaca == null) {
+            throw new SQLException(
+                    "Inconsistencia de datos: la entrada " + rs.getInt("id")
+                            + " referencia la butaca " + butacaId
+                            + ", que no pertenece a la reserva "
+                            + reserva.getId());
+        }
+
+        Entrada entrada = new Entrada(
+                rs.getInt("id"),
+                rs.getTimestamp("fecha_emision").toLocalDateTime(),
+                rs.getString("codigo_qr"),
+                rs.getDouble("precio_final"),
+                butaca,
+                reserva);
         entrada.setEstado(EstadoEntrada.valueOf(rs.getString("estado")));
         return entrada;
     }

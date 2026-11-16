@@ -176,11 +176,14 @@ public class ButacaDAOImpl implements ButacaDAO {
         }
     }
 
-    /** Elimina todas las butacas de una sala (dentro de la transacción activa). */
+    /**
+     * Desactiva todas las butacas de una sala sin borrar sus identificadores.
+     * Se mantiene el nombre histórico del método por compatibilidad con el DAO.
+     */
     @Override
     public void deleteButacas(int salaId) throws SQLException {
         validarId(salaId);
-        String sql = "DELETE FROM butaca WHERE sala_id = ?";
+        String sql = "UPDATE butaca SET activo = FALSE WHERE sala_id = ?";
         Connection conn = TransactionsManager.getConnection();
         try (PreparedStatement cmd = conn.prepareStatement(sql)) {
             cmd.setInt(1, salaId);

@@ -23,10 +23,10 @@ public class Funcion {
 
     // Estadísticas calculadas por la consulta de reportes; no forman parte
     // del alta ni de la actualización de una función.
-    private Integer entradasNoCanceladas;
+    private Integer entradasVigentes;
+    private Integer entradasEmitidas;
     private Integer entradasCanceladas;
-    private BigDecimal ingresosValidos;
-    private Integer asistentes;
+    private BigDecimal ingresosConfirmados;
     private BigDecimal porcentajeOcupacion;
 
     // Constructor normal
@@ -72,10 +72,10 @@ public class Funcion {
         setEstado(funcion.getEstado());
 
         this.entradas = new ArrayList<>(funcion.getEntradas());
-        this.entradasNoCanceladas = funcion.getEntradasNoCanceladas();
+        this.entradasVigentes = funcion.getEntradasVigentes();
+        this.entradasEmitidas = funcion.getEntradasEmitidas();
         this.entradasCanceladas = funcion.getEntradasCanceladas();
-        this.ingresosValidos = funcion.getIngresosValidos();
-        this.asistentes = funcion.getAsistentes();
+        this.ingresosConfirmados = funcion.getIngresosConfirmados();
         this.porcentajeOcupacion = funcion.getPorcentajeOcupacion();
 
         // Copia la misma referencia de contenido; no duplica el catálogo.
@@ -258,12 +258,20 @@ public class Funcion {
         this.entradas = entradas;
     }
 
-    public Integer getEntradasNoCanceladas() {
-        return entradasNoCanceladas;
+    public Integer getEntradasVigentes() {
+        return entradasVigentes;
     }
 
-    public void setEntradasNoCanceladas(Integer entradasNoCanceladas) {
-        this.entradasNoCanceladas = entradasNoCanceladas;
+    public void setEntradasVigentes(Integer entradasVigentes) {
+        this.entradasVigentes = entradasVigentes;
+    }
+
+    public Integer getEntradasEmitidas() {
+        return entradasEmitidas;
+    }
+
+    public void setEntradasEmitidas(Integer entradasEmitidas) {
+        this.entradasEmitidas = entradasEmitidas;
     }
 
     public Integer getEntradasCanceladas() {
@@ -274,20 +282,12 @@ public class Funcion {
         this.entradasCanceladas = entradasCanceladas;
     }
 
-    public BigDecimal getIngresosValidos() {
-        return ingresosValidos;
+    public BigDecimal getIngresosConfirmados() {
+        return ingresosConfirmados;
     }
 
-    public void setIngresosValidos(BigDecimal ingresosValidos) {
-        this.ingresosValidos = ingresosValidos;
-    }
-
-    public Integer getAsistentes() {
-        return asistentes;
-    }
-
-    public void setAsistentes(Integer asistentes) {
-        this.asistentes = asistentes;
+    public void setIngresosConfirmados(BigDecimal ingresosConfirmados) {
+        this.ingresosConfirmados = ingresosConfirmados;
     }
 
     public BigDecimal getPorcentajeOcupacion() {

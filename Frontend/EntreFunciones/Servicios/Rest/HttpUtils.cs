@@ -43,6 +43,7 @@ namespace EntreFunciones.Servicios.Rest
             }
 
             HttpResponseMessage respuesta;
+            string? endpoint = ObtenerEndpointSeguro(peticion.RequestUri);
             try
             {
                 respuesta = await _http.SendAsync(peticion);
@@ -56,24 +57,46 @@ namespace EntreFunciones.Servicios.Rest
 
                 throw new ServiceException(
                     "El servicio REST no respondio dentro del tiempo esperado.",
-                    ex);
+                    ex,
+                    endpoint);
             }
             catch (HttpRequestException ex)
             {
                 throw new ServiceException(
                     "No se pudo establecer comunicacion con el servicio REST.",
-                    ex);
+                    ex,
+                    endpoint);
             }
 
             if (!respuesta.IsSuccessStatusCode)
             {
                 int codigo = (int)respuesta.StatusCode;
+                string? tipoContenido = respuesta.Content.Headers.ContentType?.ToString();
                 string mensaje = await LeerMensajeError(respuesta, codigo);
                 respuesta.Dispose();
-                    throw new ServiceException(mensaje, codigo);
+                throw new ServiceException(
+                    mensaje,
+                    codigo,
+                    endpoint,
+                    tipoContenido);
             }
 
             return respuesta;
+        }
+
+        private static string? ObtenerEndpointSeguro(Uri? uri)
+        {
+            if (uri is null)
+            {
+                return null;
+            }
+
+            if (uri.IsAbsoluteUri)
+            {
+                return uri.GetLeftPart(UriPartial.Path);
+            }
+
+            return uri.OriginalString.Split('?', '#')[0];
         }
 
         private static async Task<string> LeerMensajeError(HttpResponseMessage respuesta, int codigo)
@@ -92,6 +115,14 @@ namespace EntreFunciones.Servicios.Rest
                 return mensajePredeterminado;
             }
             catch (NotSupportedException)
+            {
+                return mensajePredeterminado;
+            }
+            catch (HttpRequestException)
+            {
+                return mensajePredeterminado;
+            }
+            catch (TaskCanceledException)
             {
                 return mensajePredeterminado;
             }
@@ -120,13 +151,29 @@ namespace EntreFunciones.Servicios.Rest
             {
                 throw new ServiceException(
                     "El servicio REST devolvio una respuesta incompatible.",
-                    ex);
+                    ex,
+                    ObtenerEndpointSeguro(respuesta.RequestMessage?.RequestUri));
             }
             catch (NotSupportedException ex)
             {
                 throw new ServiceException(
                     "El formato devuelto por el servicio REST no es compatible.",
-                    ex);
+                    ex,
+                    ObtenerEndpointSeguro(respuesta.RequestMessage?.RequestUri));
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new ServiceException(
+                    "No se pudo leer la respuesta del servicio REST.",
+                    ex,
+                    ObtenerEndpointSeguro(respuesta.RequestMessage?.RequestUri));
+            }
+            catch (TaskCanceledException ex)
+            {
+                throw new ServiceException(
+                    "La lectura de la respuesta REST excedio el tiempo esperado.",
+                    ex,
+                    ObtenerEndpointSeguro(respuesta.RequestMessage?.RequestUri));
             }
 
             if (resultado is null)

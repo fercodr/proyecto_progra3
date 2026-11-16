@@ -15,6 +15,14 @@
     {
         <div class="alert alert-danger" role="alert" aria-live="assertive">Credenciales incorrectas.</div>
     }
+    @if (ServicioNoDisponible)
+    {
+        <div class="alert alert-danger" role="alert" aria-live="assertive">No se pudo contactar o validar el servicio de autenticación. Intenta nuevamente.</div>
+    }
+    @if (ErrorSesion)
+    {
+        <div class="alert alert-danger" role="alert" aria-live="assertive">La cuenta fue validada, pero no se pudo crear la sesión. Intenta nuevamente.</div>
+    }
     @if (Registrado)
     {
         <div class="alert alert-success" role="status" aria-live="polite">Registro exitoso. Ya puedes iniciar sesión.</div>
@@ -48,4 +56,10 @@
 
     [SupplyParameterFromQuery]
     public bool Registrado { get; set; }
+
+    [SupplyParameterFromQuery]
+    public bool ServicioNoDisponible { get; set; }
+
+    [SupplyParameterFromQuery]
+    public bool ErrorSesion { get; set; }
 }

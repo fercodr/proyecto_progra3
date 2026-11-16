@@ -9,6 +9,10 @@ namespace EntreFunciones.Servicios.Rest
         : RestServiceBase<FuncionResumenDTO, FuncionViewModel>,
           IFuncionService
     {
+        private static readonly HashSet<string> TiposEventoReporte = new(
+            ["PELICULA", "OBRA_TEATRO", "ACTIVIDAD_CULTURAL"],
+            StringComparer.Ordinal);
+
         protected override string ClaveRuta => "Funciones";
 
         public FuncionService(
@@ -43,7 +47,8 @@ namespace EntreFunciones.Servicios.Rest
             DateOnly desde,
             DateOnly hasta,
             int? idSede = null,
-            int? idSala = null)
+            int? idSala = null,
+            string? tipoEvento = null)
         {
             if (desde > hasta)
             {
@@ -59,12 +64,24 @@ namespace EntreFunciones.Servicios.Rest
                 throw new ArgumentOutOfRangeException(nameof(idSala));
             }
 
+            string? tipoEventoNormalizado = string.IsNullOrWhiteSpace(tipoEvento)
+                ? null
+                : tipoEvento.Trim();
+            if (tipoEventoNormalizado is not null
+                && !TiposEventoReporte.Contains(tipoEventoNormalizado))
+            {
+                throw new ArgumentException(
+                    "El tipo de actividad no es válido.",
+                    nameof(tipoEvento));
+            }
+
             Dictionary<string, string?> parametros = new()
             {
                 ["desde"] = desde.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                 ["hasta"] = hasta.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                 ["sedeId"] = idSede?.ToString(CultureInfo.InvariantCulture),
-                ["salaId"] = idSala?.ToString(CultureInfo.InvariantCulture)
+                ["salaId"] = idSala?.ToString(CultureInfo.InvariantCulture),
+                ["tipoEvento"] = tipoEventoNormalizado
             };
 
             string url = HttpUtils.AgregarParametrosConsulta(
@@ -103,10 +120,10 @@ namespace EntreFunciones.Servicios.Rest
             modelo.SedeRelacionada = ToViewModel(dto.Sede);
             modelo.SalaRelacionada = ToViewModel(dto.Sala);
             modelo.Aforo = dto.Sala?.Aforo ?? 0;
-            modelo.EntradasNoCanceladas = dto.EntradasNoCanceladas;
+            modelo.EntradasVigentes = dto.EntradasVigentes;
+            modelo.EntradasEmitidas = dto.EntradasEmitidas;
             modelo.EntradasCanceladas = dto.EntradasCanceladas;
-            modelo.IngresosValidos = dto.IngresosValidos;
-            modelo.Asistentes = dto.Asistentes;
+            modelo.IngresosConfirmados = dto.IngresosConfirmados;
             modelo.PorcentajeOcupacion = dto.PorcentajeOcupacion;
             if (modelo.SalaRelacionada is not null)
             {

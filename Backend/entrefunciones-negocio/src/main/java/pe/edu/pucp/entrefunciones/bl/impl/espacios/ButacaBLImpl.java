@@ -98,7 +98,13 @@ public class ButacaBLImpl implements ButacaBL {
         validarDatos(butaca);
         validarId(butaca.getId(), "butaca");
         TransaccionBL.ejecutar("No se pudo actualizar la butaca", () -> {
-            validarExisteButaca(butaca.getId());
+            Butaca existente = validarExisteButaca(butaca.getId());
+            if (existente.getSala() == null
+                    || existente.getSala().getId() != butaca.getSala().getId()) {
+                throw new BLException(
+                        "Una butaca con historial no puede trasladarse a otra sala; "
+                                + "desactívela y registre una nueva en la sala de destino");
+            }
             Sala sala = validarExisteSala(butaca.getSala().getId());
             if (butaca.estaActivo() && !sala.estaActivo()) {
                 throw new BLException("No se puede activar o trasladar una butaca a una sala inactiva");

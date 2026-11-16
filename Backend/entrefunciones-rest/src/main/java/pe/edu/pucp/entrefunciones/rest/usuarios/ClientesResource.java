@@ -2,6 +2,8 @@ package pe.edu.pucp.entrefunciones.rest.usuarios;
 
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.SecurityContext;
 import pe.edu.pucp.entrefunciones.bl.error.BLException;
 import pe.edu.pucp.entrefunciones.bl.error.NoEncontradoException;
 import pe.edu.pucp.entrefunciones.bl.error.ValidacionException;
@@ -12,6 +14,7 @@ import pe.edu.pucp.entrefunciones.modelo.usuarios.Cliente;
 import pe.edu.pucp.entrefunciones.rest.dto.usuarios.CambiarPasswordDTO;
 import pe.edu.pucp.entrefunciones.rest.dto.usuarios.ClienteDTO;
 import pe.edu.pucp.entrefunciones.rest.mapper.usuarios.ClienteMapper;
+import pe.edu.pucp.entrefunciones.rest.AutorizacionRest;
 
 import java.util.List;
 import java.util.Map;
@@ -25,6 +28,9 @@ public class ClientesResource {
     // Se usa ClienteBLImpl (y no la interfaz) porque su insert solo lanza BLException
     private final ClienteBLImpl clienteBL;
     private final CuentaUsuarioBL cuentaUsuarioBL;
+
+    @Context
+    private SecurityContext securityContext;
 
     public ClientesResource() {
         clienteBL = new ClienteBLImpl();
@@ -61,6 +67,7 @@ public class ClientesResource {
     // listar clientes
     @GET
     public Response listar() {
+        AutorizacionRest.exigirAdministrador(securityContext);
         try {
             List<Cliente> clientes = clienteBL.findAll();
             return Response.ok(ClienteMapper.toDTOs(clientes)).build();
@@ -74,6 +81,7 @@ public class ClientesResource {
     @GET
     @Path("/{id}")
     public Response findById(@PathParam("id") int id) {
+        AutorizacionRest.exigirPropietarioOAdministrador(securityContext, id);
         try {
             return Response.ok(ClienteMapper.toDTO(buscar(id))).build();
         }
@@ -89,6 +97,7 @@ public class ClientesResource {
     @PUT
     @Path("/{id}")
     public Response actualizar(@PathParam("id") int id, ClienteDTO dto) {
+        AutorizacionRest.exigirPropietarioOAdministrador(securityContext, id);
         try {
             if (dto == null) {
                 throw new ValidacionException("Envíe los datos del cliente");
@@ -123,6 +132,7 @@ public class ClientesResource {
     @PUT
     @Path("/{id}/password")
     public Response cambiarContrasena(@PathParam("id") int id, CambiarPasswordDTO dto) {
+        AutorizacionRest.exigirPropietarioOAdministrador(securityContext, id);
         try {
             if (dto == null) {
                 throw new ValidacionException("Envíe la contraseña actual y la nueva");
@@ -145,6 +155,7 @@ public class ClientesResource {
     @DELETE
     @Path("/{id}")
     public Response desactivar(@PathParam("id") int id) {
+        AutorizacionRest.exigirPropietarioOAdministrador(securityContext, id);
         try {
             clienteBL.delete(id);
             return Response.noContent().build();
@@ -158,6 +169,7 @@ public class ClientesResource {
     @POST
     @Path("/{id}/activar")
     public Response activar(@PathParam("id") int id) {
+        AutorizacionRest.exigirAdministrador(securityContext);
         try {
             Cliente cliente = buscar(id);
             cliente.activar();

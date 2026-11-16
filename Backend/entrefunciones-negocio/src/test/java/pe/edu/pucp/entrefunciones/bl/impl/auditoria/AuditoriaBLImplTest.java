@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.lang.reflect.Proxy;
 import java.sql.SQLException;
 import java.time.Clock;
 import java.time.Instant;
@@ -15,8 +16,10 @@ import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import pe.edu.pucp.entrefunciones.bl.error.BLException;
+import pe.edu.pucp.entrefunciones.bl.error.ValidacionException;
 import pe.edu.pucp.entrefunciones.dao.auditoria.AuditoriaDAO;
+import pe.edu.pucp.entrefunciones.dao.impl.eventos.FuncionDAO;
+import pe.edu.pucp.entrefunciones.dao.usuarios.AdministradorDAO;
 import pe.edu.pucp.entrefunciones.modelo.auditoria.Auditoria;
 import pe.edu.pucp.entrefunciones.modelo.auditoria.EstadoAuditoria;
 import pe.edu.pucp.entrefunciones.modelo.catalogo.CategoriaGenero;
@@ -25,6 +28,7 @@ import pe.edu.pucp.entrefunciones.modelo.catalogo.Funcion;
 import pe.edu.pucp.entrefunciones.modelo.catalogo.Pelicula;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Sala;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Sede;
+import pe.edu.pucp.entrefunciones.modelo.funciones.EstadoFuncion;
 import pe.edu.pucp.entrefunciones.modelo.usuarios.Administrador;
 
 class AuditoriaBLImplTest {
@@ -38,9 +42,6 @@ class AuditoriaBLImplTest {
     @BeforeEach
     void preparar() {
         dao = new FakeAuditoriaDAO();
-        Clock reloj = Clock.fixed(Instant.parse("2026-11-09T15:30:00Z"), ZONA_LIMA);
-        bl = new AuditoriaBLImpl(reloj);
-
         Sede sede = new Sede(
                 1, "Centro", "Av. Principal 100", "Lima", "014000000");
         Sala sala = new Sala(1, sede, "Sala 1", 80, "Cine 2D");
@@ -62,8 +63,14 @@ class AuditoriaBLImplTest {
                 "Espanol");
         administrador = new Administrador(
                 7, "Ana", "Perez", "EMP-0007", true);
-        dao.funcion = funcion;
-        dao.administrador = administrador;
+
+        Clock reloj = Clock.fixed(
+                Instant.parse("2026-11-09T15:30:00Z"), ZONA_LIMA);
+        bl = new AuditoriaBLImpl(
+                dao,
+                crearFuncionDAOSimulado(),
+                crearAdministradorDAOSimulado(),
+                reloj);
     }
 
     @Test
@@ -86,28 +93,36 @@ class AuditoriaBLImplTest {
     void registrarRechazaAdministradorInactivo() {
         administrador.desactivar();
 
-        assertThrows(
-                BLException.class,
+        ValidacionException error = assertThrows(
+                ValidacionException.class,
                 () -> bl.registrar(
                         funcion.getId(),
                         administrador.getId(),
                         "Proyector sin imagen"));
+
+        assertEquals(
+                "El responsable no existe o no esta activo",
+                error.getMessage());
     }
 
     @Test
     void registrarRechazaFuncionCancelada() {
         funcion.cancelar();
 
-        assertThrows(
-                BLException.class,
+        ValidacionException error = assertThrows(
+                ValidacionException.class,
                 () -> bl.registrar(
                         funcion.getId(),
                         administrador.getId(),
                         "Proyector sin imagen"));
+
+        assertEquals(
+                "La funcion no existe o no es asignable",
+                error.getMessage());
     }
 
     @Test
-    void actualizarAtencionConservaDatosOriginales() throws Exception {
+    void actualizarAtencionEditaDescripcionYConservaDatosHistoricos() throws Exception {
         LocalDateTime fechaOriginal = LocalDateTime.of(2026, 11, 8, 9, 0);
         Auditoria original = new Auditoria(
                 25,
@@ -118,25 +133,67 @@ class AuditoriaBLImplTest {
         dao.auditoria = original;
         Administrador nuevoResponsable = new Administrador(
                 8, "Luis", "Torres", "EMP-0008", true);
-        dao.administrador = nuevoResponsable;
+        administrador = nuevoResponsable;
 
         Auditoria actualizada = bl.actualizarAtencion(
                 original.getId(),
                 nuevoResponsable.getId(),
+                "Descripcion corregida",
                 EstadoAuditoria.RESUELTA);
 
         assertEquals(fechaOriginal, actualizada.getFecha());
         assertSame(funcion, actualizada.getFuncion());
-        assertEquals("Descripcion original", actualizada.getDescripcion());
+        assertEquals("Descripcion corregida", actualizada.getDescripcion());
         assertSame(nuevoResponsable, actualizada.getResponsable());
         assertEquals(EstadoAuditoria.RESUELTA, actualizada.getEstado());
+    }
+
+    @Test
+    void actualizarAtencionRechazaDescripcionVacia() {
+        ValidacionException error = assertThrows(
+                ValidacionException.class,
+                () -> bl.actualizarAtencion(
+                        25,
+                        administrador.getId(),
+                        "  ",
+                        EstadoAuditoria.EN_PROCESO));
+
+        assertEquals("La descripcion es obligatoria", error.getMessage());
+    }
+
+    private FuncionDAO crearFuncionDAOSimulado() {
+        return (FuncionDAO) Proxy.newProxyInstance(
+                FuncionDAO.class.getClassLoader(),
+                new Class<?>[]{FuncionDAO.class},
+                (proxy, metodo, argumentos) -> {
+                    if (metodo.getName().equals("findAllActiveFunctions")) {
+                        return funcion.getEstado() == EstadoFuncion.CANCELADA
+                                ? List.of()
+                                : List.of(funcion);
+                    }
+                    throw new UnsupportedOperationException(
+                            "Metodo no simulado: " + metodo.getName());
+                });
+    }
+
+    private AdministradorDAO crearAdministradorDAOSimulado() {
+        return (AdministradorDAO) Proxy.newProxyInstance(
+                AdministradorDAO.class.getClassLoader(),
+                new Class<?>[]{AdministradorDAO.class},
+                (proxy, metodo, argumentos) -> {
+                    if (metodo.getName().equals("findAllActiveAdmins")) {
+                        return administrador.estaActivo()
+                                ? List.of(administrador)
+                                : List.of();
+                    }
+                    throw new UnsupportedOperationException(
+                            "Metodo no simulado: " + metodo.getName());
+                });
     }
 
     private static final class FakeAuditoriaDAO implements AuditoriaDAO {
 
         private Auditoria auditoria;
-        private Funcion funcion;
-        private Administrador administrador;
 
         @Override
         public List<Auditoria> findAll() {

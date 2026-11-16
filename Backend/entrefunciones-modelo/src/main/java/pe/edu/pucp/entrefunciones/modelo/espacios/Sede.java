@@ -8,6 +8,7 @@ public class Sede implements IEliminable {
     private String razonSocial;
     private String direccion;
     private String ciudad;
+    private String distrito;
     private String telefonoContacto;
     private boolean activo;
     private List<Sala> salas = new ArrayList<>();
@@ -20,6 +21,7 @@ public class Sede implements IEliminable {
         setRazonSocial(razonSocial);
         setDireccion(direccion);
         setCiudad(ciudad);
+        setDistrito(ciudad);
         setTelefonoContacto(telefonoContacto);
         this.activo=true;
     }
@@ -33,6 +35,7 @@ public class Sede implements IEliminable {
         setRazonSocial(sede.getRazonSocial());
         setDireccion(sede.getDireccion());
         setCiudad(sede.getCiudad());
+        setDistrito(sede.getDistrito());
         setTelefonoContacto(sede.getTelefonoContacto());
         if(sede.estaActivo()){
             activar();
@@ -104,6 +107,14 @@ public class Sede implements IEliminable {
             throw new IllegalArgumentException("ciudad no puede ser nulo o vacio");
         }
         this.ciudad=ciudad;
+    }
+
+    public String getDistrito(){ return distrito; }
+    public void setDistrito(String distrito){
+        if(distrito == null || distrito.isBlank()){
+            throw new IllegalArgumentException("distrito no puede ser nulo o vacio");
+        }
+        this.distrito=distrito.trim();
     }
 
     public String getTelefonoContacto(){

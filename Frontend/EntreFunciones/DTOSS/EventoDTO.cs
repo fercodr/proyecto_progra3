@@ -26,6 +26,12 @@ namespace EntreFunciones.DTOSS
         [JsonPropertyName("imagenUrl")]
         public string? ImagenUrl { get; set; }
 
+        [JsonPropertyName("tematica")]
+        public string? Tematica { get; set; }
+
+        [JsonPropertyName("publicoObjetivo")]
+        public string? PublicoObjetivo { get; set; }
+
         [JsonPropertyName("requiereAsientoNumerado")]
         public bool RequiereAsientoNumerado { get; set; }
 

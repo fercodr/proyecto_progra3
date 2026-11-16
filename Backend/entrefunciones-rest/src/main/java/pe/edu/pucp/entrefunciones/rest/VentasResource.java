@@ -34,12 +34,12 @@ public class VentasResource {
             Funcion f=new FuncionDAOImpl().findById(id);
             if(f==null || f.getEstado()!=pe.edu.pucp.entrefunciones.modelo.funciones.EstadoFuncion.CONFIRMADA || !f.getEvento().estaActivo()
                 || !f.getSala().estaActivo() || !f.getSala().getSede().estaActivo() || !f.getFecha().atTime(f.getHoraInicio()).isAfter(c.ahora()))throw new BLException("La función no está disponible");
-            Set<Integer> ocupadas=c.butacasOcupadas(id);JsonArrayBuilder asientos=Json.createArrayBuilder();
+            Set<Integer> retenidas=c.butacasRetenidas(id);Set<Integer> ocupadas=c.butacasConfirmadas(id);JsonArrayBuilder asientos=Json.createArrayBuilder();
             if(f.requiereAsientoNumerado())for(Butaca b:new ButacaDAOImpl().findBySalaId(f.getSala().getId()))
-                asientos.add(Json.createObjectBuilder().add("id",b.getId()).add("fila",b.getFila()).add("columna",b.getColumna()).add("activo",b.estaActivo()).add("ocupada",ocupadas.contains(b.getId())));
+                asientos.add(Json.createObjectBuilder().add("id",b.getId()).add("fila",b.getFila()).add("columna",b.getColumna()).add("activo",b.estaActivo()).add("ocupada",ocupadas.contains(b.getId())).add("retenida",retenidas.contains(b.getId())));
             return Json.createObjectBuilder().add("id",id).add("titulo",titulo(f)).add("sede",f.getSala().getSede().getRazonSocial()).add("sala",f.getSala().getNombre())
                 .add("fecha",f.getFecha().toString()).add("horaInicio",f.getHoraInicio().toString()).add("precio",f.getEvento().getPrecio())
-                .add("aforoNumerado",f.requiereAsientoNumerado()).add("cuposDisponibles",Math.max(0,f.getSala().getAforo()-(f.requiereAsientoNumerado()?ocupadas.size():c.cuposOcupados(id))))
+                .add("aforoNumerado",f.requiereAsientoNumerado()).add("cuposDisponibles",Math.max(0,f.getSala().getAforo()-(f.requiereAsientoNumerado()?ocupadas.size()+retenidas.size():c.cuposOcupados(id))))
                 .add("butacas",asientos).build();
         });
     }

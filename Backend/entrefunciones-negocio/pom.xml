@@ -6,7 +6,7 @@
     <parent>
         <groupId>pe.edu.pucp.entrefunciones</groupId>
         <artifactId>entrefunciones</artifactId>
-        <version>1.0-SNAPSHOT</version>
+        <version>1.0</version>
     </parent>
 
     <artifactId>entrefunciones-negocio</artifactId>
@@ -16,7 +16,7 @@
         <dependency>
             <groupId>pe.edu.pucp.entrefunciones</groupId>
             <artifactId>entrefunciones-accesodatos</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>1.0</version>
         </dependency>
         <!-- Amazon S3 (pósters de eventos). Se usa el cliente HTTP liviano de Java
              y se excluyen los otros dos para no inflar el WAR. -->

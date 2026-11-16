@@ -21,6 +21,7 @@ public interface FuncionDAO extends DAO<Funcion, Integer> {
     List<Funcion> findBySalaId(int idSala) throws SQLException;
 
     List<Funcion> findReportes(LocalDate desde, LocalDate hasta,
-                               Integer idSede, Integer idSala)
+                               Integer idSede, Integer idSala,
+                               String tipoEvento)
             throws SQLException;
 }

@@ -143,6 +143,21 @@ namespace EntreFunciones.Servicios.Rest
                 cabeceras: cabeceras);
         }
 
+        public async Task<PagoDto> BuscarPagoPorCodigo(string codigoPago)
+        {
+            if (string.IsNullOrWhiteSpace(codigoPago))
+            {
+                throw new ArgumentException("El código de pago es obligatorio.", nameof(codigoPago));
+            }
+            IReadOnlyDictionary<string, string> cabeceras =
+                await CrearCabeceras();
+            string codigo = Uri.EscapeDataString(codigoPago.Trim());
+            string url = CrearUrl($"pagos/codigo/{codigo}");
+            return await HttpUtils.DoGet<PagoDto>(
+                url,
+                cabeceras: cabeceras);
+        }
+
         public async Task Validar(int pagoId)
         {
             IReadOnlyDictionary<string, string> cabeceras =

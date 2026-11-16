@@ -10,6 +10,7 @@ public class SalaDTO {
     private String nombre;
     private int aforo;
     private String tipoSala;
+    private boolean accesible;
     // Solo al crear una sala con su mapa de butacas (InsertConButacas en C#)
     private List<ButacaDTO> butacas;
 
@@ -71,6 +72,9 @@ public class SalaDTO {
     public void setTipoSala(String tipoSala) {
         this.tipoSala = tipoSala;
     }
+
+    public boolean isAccesible() { return accesible; }
+    public void setAccesible(boolean accesible) { this.accesible = accesible; }
 
     public List<ButacaDTO> getButacas() {
         return butacas;

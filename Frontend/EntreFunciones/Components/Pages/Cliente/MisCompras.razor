@@ -150,11 +150,22 @@
                 <div class="d-flex flex-wrap gap-3">
                     @foreach (EntradaDto entrada in EntradasDetalle)
                     {
-                        <div class="text-center">
+                        <div class="text-center border rounded p-2">
                             <img src="@UrlQr(entrada.CodigoQR)" alt="Código QR de la entrada @entrada.Id" width="140" height="140" />
                             @if (!string.IsNullOrEmpty(entrada.ButacaIdentificador))
                             {
                                 <div class="small text-muted mt-1">Butaca @entrada.ButacaIdentificador</div>
+                            }
+                            <div class="mt-2">
+                                <span class="badge @ClaseEstadoEntrada(entrada.Estado)">@NombreEstadoEntrada(entrada.Estado)</span>
+                            </div>
+                            @if (entrada.Estado == "VIGENTE")
+                            {
+                                <button type="button" class="btn btn-outline-danger btn-sm mt-2"
+                                        disabled="@(EntradaProcesando == entrada.Id)"
+                                        @onclick="() => CancelarEntradaAsync(entrada)">
+                                    @(EntradaProcesando == entrada.Id ? "Cancelando..." : "Cancelar entrada")
+                                </button>
                             }
                         </div>
                     }
@@ -182,6 +193,7 @@
     private List<EntradaDto> EntradasDetalle = [];
     private bool CargandoEntradas;
     private string ErrorEntradas = string.Empty;
+    private int? EntradaProcesando;
     private CompraClienteViewModel? PorCancelar;
     private bool Cargando;
     private bool Enviando;
@@ -239,6 +251,46 @@
     // el backend solo guarda el texto (ver EntradaBLImpl), no una imagen.
     private static string UrlQr(string codigoQR) =>
         $"https://api.qrserver.com/v1/create-qr-code/?size=140x140&data={Uri.EscapeDataString(codigoQR)}";
+
+    private async Task CancelarEntradaAsync(EntradaDto entrada)
+    {
+        if (Detalle is null || entrada.Estado != "VIGENTE" || EntradaProcesando.HasValue)
+        {
+            return;
+        }
+        EntradaProcesando = entrada.Id;
+        ErrorEntradas = string.Empty;
+        try
+        {
+            await Api.CancelarEntrada(entrada.Id);
+            EntradasDetalle = await Api.ListarEntradas(Detalle.Id);
+            Mensaje = $"La entrada #{entrada.Id} fue cancelada sin afectar las demás entradas de la reserva.";
+        }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException or ServiceException or TaskCanceledException)
+        {
+            ErrorEntradas = "No se pudo cancelar la entrada: " + e.Message;
+        }
+        finally
+        {
+            EntradaProcesando = null;
+        }
+    }
+
+    private static string NombreEstadoEntrada(string estado) => estado switch
+    {
+        "VIGENTE" => "Vigente",
+        "CANCELADA" => "Cancelada",
+        "UTILIZADA" => "Utilizada",
+        _ => estado
+    };
+
+    private static string ClaseEstadoEntrada(string estado) => estado switch
+    {
+        "VIGENTE" => "text-bg-success",
+        "CANCELADA" => "text-bg-danger",
+        "UTILIZADA" => "text-bg-secondary",
+        _ => "text-bg-light"
+    };
 
     private async Task CancelarAsync()
     {

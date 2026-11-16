@@ -8,6 +8,7 @@ public class SedeDTO {
     private String razonSocial;
     private String direccion;
     private String ciudad;
+    private String distrito;
     private String telefonoContacto;
     private List<SalaDTO> salas;
 
@@ -53,6 +54,9 @@ public class SedeDTO {
     public void setCiudad(String ciudad) {
         this.ciudad = ciudad;
     }
+
+    public String getDistrito() { return distrito; }
+    public void setDistrito(String distrito) { this.distrito = distrito; }
 
     public String getTelefonoContacto() {
         return telefonoContacto;

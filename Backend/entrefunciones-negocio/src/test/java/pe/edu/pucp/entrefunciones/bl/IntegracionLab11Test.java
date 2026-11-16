@@ -7,6 +7,8 @@ import pe.edu.pucp.entrefunciones.bl.error.BLException;
 import pe.edu.pucp.entrefunciones.db.DBManager;
 import pe.edu.pucp.entrefunciones.bl.impl.ventas.*;
 import pe.edu.pucp.entrefunciones.bl.impl.eventos.FuncionBLImpl;
+import pe.edu.pucp.entrefunciones.bl.impl.eventos.EventoBLImpl;
+import pe.edu.pucp.entrefunciones.bl.impl.espacios.ButacaBLImpl;
 import pe.edu.pucp.entrefunciones.dao.impl.eventos.*;
 import pe.edu.pucp.entrefunciones.dao.impl.espacios.*;
 import pe.edu.pucp.entrefunciones.dao.impl.usuarios.*;
@@ -27,11 +29,18 @@ class IntegracionLab11Test {
     private final PagoBLImpl pagos=new PagoBLImpl();
     private LocalDate fecha;
     @BeforeEach void preparar() throws Exception {
-        if(!System.getenv("DB_NAME").endsWith("_test"))throw new IllegalStateException("Se requiere una BD desechable *_test");
+        if(!"entrefunciones_lab12_test".equals(System.getenv("DB_NAME")))throw new IllegalStateException("Se requiere exactamente entrefunciones_lab12_test");
         try(Connection c=DBManager.getInstance().getConnection();Statement q=c.createStatement()) {
             for(String tabla:List.of("auditoria","entrada","pago","reserva_butaca","reserva","funcion"))q.executeUpdate("DELETE FROM "+tabla);
+            q.executeUpdate("DELETE FROM pelicula WHERE evento_id>5");
+            q.executeUpdate("DELETE FROM obra_teatro WHERE evento_id>5");
+            q.executeUpdate("DELETE FROM actividad_cultural WHERE evento_id>5");
+            q.executeUpdate("DELETE FROM evento WHERE id>5");
             q.executeUpdate("UPDATE sala SET activo=TRUE,aforo=80 WHERE id=1");
             q.executeUpdate("UPDATE sala SET activo=TRUE,aforo=3 WHERE id=2");
+            q.executeUpdate("UPDATE butaca SET activo=TRUE WHERE sala_id IN (1,2)");
+            q.executeUpdate("UPDATE butaca SET fila='A',columna=1,tipo_butaca='General' WHERE id=1");
+            q.executeUpdate("UPDATE butaca SET fila='A',columna=2,tipo_butaca='General' WHERE id=2");
             q.executeUpdate("UPDATE evento SET activo=TRUE,precio=25 WHERE id=1");
             q.executeUpdate("UPDATE evento SET activo=TRUE,precio=15 WHERE id=5");
             try(ResultSet rs=q.executeQuery("SELECT CURRENT_DATE")){rs.next();fecha=rs.getDate(1).toLocalDate().plusDays(2);}
@@ -107,7 +116,9 @@ class IntegracionLab11Test {
         assertEquals(2,contar("SELECT COUNT(*) FROM entrada"));assertEquals(EstadoReserva.CONFIRMADA,reservas.findById(r.getId()).getEstado());
     }
     private Funcion funcion(int id,LocalDate dia,int inicio,int fin)throws Exception {
-        return new Funcion(id,new EventoDAOImpl().findById(1),new SalaDAOImpl().findById(1),dia,LocalTime.of(inicio,0),LocalTime.of(fin,0),"Español");
+        Funcion funcion = new Funcion(id,new EventoDAOImpl().findById(1),new SalaDAOImpl().findById(1),dia,LocalTime.of(inicio,0),LocalTime.of(fin,0),"Español");
+        funcion.confirmar();
+        return funcion;
     }
     @Test void horariosRechazanCrucesYPermitenLimitesDiasYAutoedicion()throws Exception {
         var bl=new FuncionBLImpl();assertThrows(BLException.class,()->bl.insert(funcion(0,fecha,11,13)));
@@ -135,6 +146,43 @@ class IntegracionLab11Test {
         Reserva r=nueva(2,2,2);reservas.crearReserva(r);Pago p=pagos.generarPago(r,0);
         pagos.rechazar(p.getId());pagos.rechazar(p.getId());
         assertEquals(EstadoReserva.CANCELADA,reservas.findById(r.getId()).getEstado());
+    }
+
+    @Test void editarYDesactivarButacaConservaReservaYEntradaHistoricas()throws Exception {
+        Reserva reserva=nueva(1,2,0,1);Pago pago=registrar(reserva);pagos.validar(pago.getId());
+        int entradaId=contar("SELECT id FROM entrada WHERE reserva_id="+reserva.getId()+" AND butaca_id=1");
+        Butaca butaca=new ButacaDAOImpl().findById(1);butaca.setTipoButaca("Accesible");
+        ButacaBLImpl bl=new ButacaBLImpl();bl.update(butaca);bl.delete(1);
+
+        assertEquals(1,contar("SELECT COUNT(*) FROM reserva_butaca WHERE reserva_id="+reserva.getId()+" AND butaca_id=1"));
+        assertEquals(1,contar("SELECT COUNT(*) FROM entrada WHERE id="+entradaId+" AND reserva_id="+reserva.getId()+" AND butaca_id=1"));
+        assertEquals(0,contar("SELECT activo FROM butaca WHERE id=1"));
+        assertEquals("Accesible",new ButacaDAOImpl().findById(1).getTipoButaca());
+    }
+
+    @Test void contenidoYProgramacionSePersistenJuntos()throws Exception {
+        Pelicula evento=new Pelicula(0,28,"Contenido integrado LAB12",110,
+                CategoriaGenero.DRAMA,ClasificacionEdad.PG13,"Dirección LAB12");
+        evento.setTematica("Laboratorio");evento.setPublicoObjetivo("Mayores de 13 años");
+        Funcion funcion=new Funcion(0,evento,new SalaDAOImpl().findById(1),fecha.plusDays(1),
+                LocalTime.of(18,0),LocalTime.of(20,0),"Español");
+        evento.agregarFuncion(funcion);new EventoBLImpl().insert(evento);
+
+        Evento guardado=new EventoDAOImpl().findById(evento.getId());
+        assertNotNull(guardado);assertEquals("Contenido integrado LAB12",guardado.getTitulo());
+        assertEquals("Laboratorio",guardado.getTematica());assertEquals(1,guardado.getFunciones().size());
+        assertEquals(evento.getId(),guardado.getFunciones().get(0).getEvento().getId());
+    }
+
+    @Test void pagoSeBuscaPorCodigoHastaLaConsultaDeDatos()throws Exception {
+        Reserva reserva=nueva(1,2,0,1);reservas.crearReserva(reserva);
+        Pago generado=pagos.generarPago(reserva,0);
+
+        Pago encontrado=pagos.buscarPorCodigo("  "+generado.getCodigoPago()+"  ");
+
+        assertNotNull(encontrado);assertEquals(generado.getId(),encontrado.getId());
+        assertEquals(reserva.getId(),encontrado.getReserva().getId());
+        assertEquals(2,encontrado.getReserva().getCliente().getId());
     }
 
 }

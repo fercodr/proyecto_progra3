@@ -45,6 +45,11 @@
             <ValidationMessage For="() => ViewModel.Ciudad" />
         </div>
         <div class="col-md-6 mb-3">
+            <label for="distritoSede" class="form-label">Distrito</label>
+            <InputText id="distritoSede" class="form-control" @bind-Value="ViewModel.Distrito" />
+            <ValidationMessage For="() => ViewModel.Distrito" />
+        </div>
+        <div class="col-md-6 mb-3">
             <label for="telefonoSede" class="form-label">Teléfono de contacto</label>
             <InputText id="telefonoSede" class="form-control" @bind-Value="ViewModel.TelefonoContacto" />
             <ValidationMessage For="() => ViewModel.TelefonoContacto" />

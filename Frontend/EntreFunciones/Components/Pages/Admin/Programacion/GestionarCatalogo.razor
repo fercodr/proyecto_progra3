@@ -3,11 +3,15 @@
 @inject NavigationManager Nav
 @inject ICatalogoService Catalogo
 @inject IImagenService ImagenService
+@inject ISedeService SedeServicio
+@inject ISalaService SalaServicio
+@inject IBloqueoSalaService BloqueosSala
 @rendermode InteractiveServer
 @using Microsoft.AspNetCore.Components.Forms
 @using EntreFunciones.DTOSS
 @using EntreFunciones.Servicios
 @using EntreFunciones.Servicios.Rest
+@using EntreFunciones.ViewModels
 @attribute [Authorize(Policy = "Programacion")]
 <PageTitle>@(Id == null ? "Nuevo evento" : "Editar evento")</PageTitle>
 
@@ -58,6 +62,14 @@
                         <div class="mb-3">
                             <label for="precioEvento" class="form-label">Precio (S/)</label>
                             <input id="precioEvento" type="number" step="0.01" min="0" class="form-control" @bind="Precio" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="tematicaEvento" class="form-label">Temática</label>
+                            <input id="tematicaEvento" type="text" class="form-control" @bind="Tematica" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="publicoEvento" class="form-label">Público objetivo</label>
+                            <input id="publicoEvento" type="text" class="form-control" @bind="PublicoObjetivo" />
                         </div>
                         @if (Id != null)
                         {
@@ -150,6 +162,88 @@
 
                     </div>
                 </div>
+
+                <div class="card mb-3">
+                    <div class="card-header">Programación integrada</div>
+                    <div class="card-body">
+                        <div class="form-check mb-3">
+                            <input id="incluirProgramacion" class="form-check-input" type="checkbox" @bind="IncluirProgramacion" />
+                            <label for="incluirProgramacion" class="form-check-label">
+                                @(Id == null ? "Programar la primera función" : "Guardar contenido y programación en la misma operación")
+                            </label>
+                        </div>
+
+                        @if (IncluirProgramacion)
+                        {
+                            @if (Id != null)
+                            {
+                                <div class="mb-3">
+                                    <label for="funcionEvento" class="form-label">Función</label>
+                                    <select id="funcionEvento" class="form-select" value="@FuncionSeleccionadaId" @onchange="CambiarFuncion">
+                                        <option value="0">Nueva función</option>
+                                        @foreach (FuncionDTO funcion in FuncionesExistentes)
+                                        {
+                                            <option value="@funcion.Id">@funcion.Fecha · @funcion.HoraInicio · @funcion.NombreSala</option>
+                                        }
+                                    </select>
+                                </div>
+                            }
+
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="sedeFuncion" class="form-label">Sede</label>
+                                    <select id="sedeFuncion" class="form-select" value="@IdSedeFuncion" @onchange="CambiarSede">
+                                        <option value="0">Seleccione una sede...</option>
+                                        @foreach (SedeViewModel sede in Sedes)
+                                        {
+                                            <option value="@sede.Id">@sede.RazonSocial · @sede.Distrito</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="salaFuncion" class="form-label">Sala</label>
+                                    <select id="salaFuncion" class="form-select" @bind="IdSalaFuncion" disabled="@(!Salas.Any())">
+                                        <option value="0">Seleccione una sala...</option>
+                                        @foreach (SalaViewModel sala in Salas)
+                                        {
+                                            <option value="@sala.Id">@sala.Nombre (aforo @sala.Aforo)</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="fechaFuncion" class="form-label">Fecha</label>
+                                    <InputDate id="fechaFuncion" class="form-control" @bind-Value="FechaFuncion" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="inicioFuncion" class="form-label">Hora de inicio</label>
+                                    <input id="inicioFuncion" type="time" class="form-control" @bind="HoraInicioFuncion" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="finFuncion" class="form-label">Hora de fin</label>
+                                    <input id="finFuncion" type="time" class="form-control" @bind="HoraFinFuncion" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="idiomaFuncion" class="form-label">Idioma</label>
+                                    <select id="idiomaFuncion" class="form-select" @bind="IdiomaFuncion">
+                                        <option value="Español">Español</option>
+                                        <option value="Subtitulada">Subtitulada</option>
+                                        <option value="Doblada">Doblada</option>
+                                    </select>
+                                </div>
+                                @if (FuncionSeleccionadaId > 0)
+                                {
+                                    <div class="col-md-6">
+                                        <label class="form-label">Estado conservado</label>
+                                        <input class="form-control" value="@EstadoFuncion" disabled />
+                                    </div>
+                                }
+                            </div>
+                            <div class="form-text mt-2">
+                                El servidor vuelve a comprobar sala activa, bloqueos y cruces antes de confirmar la operación.
+                            </div>
+                        }
+                    </div>
+                </div>
                 <button type="button" class="btn btn-primary" @onclick="Guardar" disabled="@Guardando">
                     @(Guardando ? "Guardando..." : "Guardar")
                 </button>
@@ -177,6 +271,8 @@
     private string Titulo = "";
     private double Precio;
     private bool Activo = true;
+    private string? Tematica;
+    private string? PublicoObjetivo;
 
     // Pelicula
     private int? DuracionMinutos;
@@ -192,23 +288,43 @@
     private string? Expositor;
     private string TipoActividad = "CONVERSATORIO";
 
+    // RF-M3-01: contenido y programación viajan juntos en EventoDTO.Funciones.
+    private bool IncluirProgramacion = true;
+    private int FuncionSeleccionadaId;
+    private List<FuncionDTO> FuncionesExistentes = new();
+    private List<SedeViewModel> Sedes = new();
+    private List<SalaViewModel> Salas = new();
+    private int IdSedeFuncion;
+    private int IdSalaFuncion;
+    private DateOnly FechaFuncion = DateOnly.FromDateTime(DateTime.Today);
+    private TimeOnly HoraInicioFuncion = new(18, 0);
+    private TimeOnly HoraFinFuncion = new(20, 0);
+    private string IdiomaFuncion = "Español";
+    private string EstadoFuncion = "PROGRAMADA";
+
     protected override async Task OnParametersSetAsync()
     {
-        if (Id == null)
-        {
-            Cargando = false;
-            return;
-        }
-
         Cargando = true;
         MensajeError = null;
         try
         {
-            EventoDTO evento = await Catalogo.ObtenerEvento(Id.Value);
+            Sedes = (await SedeServicio.FindAll())
+                .Where(s => s.IsActivo)
+                .OrderBy(s => s.RazonSocial)
+                .ToList();
+            if (Id == null)
+            {
+                IncluirProgramacion = true;
+                return;
+            }
+
+            EventoDTO evento = await Catalogo.ObtenerEvento(Id.Value, completo: true);
             TipoEvento = evento.Tipo;
             Titulo = evento.Titulo;
             Precio = evento.Precio;
             Activo = evento.Activo;
+            Tematica = evento.Tematica;
+            PublicoObjetivo = evento.PublicoObjetivo;
             DuracionMinutos = evento.DuracionMinutos;
             Genero = evento.Genero ?? "ACCION";
             ClasificacionPorEdad = evento.ClasificacionPorEdad ?? "APTA_TODO_PUBLICO";
@@ -217,6 +333,12 @@
             Elenco = evento.Elenco;
             Expositor = evento.Expositor;
             TipoActividad = evento.TipoActividad ?? "CONVERSATORIO";
+            FuncionesExistentes = evento.Funciones ?? new();
+            IncluirProgramacion = FuncionesExistentes.Count > 0;
+            if (IncluirProgramacion)
+            {
+                await CargarFuncion(FuncionesExistentes[0]);
+            }
 
             ImagenUrlActual = evento.ImagenUrl;
             if (ImagenUrlActual != null && ImagenUrlActual.StartsWith("http"))
@@ -232,6 +354,63 @@
         {
             Cargando = false;
         }
+    }
+
+    private async Task CambiarFuncion(ChangeEventArgs e)
+    {
+        if (!int.TryParse(e.Value?.ToString(), out int idFuncion) || idFuncion <= 0)
+        {
+            FuncionSeleccionadaId = 0;
+            IdSedeFuncion = 0;
+            IdSalaFuncion = 0;
+            Salas = new();
+            FechaFuncion = DateOnly.FromDateTime(DateTime.Today);
+            HoraInicioFuncion = new TimeOnly(18, 0);
+            HoraFinFuncion = new TimeOnly(20, 0);
+            IdiomaFuncion = "Español";
+            EstadoFuncion = "PROGRAMADA";
+            return;
+        }
+
+        FuncionDTO? funcion = FuncionesExistentes.FirstOrDefault(f => f.Id == idFuncion);
+        if (funcion != null)
+        {
+            await CargarFuncion(funcion);
+        }
+    }
+
+    private async Task CargarFuncion(FuncionDTO funcion)
+    {
+        FuncionSeleccionadaId = funcion.Id;
+        IdSedeFuncion = funcion.IdSede;
+        await CargarSalas(funcion.IdSede);
+        IdSalaFuncion = funcion.IdSala;
+        FechaFuncion = DateOnly.TryParse(funcion.Fecha, out DateOnly fecha)
+            ? fecha : DateOnly.FromDateTime(DateTime.Today);
+        HoraInicioFuncion = TimeOnly.TryParse(funcion.HoraInicio, out TimeOnly inicio)
+            ? inicio : new TimeOnly(18, 0);
+        HoraFinFuncion = TimeOnly.TryParse(funcion.HoraFin, out TimeOnly fin)
+            ? fin : new TimeOnly(20, 0);
+        IdiomaFuncion = funcion.Idioma;
+        EstadoFuncion = string.IsNullOrWhiteSpace(funcion.Estado) ? "PROGRAMADA" : funcion.Estado;
+    }
+
+    private async Task CambiarSede(ChangeEventArgs e)
+    {
+        int.TryParse(e.Value?.ToString(), out int idSede);
+        IdSedeFuncion = idSede;
+        IdSalaFuncion = 0;
+        await CargarSalas(idSede);
+    }
+
+    private async Task CargarSalas(int idSede)
+    {
+        Salas = idSede <= 0
+            ? new()
+            : (await SalaServicio.FindBySede(idSede))
+                .Where(s => s.IsActivo)
+                .OrderBy(s => s.Nombre)
+                .ToList();
     }
 
     private async Task CargarImagen(InputFileChangeEventArgs e)
@@ -268,6 +447,16 @@
             MensajeError = "El título es obligatorio.";
             return;
         }
+        if (IncluirProgramacion && IdSalaFuncion <= 0)
+        {
+            MensajeError = "Seleccione la sede y la sala de la función.";
+            return;
+        }
+        if (IncluirProgramacion && HoraFinFuncion <= HoraInicioFuncion)
+        {
+            MensajeError = "La hora de fin debe ser posterior a la hora de inicio.";
+            return;
+        }
 
         Guardando = true;
         MensajeError = null;
@@ -280,6 +469,8 @@
                 Titulo = Titulo,
                 Precio = Precio,
                 Activo = Activo,
+                Tematica = Tematica,
+                PublicoObjetivo = PublicoObjetivo,
                 // Se reenvía la URL actual: si no, al editar se borraría el póster (imagen_url = NULL)
                 ImagenUrl = ImagenUrlActual
             };
@@ -300,6 +491,38 @@
                     evento.Expositor = Expositor;
                     evento.TipoActividad = TipoActividad;
                     break;
+            }
+
+            if (IncluirProgramacion)
+            {
+                DisponibilidadProgramacionDto disponibilidad =
+                    await BloqueosSala.ConsultarDisponibilidad(
+                        IdSalaFuncion,
+                        FechaFuncion,
+                        HoraInicioFuncion,
+                        HoraFinFuncion,
+                        FuncionSeleccionadaId > 0 ? FuncionSeleccionadaId : null);
+                if (!disponibilidad.Disponible)
+                {
+                    MensajeError = disponibilidad.Motivo;
+                    return;
+                }
+
+                evento.Funciones = new List<FuncionDTO>
+                {
+                    new()
+                    {
+                        Id = FuncionSeleccionadaId,
+                        IdEvento = Id ?? 0,
+                        IdSala = IdSalaFuncion,
+                        IdSede = IdSedeFuncion,
+                        Fecha = FechaFuncion.ToString("yyyy-MM-dd"),
+                        HoraInicio = HoraInicioFuncion.ToString("HH:mm"),
+                        HoraFin = HoraFinFuncion.ToString("HH:mm"),
+                        Idioma = IdiomaFuncion,
+                        Estado = EstadoFuncion
+                    }
+                };
             }
 
             EventoDTO guardado;

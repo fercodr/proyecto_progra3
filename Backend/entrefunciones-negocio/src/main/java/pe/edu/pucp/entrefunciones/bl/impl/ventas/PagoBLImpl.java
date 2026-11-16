@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import pe.edu.pucp.entrefunciones.bl.error.BLException;
+import pe.edu.pucp.entrefunciones.bl.error.ValidacionException;
 import pe.edu.pucp.entrefunciones.bl.ventas.PagoBL;
 import pe.edu.pucp.entrefunciones.dao.ventas.EntradaDAO;
 import pe.edu.pucp.entrefunciones.dao.ventas.PagoDAO;
@@ -73,8 +74,11 @@ public class PagoBLImpl implements PagoBL {
 
     @Override
     public Pago buscarPorCodigo(String codigoPago) throws BLException {
+        if (codigoPago == null || codigoPago.isBlank()) {
+            throw new ValidacionException("El código de pago es obligatorio");
+        }
         try {
-            return pagoDAO.findByCodigoPago(codigoPago);
+            return pagoDAO.findByCodigoPago(codigoPago.trim());
         } catch (SQLException ex) {
             throw new BLException("Error de base de datos al buscar el pago " + codigoPago, ex);
         }

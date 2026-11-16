@@ -4,12 +4,15 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
+import jakarta.ws.rs.core.SecurityContext;
 import pe.edu.pucp.entrefunciones.bl.error.BLException;
 import pe.edu.pucp.entrefunciones.bl.eventos.EventoBL;
 import pe.edu.pucp.entrefunciones.bl.impl.eventos.EventoBLImpl;
 import pe.edu.pucp.entrefunciones.modelo.catalogo.Evento;
 import pe.edu.pucp.entrefunciones.rest.dto.catalogo.EventoDTO;
 import pe.edu.pucp.entrefunciones.rest.mapper.catalogo.EventoMapper;
+import pe.edu.pucp.entrefunciones.rest.AutorizacionRest;
+import pe.edu.pucp.entrefunciones.modelo.funciones.EstadoFuncion;
 
 import java.net.URI;
 import java.util.Map;
@@ -32,6 +35,9 @@ public class EventosResource {
     @Context
     private UriInfo uriInfo;
 
+    @Context
+    private SecurityContext securityContext;
+
     public EventosResource() {
         eventoBL = new EventoBLImpl();
     }
@@ -39,7 +45,15 @@ public class EventosResource {
     @GET
     public Response findAll() {
         try {
-            return Response.ok(EventoMapper.toDTOs(eventoBL.findAll()))
+            var eventos = eventoBL.findAll();
+            if (!AutorizacionRest.esAdministrador(securityContext)) {
+                eventos = eventos.stream()
+                        .filter(Evento::estaActivo)
+                        .filter(evento -> evento.getFunciones().stream()
+                                .anyMatch(funcion -> funcion.getEstado() == EstadoFuncion.CONFIRMADA))
+                        .toList();
+            }
+            return Response.ok(EventoMapper.toDTOs(eventos))
                     .build();
         } catch (BLException ex) {
             return error(Response.Status.INTERNAL_SERVER_ERROR, ex);
@@ -55,6 +69,14 @@ public class EventosResource {
                 return error(Response.Status.NOT_FOUND, new BLException("No existe un evento con id " + id));
             }
 
+            if (!AutorizacionRest.esAdministrador(securityContext)) {
+                evento.getFunciones().removeIf(
+                        funcion -> funcion.getEstado() != EstadoFuncion.CONFIRMADA);
+                if (!evento.estaActivo() || evento.getFunciones().isEmpty()) {
+                    return error(Response.Status.NOT_FOUND,
+                            new BLException("No existe un evento publicado con id " + id));
+                }
+            }
             if (completo) {
                 return Response.ok(EventoMapper.toDTOCompleto(evento)).build();
             }
@@ -66,6 +88,7 @@ public class EventosResource {
 
     @POST
     public Response insert(EventoDTO eventoDTO) {
+        AutorizacionRest.exigirAdministrador(securityContext);
         try {
             eventoDTO.setActivo(true);
             Evento evento = EventoMapper.toModelo(eventoDTO);
@@ -87,6 +110,7 @@ public class EventosResource {
     @PUT
     @Path("/{id}")
     public Response update(@PathParam("id") int id, EventoDTO eventoDTO) {
+        AutorizacionRest.exigirAdministrador(securityContext);
         try {
             if (id != eventoDTO.getId()) {
                 return error(Response.Status.BAD_REQUEST, new BLException("El id y el payload no coinciden"));
@@ -108,6 +132,7 @@ public class EventosResource {
     @DELETE
     @Path("/{id}")
     public Response delete(@PathParam("id") int id) {
+        AutorizacionRest.exigirAdministrador(securityContext);
         try {
             if (eventoBL.findById(id) == null) {
                 return error(Response.Status.NOT_FOUND, new BLException("No existe un evento con id " + id));

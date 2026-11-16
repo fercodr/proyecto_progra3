@@ -6,7 +6,7 @@
     <parent>
         <groupId>pe.edu.pucp.entrefunciones</groupId>
         <artifactId>entrefunciones</artifactId>
-        <version>1.0-SNAPSHOT</version>
+        <version>1.0</version>
     </parent>
 
     <artifactId>entrefunciones-accesodatos</artifactId>
@@ -16,13 +16,13 @@
         <dependency>
             <groupId>pe.edu.pucp.entrefunciones</groupId>
             <artifactId>entrefunciones-modelo</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>1.0</version>
 
         </dependency>
         <dependency>
             <groupId>pe.edu.pucp.entrefunciones</groupId>
             <artifactId>entrefunciones-dbmanager</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>1.0</version>
         </dependency>
     </dependencies>
     <build>

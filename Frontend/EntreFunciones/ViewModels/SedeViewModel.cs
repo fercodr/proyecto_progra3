@@ -16,6 +16,10 @@ namespace EntreFunciones.ViewModels {
         [StringLength(50, ErrorMessage = "Máximo 50 caracteres")]
         public string Ciudad { get; set; } = "";
 
+        [Required(ErrorMessage = "El distrito es obligatorio")]
+        [StringLength(100, ErrorMessage = "Máximo 100 caracteres")]
+        public string Distrito { get; set; } = "";
+
         [Required(ErrorMessage = "El teléfono es obligatorio")]
         [RegularExpression(@"^[0-9 ]{6,15}$", ErrorMessage = "Solo números (6 a 15 dígitos)")]
         public string TelefonoContacto { get; set; } = "";

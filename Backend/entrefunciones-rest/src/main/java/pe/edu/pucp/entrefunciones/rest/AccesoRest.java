@@ -24,11 +24,11 @@ public class AccesoRest implements ContainerRequestFilter {
 
     @Override
     public void filter(ContainerRequestContext request) {
-        if (esAccesoPublico(request)) {
+        String cabecera = request.getHeaderString("Authorization");
+        if (esAccesoPublico(request)
+                && (cabecera == null || cabecera.isBlank())) {
             return;
         }
-
-        String cabecera = request.getHeaderString("Authorization");
         if (cabecera == null || !cabecera.startsWith("Bearer ")) {
             rechazar(request, 401, "Se requiere un token Bearer");
             return;

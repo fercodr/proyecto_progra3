@@ -283,6 +283,14 @@
                 <h3 class="fs-5 text-primary mb-3">Atención</h3>
 
                 <div class="row g-3">
+                    <div class="col-12">
+                        <label for="editarDescripcion" class="form-label">Descripción</label>
+                        <textarea id="editarDescripcion" class="form-control"
+                                  rows="3" maxlength="500"
+                                  placeholder="Describe lo ocurrido..."
+                                  @bind="Atencion.Descripcion"></textarea>
+                    </div>
+
                     <div class="col-12 col-md-6">
                         <label for="editarResponsable" class="form-label">Responsable</label>
                         <select id="editarResponsable" class="form-select"

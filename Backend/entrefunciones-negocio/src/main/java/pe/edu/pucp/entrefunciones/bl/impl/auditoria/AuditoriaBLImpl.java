@@ -22,24 +22,43 @@ import pe.edu.pucp.entrefunciones.modelo.funciones.EstadoFuncion;
 import pe.edu.pucp.entrefunciones.modelo.usuarios.Administrador;
 
 public class AuditoriaBLImpl implements AuditoriaBL {
-
     private static final ZoneId ZONA_NEGOCIO = ZoneId.of("America/Lima");
-    private final AuditoriaDAO auditoriaDAO =  new AuditoriaDAOImpl();
-    private final FuncionDAO funcionDAO = new FuncionDAOImpl();
-    private final AdministradorDAO administradorDAO=new AdministradorDAOImpl();
+    private final AuditoriaDAO auditoriaDAO;
+    private final FuncionDAO funcionDAO;
+    private final AdministradorDAO administradorDAO;
     private final Clock reloj;
 
     public AuditoriaBLImpl() {
-        this( Clock.system(ZONA_NEGOCIO));
+        this(Clock.system(ZONA_NEGOCIO));
     }
 
     public AuditoriaBLImpl(Clock reloj) {
-        if (reloj == null) {
-            throw new IllegalArgumentException( "El DAO y el reloj son obligatorios");
+        this(
+                new AuditoriaDAOImpl(),
+                new FuncionDAOImpl(),
+                new AdministradorDAOImpl(),
+                reloj
+        );
+    }
+
+    public AuditoriaBLImpl(
+            AuditoriaDAO auditoriaDAO,
+            FuncionDAO funcionDAO,
+            AdministradorDAO administradorDAO,
+            Clock reloj) {
+
+        if (auditoriaDAO == null
+                || funcionDAO == null
+                || administradorDAO == null
+                || reloj == null) {
+            throw new IllegalArgumentException(
+                    "Los DAO y el reloj son obligatorios");
         }
 
+        this.auditoriaDAO = auditoriaDAO;
+        this.funcionDAO = funcionDAO;
+        this.administradorDAO = administradorDAO;
         this.reloj = reloj;
-
     }
 
     @Override
@@ -122,10 +141,12 @@ public class AuditoriaBLImpl implements AuditoriaBL {
     @Override
     public Auditoria actualizarAtencion(Integer auditoriaId,
                                         Integer responsableId,
+                                        String descripcion,
                                         EstadoAuditoria estado)
             throws BLException {
         validarId(auditoriaId, "auditoria");
         validarId(responsableId, "responsable");
+        validarDescripcion(descripcion);
         if (estado == null) {
             throw new ValidacionException("El estado es obligatorio");
         }
@@ -136,8 +157,9 @@ public class AuditoriaBLImpl implements AuditoriaBL {
                 throw new NoEncontradoException(
                         "No existe una auditoria con id " + auditoriaId);
             }
-            Administrador responsable = buscarResponsableActivo(responsableId);
-            existente.setResponsable(responsable);
+        Administrador responsable = buscarResponsableActivo(responsableId);
+        existente.setDescripcion(descripcion.trim());
+        existente.setResponsable(responsable);
             existente.setEstado(estado);
             auditoriaDAO.update(existente);
             return auditoriaDAO.findById(auditoriaId);

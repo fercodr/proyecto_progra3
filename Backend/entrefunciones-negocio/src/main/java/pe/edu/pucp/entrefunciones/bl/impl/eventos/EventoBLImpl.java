@@ -9,10 +9,19 @@ import pe.edu.pucp.entrefunciones.modelo.catalogo.Funcion;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Objects;
 
 public class EventoBLImpl implements EventoBL {
 
-    private final EventoDAO eventoDAO = new EventoDAOImpl();
+    private final EventoDAO eventoDAO;
+
+    public EventoBLImpl() {
+        this(new EventoDAOImpl());
+    }
+
+    EventoBLImpl(EventoDAO eventoDAO) {
+        this.eventoDAO = Objects.requireNonNull(eventoDAO);
+    }
 
     @Override
     public List<Evento> findAll() throws BLException {

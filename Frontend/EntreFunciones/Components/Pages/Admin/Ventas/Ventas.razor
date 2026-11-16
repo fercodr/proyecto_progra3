@@ -173,8 +173,8 @@
                             <button type="button" class="btn btn-outline-secondary" @onclick="LimpiarFiltrosPagos">
                                 Limpiar
                             </button>
-                            <button type="button" class="btn btn-primary" @onclick="FiltrarPagos">
-                                Buscar
+                            <button type="button" class="btn btn-primary" disabled="@BuscandoPago" @onclick="BuscarPagos">
+                                @(BuscandoPago ? "Buscando..." : "Buscar")
                             </button>
                         </div>
                     </div>
@@ -279,7 +279,7 @@
     private List<PagoVentaViewModel> Pagos=[];
     private List<PagoDto> PagosApi=[];
     private List<ReservaDto> ReservasApi=[];
-    private bool RechazarOperacion,Enviando,Cargando;
+    private bool RechazarOperacion,Enviando,Cargando,BuscandoPago;
     private string Error="";
     protected override async Task OnInitializedAsync() { await Cargar(); }
     private async Task Cargar()
@@ -289,7 +289,7 @@
             ReservasApi=await Api.ListarReservas();PagosApi=await Api.ListarPagos();
             Reservas=ReservasApi.Select(r=>new ReservaVentaViewModel {Codigo=r.CodigoOId,Cliente=r.Cliente,Dni=r.Dni,Funcion=r.FuncionNombre,FechaFuncion=r.FechaFuncion.ToString("dd/MM/yyyy HH:mm"),Cantidad=r.Cantidad,Expira=r.FechaExpiracion.ToString("dd/MM/yyyy HH:mm"),Estado=EstadoReserva(r.Estado)}).ToList();
             Pagos=PagosApi.Select(p=>new PagoVentaViewModel {Codigo=p.CodigoPago,Reserva=$"RES-{p.ReservaId}",Cliente=p.Cliente,Monto=p.Monto,FechaPago=p.FechaPago,Estado=p.Estado=="PENDIENTE"?"Pendiente":p.Estado=="VALIDADO"?"Validado":"Rechazado"}).ToList();
-            FiltrarReservas();FiltrarPagos();
+            FiltrarReservas();MostrarPagosCargados();
         } catch(Exception e) when(e is HttpRequestException or InvalidOperationException or ServiceException or TaskCanceledException) {Error=e.Message;}
         finally { Cargando=false; }
     }
@@ -316,19 +316,63 @@
         ReservasFiltradas = Reservas.AsQueryable();
     }
 
-    private void FiltrarPagos()
+    private void MostrarPagosCargados()
     {
         PagosFiltrados = Pagos
-            .Where(p => string.IsNullOrEmpty(FiltroCodigoPago) || p.Codigo.Contains(FiltroCodigoPago, StringComparison.OrdinalIgnoreCase))
             .Where(p => !SoloPendientes || p.Estado == "Pendiente")
             .AsQueryable();
     }
+
+    private async Task BuscarPagos()
+    {
+        Error = string.Empty;
+        if (string.IsNullOrWhiteSpace(FiltroCodigoPago))
+        {
+            MostrarPagosCargados();
+            return;
+        }
+
+        BuscandoPago = true;
+        try
+        {
+            PagoDto encontrado = await Api.BuscarPagoPorCodigo(FiltroCodigoPago);
+            PagoVentaViewModel pago = MapearPago(encontrado);
+            PagosFiltrados = (!SoloPendientes || pago.Estado == "Pendiente")
+                ? new[] { pago }.AsQueryable()
+                : Enumerable.Empty<PagoVentaViewModel>().AsQueryable();
+        }
+        catch (ServiceException ex) when (ex.StatusCode == 404)
+        {
+            PagosFiltrados = Enumerable.Empty<PagoVentaViewModel>().AsQueryable();
+        }
+        catch (Exception ex) when (ex is HttpRequestException or InvalidOperationException
+                or ArgumentException or ServiceException or TaskCanceledException)
+        {
+            Error = ex.Message;
+            PagosFiltrados = Enumerable.Empty<PagoVentaViewModel>().AsQueryable();
+        }
+        finally
+        {
+            BuscandoPago = false;
+        }
+    }
+
+    private static PagoVentaViewModel MapearPago(PagoDto p) => new()
+    {
+        Codigo = p.CodigoPago,
+        Reserva = $"RES-{p.ReservaId}",
+        Cliente = p.Cliente,
+        Monto = p.Monto,
+        FechaPago = p.FechaPago,
+        Estado = p.Estado == "PENDIENTE" ? "Pendiente"
+            : p.Estado == "VALIDADO" ? "Validado" : "Rechazado"
+    };
 
     private void LimpiarFiltrosPagos()
     {
         FiltroCodigoPago = string.Empty;
         SoloPendientes = false;
-        PagosFiltrados = Pagos.AsQueryable();
+        MostrarPagosCargados();
     }
 
     private string ClaseBadgeReserva(string estado) => estado switch

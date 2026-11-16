@@ -64,6 +64,11 @@
         </div>
     </div>
 
+    <div class="form-check mb-3">
+        <InputCheckbox id="salaAccesible" class="form-check-input" @bind-Value="ViewModel.Accesible" />
+        <label for="salaAccesible" class="form-check-label">Sala con características de accesibilidad</label>
+    </div>
+
     @if (Id == null) {
         <div class="row">
             <div class="col-md-6 mb-3">

@@ -38,6 +38,7 @@ namespace EntreFunciones.Servicios.Rest
                 RazonSocial = dto.RazonSocial,
                 Direccion = dto.Direccion,
                 Ciudad = dto.Ciudad,
+                Distrito = dto.Distrito,
                 TelefonoContacto = dto.TelefonoContacto ?? string.Empty
             };
         }
@@ -51,6 +52,7 @@ namespace EntreFunciones.Servicios.Rest
                 RazonSocial = modelo.RazonSocial,
                 Direccion = modelo.Direccion,
                 Ciudad = modelo.Ciudad,
+                Distrito = modelo.Distrito,
                 TelefonoContacto = modelo.TelefonoContacto
             };
         }

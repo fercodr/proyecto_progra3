@@ -35,6 +35,7 @@ CREATE TABLE sede (
     razon_social       VARCHAR(150) NOT NULL,
     direccion          VARCHAR(200) NOT NULL,
     ciudad             VARCHAR(100) NOT NULL,
+    distrito           VARCHAR(100) NOT NULL DEFAULT 'Sin especificar',
     telefono_contacto  VARCHAR(20),
     activo             BOOLEAN      NOT NULL DEFAULT TRUE
 );
@@ -45,10 +46,22 @@ CREATE TABLE sala (
     nombre     VARCHAR(100) NOT NULL,
     aforo      INT          NOT NULL,
     tipo_sala  VARCHAR(50)  NOT NULL,
+    accesible  BOOLEAN      NOT NULL DEFAULT FALSE,
     activo     BOOLEAN      NOT NULL DEFAULT TRUE,
     UNIQUE KEY uk_sala_sede_nombre (sede_id, nombre),
     CONSTRAINT fk_sala_sede FOREIGN KEY (sede_id) REFERENCES sede (id),
     CONSTRAINT chk_sala_aforo CHECK (aforo > 0)
+);
+
+CREATE TABLE bloqueo_sala (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    sala_id INT NOT NULL,
+    inicio DATETIME NOT NULL,
+    fin DATETIME NOT NULL,
+    activo BOOLEAN NOT NULL DEFAULT TRUE,
+    INDEX ix_bloqueo_sala_horario (sala_id, activo, inicio, fin),
+    CONSTRAINT fk_bloqueo_sala_sala FOREIGN KEY (sala_id) REFERENCES sala(id),
+    CONSTRAINT chk_bloqueo_sala_horario CHECK (fin > inicio)
 );
 
 CREATE TABLE butaca (
@@ -67,6 +80,8 @@ CREATE TABLE evento (
     precio  DECIMAL(8,2) NOT NULL,
     activo  BOOLEAN      NOT NULL DEFAULT TRUE,
     imagen_url VARCHAR(255) NULL,  -- ruta relativa, p. ej. 'img/eventos/interestelar.jpg'
+    tematica VARCHAR(100) NULL,
+    publico_objetivo VARCHAR(100) NULL,
     CONSTRAINT chk_evento_precio CHECK (precio >= 0)
 );
 

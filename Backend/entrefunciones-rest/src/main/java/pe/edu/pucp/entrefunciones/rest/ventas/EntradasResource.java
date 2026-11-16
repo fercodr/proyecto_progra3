@@ -15,7 +15,11 @@ import pe.edu.pucp.entrefunciones.dao.impl.ventas.ReservaDAOImpl;
 import pe.edu.pucp.entrefunciones.dao.impl.espacios.ButacaDAOImpl;
 import pe.edu.pucp.entrefunciones.rest.dto.ventas.EntradaDTO;
 import pe.edu.pucp.entrefunciones.rest.mapper.ventas.EntradaMapper;
+import pe.edu.pucp.entrefunciones.rest.AutorizacionRest;
+import pe.edu.pucp.entrefunciones.modelo.ventas.Entrada;
+import pe.edu.pucp.entrefunciones.modelo.ventas.Reserva;
 
+import java.util.List;
 import java.util.Map;
 
 @Path("/entradas")
@@ -39,9 +43,18 @@ public class EntradasResource {
     public Response findAll(@QueryParam("idReserva") Integer idReserva) {
         try {
             if (idReserva != null) {
-                return Response.ok(EntradaMapper.toDTOs(entradaBL.buscarPorReserva(idReserva)))
+                List<Entrada> entradas = entradaBL.buscarPorReserva(idReserva);
+                if (entradas.isEmpty()) {
+                    exigirReservaPropia(idReserva);
+                } else {
+                    AutorizacionRest.exigirPropietarioOAdministrador(
+                            securityContext,
+                            entradas.get(0).getReserva().getCliente().getId());
+                }
+                return Response.ok(EntradaMapper.toDTOs(entradas))
                         .build();
             }
+            AutorizacionRest.exigirAdministrador(securityContext);
             return Response.ok(EntradaMapper.toDTOs(entradaBL.findAll()))
                     .build();
         }
@@ -54,7 +67,9 @@ public class EntradasResource {
     @Path("/{id}")
     public Response findById(@PathParam("id") int id) {
         try {
-            return Response.ok(EntradaMapper.toDTO(entradaBL.findById(id)))
+            Entrada entrada = entradaBL.findById(id);
+            exigirEntradaPropia(entrada);
+            return Response.ok(EntradaMapper.toDTO(entrada))
                     .build();
         }
         catch (NoEncontradoException ex) {
@@ -69,6 +84,7 @@ public class EntradasResource {
     @PUT
     @Path("/validar-ingreso")
     public Response validarIngreso(Map<String, String> payload) {
+        AutorizacionRest.exigirAdministrador(securityContext);
         try {
             String codigoQR = payload != null ? payload.get("codigoQR") : null;
             if (codigoQR == null || codigoQR.isEmpty()) {
@@ -93,6 +109,7 @@ public class EntradasResource {
     @Path("/{id}/cancelar")
     public Response cancelar(@PathParam("id") int id) {
         try {
+            exigirEntradaPropia(entradaBL.findById(id));
             entradaBL.cancelar(id);
             return Response.ok(Map.of("mensaje", "Entrada cancelada exitosamente")).build();
         }
@@ -105,6 +122,25 @@ public class EntradasResource {
         catch (BLException ex) {
             return error(Response.Status.INTERNAL_SERVER_ERROR, ex);
         }
+    }
+
+    private void exigirReservaPropia(int reservaId) throws BLException {
+        Reserva reserva;
+        try {
+            reserva = new ReservaDAOImpl().findById(reservaId);
+        } catch (java.sql.SQLException ex) {
+            throw new BLException("No se pudo verificar la reserva", ex);
+        }
+        if (reserva == null) {
+            throw new NoEncontradoException("No existe la reserva indicada");
+        }
+        AutorizacionRest.exigirPropietarioOAdministrador(
+                securityContext, reserva.getCliente().getId());
+    }
+
+    private void exigirEntradaPropia(Entrada entrada) {
+        AutorizacionRest.exigirPropietarioOAdministrador(
+                securityContext, entrada.getReserva().getCliente().getId());
     }
 
     private Response error(Response.Status status, Exception ex) {

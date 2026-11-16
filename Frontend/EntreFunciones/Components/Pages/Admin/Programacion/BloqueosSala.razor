@@ -1,0 +1,139 @@
+@page "/admin/bloqueos-sala"
+@attribute [Authorize(Policy = "Programacion")]
+@rendermode InteractiveServer
+@using EntreFunciones.DTOSS
+@using EntreFunciones.Servicios
+@using EntreFunciones.ViewModels
+@inject IBloqueoSalaService Bloqueos
+@inject ISalaService SalasService
+
+<PageTitle>Bloqueos de salas</PageTitle>
+
+<div class="page-shell">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Bloqueos temporales de salas</h1>
+            <p class="page-description">Registra periodos de indisponibilidad sin borrar su historial.</p>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Error))
+    {
+        <div class="alert alert-danger">@Error</div>
+    }
+
+    <div class="card card-body mb-4">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label" for="salaBloqueo">Sala</label>
+                <select id="salaBloqueo" class="form-select" @bind="Edicion.SalaId">
+                    <option value="0">Seleccione...</option>
+                    @foreach (SalaViewModel sala in Salas.Where(s => s.IsActivo))
+                    {
+                        <option value="@sala.Id">@sala.NombreSede / @sala.Nombre</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label" for="inicioBloqueo">Inicio</label>
+                <input id="inicioBloqueo" type="datetime-local" class="form-control" @bind="Edicion.Inicio" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label" for="finBloqueo">Fin</label>
+                <input id="finBloqueo" type="datetime-local" class="form-control" @bind="Edicion.Fin" />
+            </div>
+            <div class="col-md-2 d-grid">
+                <button class="btn btn-primary" disabled="@Procesando" @onclick="Guardar">
+                    @(Edicion.Id == 0 ? "Registrar" : "Actualizar")
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="data-table-wrapper">
+        <table class="table table-bordered align-middle">
+            <thead><tr><th>Sede / sala</th><th>Inicio</th><th>Fin</th><th>Estado</th><th>Acciones</th></tr></thead>
+            <tbody>
+                @foreach (BloqueoSalaDto bloqueo in Lista)
+                {
+                    <tr>
+                        <td>@bloqueo.SedeNombre / @bloqueo.SalaNombre</td>
+                        <td>@bloqueo.Inicio.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>@bloqueo.Fin.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>@(bloqueo.Activo ? "Activo" : "Histórico")</td>
+                        <td>
+                            <button class="btn btn-outline-primary btn-sm" disabled="@Procesando" @onclick="() => Editar(bloqueo)">Editar</button>
+                            @if (bloqueo.Activo)
+                            {
+                                <button class="btn btn-outline-danger btn-sm ms-1" disabled="@Procesando" @onclick="() => Desactivar(bloqueo.Id)">Desactivar</button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@code {
+    private List<BloqueoSalaDto> Lista = [];
+    private List<SalaViewModel> Salas = [];
+    private BloqueoSalaDto Edicion = Nueva();
+    private bool Procesando;
+    private string Error = string.Empty;
+
+    protected override async Task OnInitializedAsync() => await Cargar();
+
+    private async Task Cargar()
+    {
+        Error = string.Empty;
+        try
+        {
+            Salas = await SalasService.FindAll();
+            Lista = await Bloqueos.Listar();
+        }
+        catch (Exception ex) { Error = ex.Message; }
+    }
+
+    private async Task Guardar()
+    {
+        Error = string.Empty;
+        if (Edicion.SalaId <= 0 || Edicion.Fin <= Edicion.Inicio)
+        {
+            Error = "Seleccione una sala y un fin posterior al inicio.";
+            return;
+        }
+        Procesando = true;
+        try
+        {
+            if (Edicion.Id == 0) await Bloqueos.Insertar(Edicion);
+            else await Bloqueos.Actualizar(Edicion);
+            Edicion = Nueva();
+            Lista = await Bloqueos.Listar();
+        }
+        catch (Exception ex) { Error = ex.Message; }
+        finally { Procesando = false; }
+    }
+
+    private void Editar(BloqueoSalaDto bloqueo) => Edicion = new BloqueoSalaDto
+    {
+        Id = bloqueo.Id, SalaId = bloqueo.SalaId, Inicio = bloqueo.Inicio,
+        Fin = bloqueo.Fin, Activo = bloqueo.Activo,
+        SalaNombre = bloqueo.SalaNombre, SedeNombre = bloqueo.SedeNombre
+    };
+
+    private async Task Desactivar(int id)
+    {
+        Procesando = true;
+        try { await Bloqueos.Desactivar(id); Lista = await Bloqueos.Listar(); }
+        catch (Exception ex) { Error = ex.Message; }
+        finally { Procesando = false; }
+    }
+
+    private static BloqueoSalaDto Nueva() => new()
+    {
+        Activo = true,
+        Inicio = DateTime.Now.AddHours(1).AddMinutes(-DateTime.Now.Minute),
+        Fin = DateTime.Now.AddHours(2).AddMinutes(-DateTime.Now.Minute)
+    };
+}

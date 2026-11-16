@@ -4,6 +4,7 @@ import pe.edu.pucp.entrefunciones.bl.error.BLException;
 import pe.edu.pucp.entrefunciones.bl.ventas.ReservaBL;
 import pe.edu.pucp.entrefunciones.dao.impl.ControlOperacionesDAO;
 import pe.edu.pucp.entrefunciones.dao.impl.ventas.ReservaDAOImpl;
+import pe.edu.pucp.entrefunciones.dao.impl.ventas.EntradaDAOImpl;
 import pe.edu.pucp.entrefunciones.dao.impl.eventos.FuncionDAOImpl;
 import pe.edu.pucp.entrefunciones.dao.impl.usuarios.ClienteDAOImpl;
 import pe.edu.pucp.entrefunciones.dao.impl.espacios.ButacaDAOImpl;
@@ -16,6 +17,8 @@ import java.time.LocalDateTime;
 import java.util.*;
 public class ReservaBLImpl implements ReservaBL {
     private final ReservaDAOImpl reservas = new ReservaDAOImpl();
+    private final EntradaDAOImpl entradas = new EntradaDAOImpl(
+            new ReservaDAOImpl(), new ButacaDAOImpl());
     private final ControlOperacionesDAO control = new ControlOperacionesDAO();
     @FunctionalInterface private interface Consulta<T> { T ejecutar() throws SQLException; }
     private <T> T leer(Consulta<T> consulta) throws BLException {
@@ -66,6 +69,25 @@ public class ReservaBLImpl implements ReservaBL {
             reserva.setFechaExpiracion(ahora.plusMinutes(15).isBefore(inicio)?ahora.plusMinutes(15):inicio);
             reserva.setPrecioUnitario(funcion.getEvento().getPrecio());
             reservas.insertConButacas(reserva,TransactionsManager.getConnection());
+            if (Double.compare(reserva.getPrecioUnitario(), 0d) == 0) {
+                if (!reserva.confirmar()) {
+                    throw new BLException("La reserva gratuita no pudo confirmarse");
+                }
+                reservas.update(reserva);
+                for (int i = 0; i < reserva.getCantidad(); i++) {
+                    Butaca butaca = funcion.requiereAsientoNumerado()
+                            ? reserva.getButacas().get(i)
+                            : null;
+                    Entrada entrada = new Entrada(
+                            0,
+                            ahora,
+                            "QR-" + UUID.randomUUID(),
+                            0d,
+                            butaca,
+                            reserva);
+                    entradas.insert(entrada);
+                }
+            }
             return null;
         });
     }

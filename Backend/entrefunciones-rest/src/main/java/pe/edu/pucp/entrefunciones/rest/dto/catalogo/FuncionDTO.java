@@ -41,15 +41,17 @@ public class FuncionDTO {
     private int idSede;
     private String nombreSede;
     private String ciudadSede;
+    private String distritoSede;
+    private boolean salaAccesible;
     private String fecha;
     private String horaInicio;
     private String horaFin;
     private String idioma;
     private String estado;
-    private Integer entradasNoCanceladas;
+    private Integer entradasVigentes;
+    private Integer entradasEmitidas;
     private Integer entradasCanceladas;
-    private BigDecimal ingresosValidos;
-    private Integer asistentes;
+    private BigDecimal ingresosConfirmados;
     private BigDecimal porcentajeOcupacion;
 
     public FuncionDTO() {
@@ -159,12 +161,25 @@ public class FuncionDTO {
         this.estado = estado;
     }
 
-    public Integer getEntradasNoCanceladas() {
-        return entradasNoCanceladas;
+    public Integer getEntradasVigentes() {
+        return entradasVigentes;
     }
 
-    public void setEntradasNoCanceladas(Integer entradasNoCanceladas) {
-        this.entradasNoCanceladas = entradasNoCanceladas;
+    public String getDistritoSede() { return distritoSede; }
+    public void setDistritoSede(String distritoSede) { this.distritoSede = distritoSede; }
+    public boolean isSalaAccesible() { return salaAccesible; }
+    public void setSalaAccesible(boolean salaAccesible) { this.salaAccesible = salaAccesible; }
+
+    public void setEntradasVigentes(Integer entradasVigentes) {
+        this.entradasVigentes = entradasVigentes;
+    }
+
+    public Integer getEntradasEmitidas() {
+        return entradasEmitidas;
+    }
+
+    public void setEntradasEmitidas(Integer entradasEmitidas) {
+        this.entradasEmitidas = entradasEmitidas;
     }
 
     public Integer getEntradasCanceladas() {
@@ -175,20 +190,12 @@ public class FuncionDTO {
         this.entradasCanceladas = entradasCanceladas;
     }
 
-    public BigDecimal getIngresosValidos() {
-        return ingresosValidos;
+    public BigDecimal getIngresosConfirmados() {
+        return ingresosConfirmados;
     }
 
-    public void setIngresosValidos(BigDecimal ingresosValidos) {
-        this.ingresosValidos = ingresosValidos;
-    }
-
-    public Integer getAsistentes() {
-        return asistentes;
-    }
-
-    public void setAsistentes(Integer asistentes) {
-        this.asistentes = asistentes;
+    public void setIngresosConfirmados(BigDecimal ingresosConfirmados) {
+        this.ingresosConfirmados = ingresosConfirmados;
     }
 
     public BigDecimal getPorcentajeOcupacion() {

@@ -71,7 +71,7 @@ public class SedeDAOImpl implements SedeDAO {
         }
 
         String placeholders = String.join(",", java.util.Collections.nCopies(validos.size(), "?"));
-        String sql = "SELECT id, razon_social, direccion, ciudad, telefono_contacto, activo "
+        String sql = "SELECT id, razon_social, direccion, ciudad, distrito, telefono_contacto, activo "
                 + "FROM sede WHERE id IN (" + placeholders + ") ORDER BY id";
         try (ConnectionScope scope = ConnectionScope.openForRead();
              PreparedStatement cmd = scope.connection().prepareStatement(sql)) {
@@ -92,12 +92,12 @@ public class SedeDAOImpl implements SedeDAO {
     public void insert(Sede sede) throws SQLException {
         validarSede(sede);
         Connection connection = TransactionsManager.getConnection();
-        String sql = "{call insertar_sede(?, ?, ?, ?, ?, ?)}";
+        String sql = "{call insertar_sede(?, ?, ?, ?, ?, ?, ?)}";
         try (CallableStatement cmd = connection.prepareCall(sql)) {
             asignarParametros(cmd, sede);
-            cmd.registerOutParameter(6, Types.INTEGER);
+            cmd.registerOutParameter(7, Types.INTEGER);
             cmd.executeUpdate();
-            sede.setId(cmd.getInt(6));
+            sede.setId(cmd.getInt(7));
             if (sede.getId() <= 0) {
                 throw new SQLException("No se obtuvo el id de la sede insertada");
             }
@@ -109,14 +109,15 @@ public class SedeDAOImpl implements SedeDAO {
         validarSede(sede);
         validarId(sede.getId());
         Connection connection = TransactionsManager.getConnection();
-        String sql = "{call modificar_sede(?, ?, ?, ?, ?, ?)}";
+        String sql = "{call modificar_sede(?, ?, ?, ?, ?, ?, ?)}";
         try (CallableStatement cmd = connection.prepareCall(sql)) {
             cmd.setInt(1, sede.getId());
             cmd.setString(2, sede.getRazonSocial());
             cmd.setString(3, sede.getDireccion());
             cmd.setString(4, sede.getCiudad());
-            cmd.setString(5, sede.getTelefonoContacto());
-            cmd.setBoolean(6, sede.estaActivo());
+            cmd.setString(5, sede.getDistrito());
+            cmd.setString(6, sede.getTelefonoContacto());
+            cmd.setBoolean(7, sede.estaActivo());
             cmd.executeUpdate();
             if (!existe(connection, sede.getId())) {
                 throw new SQLException("No existe la sede con id " + sede.getId());
@@ -150,7 +151,7 @@ public class SedeDAOImpl implements SedeDAO {
 
     private Map<Integer, Sala> cargarSalas(Connection connection, Sede sede) throws SQLException {
         String sql = """
-                SELECT id, nombre, aforo, tipo_sala, activo
+                SELECT id, nombre, aforo, tipo_sala, accesible, activo
                 FROM sala
                 WHERE sede_id = ?
                 ORDER BY id
@@ -163,6 +164,7 @@ public class SedeDAOImpl implements SedeDAO {
                     Sala sala = new Sala(
                             rs.getInt("id"), sede, rs.getString("nombre"),
                             rs.getInt("aforo"), rs.getString("tipo_sala"));
+                    sala.setAccesible(rs.getBoolean("accesible"));
                     if (rs.getBoolean("activo")) {
                         sala.activar();
                     } else {
@@ -221,8 +223,9 @@ public class SedeDAOImpl implements SedeDAO {
         cmd.setString(1, sede.getRazonSocial());
         cmd.setString(2, sede.getDireccion());
         cmd.setString(3, sede.getCiudad());
-        cmd.setString(4, sede.getTelefonoContacto());
-        cmd.setBoolean(5, sede.estaActivo());
+        cmd.setString(4, sede.getDistrito());
+        cmd.setString(5, sede.getTelefonoContacto());
+        cmd.setBoolean(6, sede.estaActivo());
     }
 
     private Sede mapearSede(ResultSet rs) throws SQLException {
@@ -231,6 +234,7 @@ public class SedeDAOImpl implements SedeDAO {
         sede.setRazonSocial(rs.getString("razon_social"));
         sede.setDireccion(rs.getString("direccion"));
         sede.setCiudad(rs.getString("ciudad"));
+        sede.setDistrito(rs.getString("distrito"));
         sede.setTelefonoContacto(rs.getString("telefono_contacto"));
         if (rs.getBoolean("activo")) {
             sede.activar();

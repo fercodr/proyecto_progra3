@@ -13,6 +13,9 @@ namespace EntreFunciones.DTOSS
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public bool Ocupada { get; set; }
 
+        [JsonPropertyName("retenida")]
+        public bool Retenida { get; set; }
+
         // Solo en el cliente: no viene del backend
         [JsonIgnore]
         public bool Elegida { get; set; }

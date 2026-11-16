@@ -132,6 +132,7 @@ public class AuditoriaResource {
             Auditoria registradaModelo = auditorias.actualizarAtencion(
                     id,
                     solicitud.getResponsable().getId(),
+                    solicitud.getDescripcion(),
                     convertirEstado(solicitud.getEstado()));
             AuditoriaDTO registrada = AuditoriaMapper.toDTO(registradaModelo);
 

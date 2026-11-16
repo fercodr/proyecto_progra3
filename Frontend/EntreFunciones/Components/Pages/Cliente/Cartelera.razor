@@ -43,12 +43,12 @@ else
             </select>
         </div>
         <div class="col-6 col-md-3">
-            <label for="filtroCiudad" class="form-label">Ciudad</label>
-            <select id="filtroCiudad" class="form-select" @bind="FiltroCiudad">
+            <label for="filtroDistrito" class="form-label">Distrito</label>
+            <select id="filtroDistrito" class="form-select" @bind="FiltroDistrito">
                 <option value="">Todas</option>
-                @foreach (string ciudad in Ciudades)
+                @foreach (string distrito in Distritos)
                 {
-                    <option value="@ciudad">@ciudad</option>
+                    <option value="@distrito">@distrito</option>
                 }
             </select>
         </div>
@@ -64,6 +64,28 @@ else
         <div class="col-6 col-md-3">
             <label for="filtroPrecio" class="form-label">Precio máx. (S/)</label>
             <input id="filtroPrecio" type="number" min="0" class="form-control" @bind="FiltroPrecioMax" />
+        </div>
+        <div class="col-6 col-md-3">
+            <label for="filtroFecha" class="form-label">Fecha</label>
+            <input id="filtroFecha" type="date" class="form-control" @bind="FiltroFecha" />
+        </div>
+        <div class="col-6 col-md-3">
+            <label for="filtroTematica" class="form-label">Temática</label>
+            <select id="filtroTematica" class="form-select" @bind="FiltroTematica">
+                <option value="">Todas</option>
+                @foreach (string tematica in Tematicas)
+                {
+                    <option value="@tematica">@tematica</option>
+                }
+            </select>
+        </div>
+        <div class="col-6 col-md-3">
+            <label for="filtroAccesibilidad" class="form-label">Accesibilidad</label>
+            <select id="filtroAccesibilidad" class="form-select" @bind="FiltroAccesibilidad">
+                <option value="">Todas</option>
+                <option value="SI">Sala accesible</option>
+                <option value="NO">Sin característica registrada</option>
+            </select>
         </div>
     </div>
 
@@ -117,8 +139,11 @@ else
 
 @code {
     private string FiltroSede = string.Empty;
-    private string FiltroCiudad = string.Empty;
+    private string FiltroDistrito = string.Empty;
     private string FiltroTipo = string.Empty;
+    private string FiltroTematica = string.Empty;
+    private string FiltroAccesibilidad = string.Empty;
+    private DateOnly? FiltroFecha;
     private int? FiltroPrecioMax;
 
     private bool Cargando = true;
@@ -140,8 +165,16 @@ else
         {
             // Solo eventos activos: el backend aun no distingue "publicado" de "activo" (RF-M4-01),
             // asi que por ahora se muestra todo evento activo tal cual EventoBL.findAll() lo devuelve.
-            Eventos = (await Catalogo.ListarEventos()).Where(e => e.Activo).ToList();
-            Funciones = await Catalogo.ListarFunciones();
+            Funciones = (await Catalogo.ListarFunciones())
+                .Where(f => f.Estado == "CONFIRMADA"
+                    && DateOnly.TryParse(f.Fecha, out DateOnly fecha)
+                    && fecha >= DateOnly.FromDateTime(DateTime.Today)
+                    && (f.Sala?.IsActivo ?? true)
+                    && (f.Sede?.IsActivo ?? true))
+                .ToList();
+            HashSet<int> publicados = Funciones.Select(f => f.IdEvento).ToHashSet();
+            Eventos = (await Catalogo.ListarEventos())
+                .Where(e => e.Activo && publicados.Contains(e.Id)).ToList();
         }
         catch (Exception ex)
         {
@@ -154,19 +187,26 @@ else
     }
 
     private List<string> Sedes => Funciones.Select(f => f.NombreSede ?? "").Where(s => s != "").Distinct().OrderBy(s => s).ToList();
-    private List<string> Ciudades => Funciones.Select(f => f.CiudadSede ?? "").Where(s => s != "").Distinct().OrderBy(s => s).ToList();
+    private List<string> Distritos => Funciones.Select(f => f.DistritoSede ?? "").Where(s => s != "").Distinct().OrderBy(s => s).ToList();
+    private List<string> Tematicas => Eventos.Select(e => e.Tematica ?? "").Where(s => s != "").Distinct().OrderBy(s => s).ToList();
     private List<string> TiposPresentes => EventosFiltrados.Select(e => e.Tipo).Distinct().OrderBy(t => t).ToList();
 
     private IEnumerable<EventoDTO> EventosFiltrados => Eventos.Where(e =>
         (string.IsNullOrEmpty(FiltroTipo) || e.Tipo == FiltroTipo) &&
+        (string.IsNullOrEmpty(FiltroTematica) || e.Tematica == FiltroTematica) &&
         (FiltroPrecioMax == null || e.Precio <= FiltroPrecioMax) &&
-        (string.IsNullOrEmpty(FiltroSede) || Funciones.Any(f => f.IdEvento == e.Id && f.NombreSede == FiltroSede)) &&
-        (string.IsNullOrEmpty(FiltroCiudad) || Funciones.Any(f => f.IdEvento == e.Id && f.CiudadSede == FiltroCiudad)));
+        Funciones.Any(f => f.IdEvento == e.Id
+            && (string.IsNullOrEmpty(FiltroSede) || f.NombreSede == FiltroSede)
+            && (string.IsNullOrEmpty(FiltroDistrito) || f.DistritoSede == FiltroDistrito)
+            && (!FiltroFecha.HasValue || (DateOnly.TryParse(f.Fecha, out DateOnly fecha) && fecha == FiltroFecha.Value))
+            && (string.IsNullOrEmpty(FiltroAccesibilidad)
+                || (FiltroAccesibilidad == "SI" && f.SalaAccesible)
+                || (FiltroAccesibilidad == "NO" && !f.SalaAccesible))));
 
     private (string sede, string ciudad) ProximaSedeYCiudad(int idEvento)
     {
         FuncionDTO? proxima = Funciones
-            .Where(f => f.IdEvento == idEvento && f.Estado != "CANCELADA")
+            .Where(f => f.IdEvento == idEvento && f.Estado == "CONFIRMADA")
             .OrderBy(f => f.Fecha).ThenBy(f => f.HoraInicio)
             .FirstOrDefault();
 

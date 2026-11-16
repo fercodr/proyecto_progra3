@@ -13,6 +13,9 @@ namespace EntreFunciones.DTOSS
         [JsonPropertyName("ciudad")]
         public string Ciudad { get; set; } = string.Empty;
 
+        [JsonPropertyName("distrito")]
+        public string Distrito { get; set; } = string.Empty;
+
         [JsonPropertyName("telefonoContacto")]
         public string? TelefonoContacto { get; set; }
 

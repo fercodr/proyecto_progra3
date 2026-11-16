@@ -22,6 +22,7 @@ public final class SedeMapper {
         dto.setRazonSocial(sede.getRazonSocial());
         dto.setDireccion(sede.getDireccion());
         dto.setCiudad(sede.getCiudad());
+        dto.setDistrito(sede.getDistrito());
         dto.setTelefonoContacto(sede.getTelefonoContacto());
         return dto;
     }
@@ -46,6 +47,7 @@ public final class SedeMapper {
         try {
             sede = new Sede(dto.getId(), dto.getRazonSocial(), dto.getDireccion(),
                     dto.getCiudad(), dto.getTelefonoContacto());
+            sede.setDistrito(dto.getDistrito());
             if (!dto.isActivo()) {
                 sede.desactivar();
             }
@@ -53,6 +55,7 @@ public final class SedeMapper {
                 for (SalaDTO salaDTO : dto.getSalas()) {
                     Sala sala = new Sala(salaDTO.getId(), sede, salaDTO.getNombre(),
                             salaDTO.getAforo(), salaDTO.getTipoSala());
+                    sala.setAccesible(salaDTO.isAccesible());
                     if (!salaDTO.isActivo()) {
                         sala.desactivar();
                     }

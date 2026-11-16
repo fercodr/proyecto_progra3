@@ -95,12 +95,13 @@ public class AuditoriaDAOImpl implements AuditoriaDAO {
         validarAuditoriaEscribible(auditoria);
         if (auditoria== null || auditoria.getId()<0) throw new IllegalArgumentException("El id debe ser positivo");
 
-        String sql = "{call modificar_auditoria_atencion(?, ?, ?)}";
+        String sql = "{call modificar_auditoria_atencion(?, ?, ?, ?)}";
         try (Connection conn = DBManager.getInstance().getConnection();
              CallableStatement cmd = conn.prepareCall(sql)) {
             cmd.setInt(1, auditoria.getId());
-            cmd.setInt(2, auditoria.getResponsable().getId());
-            cmd.setString(3, auditoria.getEstado().name());
+            cmd.setString(2, auditoria.getDescripcion().trim());
+            cmd.setInt(3, auditoria.getResponsable().getId());
+            cmd.setString(4, auditoria.getEstado().name());
             cmd.executeUpdate();
         }
     }

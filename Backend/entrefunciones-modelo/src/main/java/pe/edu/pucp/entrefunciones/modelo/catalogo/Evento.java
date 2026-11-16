@@ -9,6 +9,8 @@ public abstract class Evento implements IEliminable {
     private double precio;
     private boolean activo;
     private String imagenUrl;
+    private String tematica;
+    private String publicoObjetivo;
     private ArrayList<Funcion> funciones;
 
     public Evento() {
@@ -27,11 +29,17 @@ public abstract class Evento implements IEliminable {
         setId(evento.getId());
         setPrecio(evento.getPrecio());
         this.activo = evento.estaActivo();
+        this.tematica = evento.getTematica();
+        this.publicoObjetivo = evento.getPublicoObjetivo();
         funciones = new ArrayList<>();
     }
 
     public String getImagenUrl() { return imagenUrl; }
     public void setImagenUrl(String imagenUrl) { this.imagenUrl = imagenUrl; }
+    public String getTematica() { return tematica; }
+    public void setTematica(String tematica) { this.tematica = tematica; }
+    public String getPublicoObjetivo() { return publicoObjetivo; }
+    public void setPublicoObjetivo(String publicoObjetivo) { this.publicoObjetivo = publicoObjetivo; }
 
     public int getId() {
         return id;
