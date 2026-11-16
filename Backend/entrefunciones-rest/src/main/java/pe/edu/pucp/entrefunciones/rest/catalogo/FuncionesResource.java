@@ -202,6 +202,10 @@ public class FuncionesResource {
     }
 
     private Response error(Response.Status status, Exception ex) {
+        if (status.getStatusCode() >= 500) {
+            java.util.logging.Logger.getLogger(FuncionesResource.class.getName())
+                    .log(java.util.logging.Level.SEVERE, ex.getMessage(), ex);
+        }
         return Response.status(status)
                 .entity(Map.of("mensaje", ex.getMessage()))
                 .build();

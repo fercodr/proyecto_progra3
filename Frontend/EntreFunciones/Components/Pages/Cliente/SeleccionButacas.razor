@@ -112,15 +112,25 @@ else
                 <p class="mb-1">Butacas: <strong>@(ButacasElegidasTexto == "" ? "Ninguna" : ButacasElegidasTexto)</strong></p>
             }
             <p class="mb-1">Cantidad: <strong>@CantidadElegida</strong></p>
-            <p class="mb-1">Precio unitario: <strong>@CompraClienteMapper.Soles(Funcion.Precio)</strong></p>
-            <p class="mb-3">Total: <strong>@CompraClienteMapper.Soles(Total)</strong></p>
+            <p class="mb-1">Precio unitario: <strong>@CompraClienteMapper.SolesOGratis(Funcion.Precio)</strong></p>
+            <p class="mb-3">Total: <strong>@(Gratuita ? "Gratuita" : CompraClienteMapper.Soles(Total))</strong></p>
             <button type="button" class="btn btn-primary w-100" disabled="@(CantidadElegida <= 0 || Enviando)" @onclick="() => MostrarConfirmacion = true">
                 Continuar
             </button>
-            <p class="small text-muted mt-2 mb-0">
-                Se separarán por 15 minutos
-                <IconoInfo Texto="Al continuar se crea tu reserva y las butacas quedan bloqueadas para otros usuarios durante 15 minutos. Si no pagas en ese tiempo, se liberan automáticamente." />
-            </p>
+            @if (Gratuita)
+            {
+                <p class="small text-muted mt-2 mb-0">
+                    Función gratuita
+                    <IconoInfo Texto="Al continuar tu reserva queda confirmada de inmediato y se emite una entrada con código QR por cada cupo. No necesitas registrar un pago." />
+                </p>
+            }
+            else
+            {
+                <p class="small text-muted mt-2 mb-0">
+                    Se separarán hasta por 15 minutos
+                    <IconoInfo Texto="Al continuar se crea tu reserva y las butacas quedan retenidas para otros usuarios hasta por 15 minutos (o hasta el inicio de la función, si falta menos). Si no pagas en ese tiempo, se liberan automáticamente." />
+                </p>
+            }
         </div>
     </div>
 
@@ -138,9 +148,16 @@ else
             {
                 <li>Cupos: @CantidadElegida</li>
             }
-            <li>Total a pagar: <strong>@CompraClienteMapper.Soles(Total)</strong></li>
+            <li>Total a pagar: <strong>@(Gratuita ? "Gratuita" : CompraClienteMapper.Soles(Total))</strong></li>
         </ul>
-        <p class="small text-muted mb-0">Tendrás 15 minutos para completar el pago.</p>
+        @if (Gratuita)
+        {
+            <p class="small text-muted mb-0">Es una función gratuita: la reserva se confirma al instante y recibirás tus entradas con código QR.</p>
+        }
+        else
+        {
+            <p class="small text-muted mb-0">Tendrás hasta 15 minutos para completar el pago; verás el tiempo exacto en el siguiente paso.</p>
+        }
     </ModalConfirmacion>
 }
 </div>
@@ -165,6 +182,8 @@ else
     }
     private int CantidadElegida => Funcion?.AforoNumerado==true?Butacas.Count(b=>b.Elegida):Cantidad;
     private decimal Total => CantidadElegida * (Funcion?.Precio ?? 0);
+    /// <summary>Función de precio cero: se confirma sin pago y emite las entradas al reservar (RF-M5-03).</summary>
+    private bool Gratuita => Funcion?.Precio == 0;
     private string ButacasElegidasTexto => string.Join(", ", Butacas.Where(b=>b.Elegida).OrderBy(b=>b.Fila).ThenBy(b=>b.Columna).Select(b=>$"{b.Fila}{b.Columna}"));
     private bool MostrarConfirmacion;
     private string ErrorAccion = "";

@@ -1,0 +1,48 @@
+@* Imagen del código QR de una entrada (RF-M5-03).
+   El backend solo guarda el texto del código (Entrada.codigoQR); aquí se convierte en imagen
+   con la librería QRCoder, dentro del propio servidor: el código no se envía a ningún sitio externo.
+
+   <CodigoQr Valor="@entrada.CodigoQR" Tamano="180" TextoAlternativo="Código QR de la entrada ENT-12" /> *@
+@using QRCoder
+
+@if (!string.IsNullOrEmpty(_imagen))
+{
+    <img src="@_imagen" alt="@TextoAlternativo" width="@Tamano" height="@Tamano" class="img-fluid" />
+}
+else
+{
+    <span class="text-muted small">Código QR no disponible</span>
+}
+
+@code {
+    /// <summary>Texto que se codifica en el QR (el codigoQR de la entrada).</summary>
+    [Parameter, EditorRequired] public string Valor { get; set; } = string.Empty;
+    /// <summary>Lado de la imagen en pixeles de pantalla.</summary>
+    [Parameter] public int Tamano { get; set; } = 160;
+    [Parameter] public string TextoAlternativo { get; set; } = "Código QR de la entrada";
+
+    private string _imagen = string.Empty;
+    private string? _valorGenerado;
+
+    protected override void OnParametersSet()
+    {
+        // Solo se vuelve a dibujar cuando cambia el texto, no en cada render de la página.
+        if (Valor == _valorGenerado)
+        {
+            return;
+        }
+
+        _valorGenerado = Valor;
+        _imagen = string.Empty;
+        if (string.IsNullOrWhiteSpace(Valor))
+        {
+            return;
+        }
+
+        using QRCodeGenerator generador = new();
+        using QRCodeData datos = generador.CreateQrCode(Valor, QRCodeGenerator.ECCLevel.M);
+        using PngByteQRCode png = new(datos);
+        byte[] bytes = png.GetGraphic(8);
+        _imagen = $"data:image/png;base64,{Convert.ToBase64String(bytes)}";
+    }
+}

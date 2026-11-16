@@ -3,6 +3,7 @@
 @using EntreFunciones.DTOSS
 @using EntreFunciones.Mappers
 @using EntreFunciones.Servicios.Rest
+@using EntreFunciones.ViewModels
 @implements IDisposable
 @inject ICompraService Api
 @inject NavigationManager Nav
@@ -39,8 +40,16 @@
                 @if (Reserva.Estado == "CONFIRMADA")
                 {
                     <i class="bi bi-check-circle-fill text-success display-5" aria-hidden="true"></i>
-                    <h1 class="h4 mt-3">¡Compra confirmada!</h1>
-                    <p class="text-muted">Tu pago fue validado. Tus entradas ya están disponibles en <strong>Mis compras</strong>.</p>
+                    @if (Gratuita)
+                    {
+                        <h1 class="h4 mt-3">¡Reserva confirmada!</h1>
+                        <p class="text-muted">Esta función es gratuita, así que no necesitas pagar. Tus entradas ya fueron emitidas y también están en <strong>Mis compras</strong>.</p>
+                    }
+                    else
+                    {
+                        <h1 class="h4 mt-3">¡Compra confirmada!</h1>
+                        <p class="text-muted">Tu pago fue validado. Tus entradas ya fueron emitidas y también están en <strong>Mis compras</strong>.</p>
+                    }
                 }
                 else
                 {
@@ -65,9 +74,30 @@
                     <dd class="col-7 mb-1">@Reserva.FuncionNombre</dd>
                     <dt class="col-5">Fecha de la función</dt>
                     <dd class="col-7 mb-1">@Reserva.FechaFuncion.ToString("dd/MM/yyyy HH:mm")</dd>
-                    <dt class="col-5">Monto pagado</dt>
-                    <dd class="col-7 mb-0">@CompraClienteMapper.Soles(Reserva.MontoTotal)</dd>
+                    <dt class="col-5">@(Gratuita ? "Monto" : "Monto pagado")</dt>
+                    <dd class="col-7 mb-0">@CompraClienteMapper.SolesOGratis(Reserva.MontoTotal)</dd>
                 </dl>
+
+                @* RF-M5-03: una entrada con su propio QR por cada cupo, apenas la reserva queda confirmada *@
+                @if (Entradas.Count > 0)
+                {
+                    <h2 class="h6 text-start">Tus entradas</h2>
+                    <div class="d-flex flex-wrap justify-content-center gap-3 mb-3">
+                        @foreach (EntradaClienteViewModel entrada in Entradas)
+                        {
+                            <div class="text-center border rounded p-2">
+                                <CodigoQr Valor="@entrada.CodigoQR" Tamano="140" TextoAlternativo="@($"Código QR de la entrada {entrada.Codigo}")" />
+                                <div class="small font-monospace mt-1">@entrada.Codigo</div>
+                                <div class="small text-muted">@entrada.Butaca</div>
+                                <span class="badge @entrada.EstadoClase mt-1">@entrada.Estado</span>
+                            </div>
+                        }
+                    </div>
+                }
+                else if (!string.IsNullOrEmpty(AvisoEntradas))
+                {
+                    <div class="alert alert-warning py-2 small text-start" role="alert">@AvisoEntradas</div>
+                }
 
                 <div class="d-flex flex-column flex-sm-row gap-2 justify-content-center">
                     <a class="btn btn-primary" href="/mis-compras"><i class="bi bi-ticket-perforated me-1" aria-hidden="true"></i>Ver mis compras</a>
@@ -126,6 +156,17 @@
                         <dd class="col-sm-7">@Reserva.FechaFuncion.ToString("dd/MM/yyyy HH:mm")</dd>
                         <dt class="col-sm-5 text-muted fw-normal">Cantidad</dt>
                         <dd class="col-sm-7">@Reserva.Cantidad @(Reserva.Cantidad == 1 ? "entrada" : "entradas")</dd>
+                        <dt class="col-sm-5 text-muted fw-normal">Vence el</dt>
+                        <dd class="col-sm-7">@Reserva.FechaExpiracion.ToString("dd/MM/yyyy HH:mm")</dd>
+                        @if (Pago != null)
+                        {
+                            @* RF-M5-02: el cliente consulta el código de pago generado para su reserva *@
+                            <dt class="col-sm-5 text-muted fw-normal">
+                                Código de pago
+                                <IconoInfo Texto="Es el código con el que el administrador busca y valida tu pago. Guárdalo por si necesitas hacer una consulta." />
+                            </dt>
+                            <dd class="col-sm-7 font-monospace text-break">@Pago.CodigoPago</dd>
+                        }
                         <dt class="col-sm-5 text-muted fw-normal">Total a pagar</dt>
                         <dd class="col-sm-7 mb-0 fs-5 fw-semibold">@CompraClienteMapper.Soles(Reserva.MontoTotal)</dd>
                     </dl>
@@ -148,6 +189,10 @@
                 <div class="card-body py-2 d-flex flex-wrap justify-content-between gap-2 small">
                     <span><strong>@Reserva.FuncionNombre</strong> &middot; @Reserva.Cantidad @(Reserva.Cantidad == 1 ? "entrada" : "entradas")</span>
                     <span>Total: <strong>@CompraClienteMapper.Soles(Reserva.MontoTotal)</strong></span>
+                    @if (Pago != null)
+                    {
+                        <span class="w-100 text-muted">Código de pago: <span class="font-monospace text-break">@Pago.CodigoPago</span></span>
+                    }
                 </div>
             </div>
 
@@ -157,28 +202,70 @@
                         Datos de la tarjeta
                         <IconoInfo Texto="Pago simulado: los datos de la tarjeta no se envían ni se guardan en el sistema." />
                     </h2>
-                    <form @onsubmit="PedirConfirmacionPago" @onsubmit:preventDefault="true">
+                    <form @onsubmit="PedirConfirmacionPago" @onsubmit:preventDefault="true" novalidate>
                         <div class="mb-3">
                             <label for="nombreTitular" class="form-label">Nombre del titular</label>
-                            <input id="nombreTitular" @bind="NombreTitular" type="text" class="form-control" placeholder="Como figura en la tarjeta" autocomplete="cc-name" required />
+                            <input id="nombreTitular" type="text" autocomplete="cc-name" maxlength="50"
+                                   class="form-control @ClaseCampo(TocadoNombre, ErrorNombre)"
+                                   placeholder="Como figura en la tarjeta"
+                                   @bind:get="NombreTitular" @bind:set="AlCambiarNombre" @bind:event="oninput"
+                                   @onblur="() => TocadoNombre = true"
+                                   aria-invalid="@((TocadoNombre && ErrorNombre != null).ToString().ToLower())" aria-describedby="errorNombre" />
+                            @if (TocadoNombre && ErrorNombre != null)
+                            {
+                                <div id="errorNombre" class="invalid-feedback d-block">@ErrorNombre</div>
+                            }
                         </div>
 
                         <div class="mb-3">
-                            <label for="numeroTarjeta" class="form-label">Número de tarjeta</label>
-                            <input id="numeroTarjeta" @bind="NumeroTarjeta" type="text" inputmode="numeric" class="form-control" placeholder="0000 0000 0000 0000" maxlength="19" autocomplete="cc-number" required />
+                            <label for="numeroTarjeta" class="form-label d-flex justify-content-between">
+                                <span>Número de tarjeta</span>
+                                @if (MarcaTarjeta != null)
+                                {
+                                    <span class="badge text-bg-light border">@MarcaTarjeta</span>
+                                }
+                            </label>
+                            <input id="numeroTarjeta" type="text" inputmode="numeric" autocomplete="cc-number" maxlength="19"
+                                   class="form-control font-monospace @ClaseCampo(TocadoNumero, ErrorNumero)"
+                                   placeholder="0000 0000 0000 0000"
+                                   @bind:get="NumeroTarjeta" @bind:set="AlCambiarNumero" @bind:event="oninput"
+                                   @onblur="() => TocadoNumero = true"
+                                   aria-invalid="@((TocadoNumero && ErrorNumero != null).ToString().ToLower())" aria-describedby="errorNumero" />
+                            @if (TocadoNumero && ErrorNumero != null)
+                            {
+                                <div id="errorNumero" class="invalid-feedback d-block">@ErrorNumero</div>
+                            }
                         </div>
 
                         <div class="row">
                             <div class="col-6 mb-3">
-                                <label for="fechaExpiracion" class="form-label">Expiración (MM/AA)</label>
-                                <input id="fechaExpiracion" @bind="FechaExpiracion" type="text" inputmode="numeric" class="form-control" placeholder="MM/AA" maxlength="5" autocomplete="cc-exp" required />
+                                <label for="fechaExpiracion" class="form-label">Vencimiento (MM/AA)</label>
+                                <input id="fechaExpiracion" type="text" inputmode="numeric" autocomplete="cc-exp" maxlength="5"
+                                       class="form-control font-monospace @ClaseCampo(TocadoFecha, ErrorFecha)"
+                                       placeholder="MM/AA"
+                                       @bind:get="FechaExpiracion" @bind:set="AlCambiarFecha" @bind:event="oninput"
+                                       @onblur="() => TocadoFecha = true"
+                                       aria-invalid="@((TocadoFecha && ErrorFecha != null).ToString().ToLower())" aria-describedby="errorFecha" />
+                                @if (TocadoFecha && ErrorFecha != null)
+                                {
+                                    <div id="errorFecha" class="invalid-feedback d-block">@ErrorFecha</div>
+                                }
                             </div>
                             <div class="col-6 mb-3">
                                 <label for="cvc" class="form-label">
-                                    CVC / CVV
-                                    <IconoInfo Texto="Son los 3 o 4 dígitos que aparecen en el reverso de la tarjeta." />
+                                    CVV
+                                    <IconoInfo Texto="Son los 3 dígitos que aparecen en el reverso de la tarjeta." />
                                 </label>
-                                <input id="cvc" @bind="Cvc" type="password" inputmode="numeric" class="form-control" placeholder="123" maxlength="4" autocomplete="cc-csc" required />
+                                <input id="cvc" type="password" inputmode="numeric" autocomplete="cc-csc" maxlength="3"
+                                       class="form-control font-monospace @ClaseCampo(TocadoCvc, ErrorCvc)"
+                                       placeholder="123"
+                                       @bind:get="Cvc" @bind:set="AlCambiarCvc" @bind:event="oninput"
+                                       @onblur="() => TocadoCvc = true"
+                                       aria-invalid="@((TocadoCvc && ErrorCvc != null).ToString().ToLower())" aria-describedby="errorCvc" />
+                                @if (TocadoCvc && ErrorCvc != null)
+                                {
+                                    <div id="errorCvc" class="invalid-feedback d-block">@ErrorCvc</div>
+                                }
                             </div>
                         </div>
 
@@ -232,18 +319,29 @@
     private string TiempoRestante=>TimeSpan.FromSeconds(Segundos).ToString(@"mm\:ss");
     private string TituloPagina=>Paso switch {3=>"Pago",4=>"Confirmación",_=>"Reserva"};
     private string NombreTitular="",NumeroTarjeta="",FechaExpiracion="",Cvc="";
+    /// <summary>Entradas emitidas de la reserva; solo existen cuando ya está CONFIRMADA (RF-M5-03).</summary>
+    private List<EntradaClienteViewModel> Entradas=[];
+    private string AvisoEntradas="";
+    /// <summary>Función de precio cero: el backend la confirma y emite sus entradas sin pasar por el pago.</summary>
+    private bool Gratuita=>Reserva?.MontoTotal==0;
     protected override Task OnParametersSetAsync() => CargarAsync();
     private async Task CargarAsync()
     {
-        Cargando=true;Reserva=null;Pago=null;Error="";ErrorAccion="";Paso=2;
+        Cargando=true;Reserva=null;Pago=null;Entradas=[];Error="";ErrorAccion="";AvisoEntradas="";Paso=2;
         try {
             Reserva=await Api.Obtener(Id);
             SegundosIniciales=Math.Max(0,(Reserva.FechaExpiracion-Reserva.FechaServidor).TotalSeconds);Reloj.Restart();
-            if(Reserva.Estado=="ACTIVA") {
-                Pago=await Api.GenerarPago(Id);
-                if(PagoRegistrado)Paso=4;
+            if(Reserva.Estado=="ACTIVA" && Segundos>0) {
+                // Si el código de pago no se puede generar (por ejemplo, la función dejó de estar disponible),
+                // se muestra el motivo sobre la reserva en vez de reemplazar toda la pantalla por un error.
+                try { Pago=await Api.GenerarPago(Id); if(PagoRegistrado)Paso=4; }
+                catch(ServiceException e) { ErrorAccion=e.Message; }
             }
-            else if(Reserva.Estado=="CONFIRMADA")Paso=4;
+            else if(Reserva.Estado=="CONFIRMADA") {
+                Paso=4;
+                try { Entradas=CompraClienteMapper.ToEntradaViewModels(await Api.ListarEntradas(Id),Reserva); }
+                catch(ServiceException) { AvisoEntradas="No pudimos cargar tus entradas ahora. Las encontrarás en Mis compras."; }
+            }
             Temporizador ??= ActualizarTiempo();
         }catch(Exception e) when(e is HttpRequestException or InvalidOperationException or ServiceException or TaskCanceledException) { Error=e.Message; }
         finally { Cargando=false; }
@@ -255,17 +353,123 @@
         catch(OperationCanceledException) { }
     }
     private void IrAPago() { ErrorAccion="";Paso=3; }
-    private void PedirConfirmacionPago() { if(PuedePagar && !Enviando)MostrarPagar=true; }
+    private void PedirConfirmacionPago()
+    {
+        // Al intentar pagar se muestran los errores de todos los campos, aunque no se hayan tocado.
+        TocadoNombre=TocadoNumero=TocadoFecha=TocadoCvc=true;
+        if(PuedePagar && TarjetaValida && !Enviando)MostrarPagar=true;
+    }
+
+    // ---------- Validación de la tarjeta (pago simulado: solo se valida en pantalla) ----------
+    private bool TocadoNombre,TocadoNumero,TocadoFecha,TocadoCvc;
+    private bool TarjetaValida=>ErrorNombre==null && ErrorNumero==null && ErrorFecha==null && ErrorCvc==null;
+    private static string ClaseCampo(bool tocado,string? error)=>!tocado ? "" : error==null ? "is-valid" : "is-invalid";
+    private static string SoloDigitos(string? texto,int maximo)=>new string((texto??"").Where(char.IsAsciiDigit).Take(maximo).ToArray());
+
+    private void AlCambiarNombre(string? valor)
+    {
+        // Solo letras (con tildes y ñ), espacios, apóstrofo y guion; en mayúsculas como en la tarjeta.
+        string limpio=new string((valor??"").Where(c=>char.IsLetter(c) || c==' ' || c=='\'' || c=='-').ToArray());
+        NombreTitular=System.Text.RegularExpressions.Regex.Replace(limpio.TrimStart(),@"\s{2,}"," ").ToUpperInvariant();
+    }
+    private void AlCambiarNumero(string? valor)
+    {
+        // Agrupa en bloques de 4: "4111111111111111" -> "4111 1111 1111 1111".
+        string digitos=SoloDigitos(valor,16);
+        NumeroTarjeta=string.Join(" ",Enumerable.Range(0,(digitos.Length+3)/4).Select(i=>digitos.Substring(i*4,Math.Min(4,digitos.Length-i*4))));
+        if(digitos.Length==16)TocadoNumero=true;
+    }
+    private void AlCambiarFecha(string? valor)
+    {
+        // Inserta la barra automáticamente: "1228" -> "12/28". Permite borrar sin que la barra estorbe.
+        string digitos=SoloDigitos(valor,4);
+        if(digitos.Length==1 && digitos[0]>'1')digitos="0"+digitos;
+        FechaExpiracion=digitos.Length>2 ? $"{digitos[..2]}/{digitos[2..]}" : digitos;
+        if(digitos.Length==4)TocadoFecha=true;
+    }
+    private void AlCambiarCvc(string? valor)
+    {
+        Cvc=SoloDigitos(valor,3);
+        if(Cvc.Length==3)TocadoCvc=true;
+    }
+
+    private string? ErrorNombre
+    {
+        get
+        {
+            string nombre=NombreTitular.Trim();
+            if(nombre.Length==0)return "Ingresa el nombre del titular.";
+            string[] palabras=nombre.Split(' ',StringSplitOptions.RemoveEmptyEntries);
+            if(palabras.Length<2 || palabras.Any(p=>p.Count(char.IsLetter)<2))return "Ingresa nombre y apellido tal como aparecen en la tarjeta.";
+            return null;
+        }
+    }
+    private string? ErrorNumero
+    {
+        get
+        {
+            string digitos=SoloDigitos(NumeroTarjeta,16);
+            if(digitos.Length==0)return "Ingresa el número de la tarjeta.";
+            if(digitos.Length<16)return $"El número debe tener 16 dígitos (faltan {16-digitos.Length}).";
+            if(MarcaTarjeta==null)return "Solo se aceptan tarjetas Visa (empiezan con 4) o Mastercard (empiezan con 51-55 o 2221-2720).";
+            if(!CumpleLuhn(digitos))return "El número de tarjeta no es válido. Revisa que lo hayas escrito bien.";
+            return null;
+        }
+    }
+    private string? MarcaTarjeta
+    {
+        get
+        {
+            string d=SoloDigitos(NumeroTarjeta,16);
+            if(d.Length>=1 && d[0]=='4')return "Visa";
+            if(d.Length>=2 && int.Parse(d[..2]) is >=51 and <=55)return "Mastercard";
+            if(d.Length>=4 && int.Parse(d[..4]) is >=2221 and <=2720)return "Mastercard";
+            return null;
+        }
+    }
+    /// <summary>Algoritmo de Luhn: el dígito verificador que usan todas las tarjetas reales.</summary>
+    private static bool CumpleLuhn(string digitos)
+    {
+        int suma=0;
+        for(int i=0;i<digitos.Length;i++)
+        {
+            int d=digitos[digitos.Length-1-i]-'0';
+            if(i%2==1){d*=2;if(d>9)d-=9;}
+            suma+=d;
+        }
+        return suma%10==0;
+    }
+    private string? ErrorFecha
+    {
+        get
+        {
+            string digitos=SoloDigitos(FechaExpiracion,4);
+            if(digitos.Length==0)return "Ingresa la fecha de vencimiento.";
+            if(digitos.Length<4)return "Usa el formato MM/AA, por ejemplo 08/28.";
+            int mes=int.Parse(digitos[..2]),anio=2000+int.Parse(digitos[2..]);
+            if(mes is <1 or >12)return "El mes debe estar entre 01 y 12.";
+            DateTime hoy=DateTime.Today;
+            if(anio<hoy.Year || (anio==hoy.Year && mes<hoy.Month))return "La tarjeta está vencida.";
+            if(anio>hoy.Year+15)return "La fecha de vencimiento no es válida.";
+            return null;
+        }
+    }
+    private string? ErrorCvc=>Cvc.Length switch
+    {
+        0=>"Ingresa el CVV.",
+        <3=>"El CVV debe tener 3 dígitos.",
+        _=>null
+    };
     private async Task RegistrarPago()
     {
-        if(Enviando || !PuedePagar || Pago==null)return;
+        if(Enviando || !PuedePagar || !TarjetaValida || Pago==null)return;
         Enviando=true;ErrorAccion="";
         try {
             // Pago simulado: nunca se envían ni almacenan tarjeta o CVC.
             await Api.RegistrarPago(Pago.Id);Pago.FechaPago="Registrado";
             Paso=4;
         }catch(Exception e) when(e is HttpRequestException or InvalidOperationException or ServiceException or TaskCanceledException) { ErrorAccion=e.Message; }
-        finally { NombreTitular=NumeroTarjeta=FechaExpiracion=Cvc="";Enviando=false;MostrarPagar=false; }
+        finally { NombreTitular=NumeroTarjeta=FechaExpiracion=Cvc="";TocadoNombre=TocadoNumero=TocadoFecha=TocadoCvc=false;Enviando=false;MostrarPagar=false; }
     }
     private async Task CancelarReserva()
     {

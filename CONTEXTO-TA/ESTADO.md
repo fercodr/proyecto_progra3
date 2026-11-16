@@ -1,5 +1,21 @@
 # Estado de EntreFunciones
 
+## Flujo de compra del cliente: entradas con QR local (2026-11-16, bloque del Integrante 4)
+
+### Cambios realizados (solo frontend C#, sin commit)
+
+- **RF-M5-03 — QR:** nuevo componente `Components/Shared/CodigoQr.razor`, que dibuja el QR en el propio servidor con el paquete NuGet `QRCoder` 1.6.0 (agregado a `EntreFunciones.csproj`). Se retiró el uso de `api.qrserver.com` en `MisCompras.razor`: el código de la entrada ya no se envía a un servicio externo ni depende de internet.
+- **RF-M5-03 — historial de entradas:** `MisCompras.razor` tiene dos pestañas, Reservas y Entradas. La pestaña Entradas lista cada entrada con identificador (`ENT-000000`), función, fecha y hora, butaca, precio y estado, con las acciones Ver QR y Cancelar. La cancelación individual ahora pide confirmación previa. Nuevos `EntradaClienteViewModel` y métodos de entradas en `CompraClienteMapper`.
+- **RF-M5-01 / RF-M5-02:** `MisCompras.razor` ya no queda en error completo cuando falla la consulta del pago de una sola reserva, y no consulta reservas ya vencidas. `ReservaPago.razor` muestra el vencimiento y el código de pago desde la etapa Reserva, y un fallo al generar el pago se muestra sobre la reserva.
+- **Reservas gratuitas:** `SeleccionButacas.razor` y `ReservaPago.razor` usan textos propios para funciones de precio cero (sin pago ni plazo de 15 minutos); la confirmación muestra las entradas emitidas con su QR.
+- No se modificó el backend Java, la base de datos, el catálogo ni la pantalla administrativa de Ventas.
+
+### Verificación
+
+- **Implementación por código, no probada.** Los cambios se escribieron sin compilar: el entorno de edición no disponía de .NET. No se ejecutó `dotnet build`, ni el recorrido C# → REST → MySQL.
+- **Pendiente inmediato:** `dotnet restore` (descarga `QRCoder`) y `dotnet build` de `Frontend/EntreFunciones`; luego recorrer una compra pagada (validada por el administrador), una reserva gratuita y la cancelación de una entrada, comprobando que el QR se dibuja y que la butaca se libera.
+- **Cómo revertir:** `git checkout -- Frontend/EntreFunciones CONTEXTO-TA/ESTADO.md` y borrar `Components/Shared/CodigoQr.razor` y `ViewModels/EntradaClienteViewModel.cs`.
+
 ## Paso 6 — diagnóstico y corrección del login (2026-11-15, 22:45 hora de Lima)
 
 ### Causa confirmada y correcciones
@@ -233,3 +249,32 @@ El bloqueo exacto es la ausencia de una BD MySQL de pruebas identificada y autor
 ## Siguiente paso
 
 Con autorización para usar una BD de prueba, aplicar la migración y ejecutar la prueba integrada del reporte sin desplegar a producción.
+
+## Entorno local — 2026-11-16, login con HTTP 500 por JWT
+
+- Síntoma: tras registrarse como cliente, el login mostraba "No se pudo contactar o validar el servicio de autenticación". El `server.log` del GlassFish local registró `Configure ENTREFUNCIONES_JWT_SECRET con al menos 32 bytes` en `JwtServicio.cargarClave`; las credenciales eran válidas.
+- Cambio: se registró `-DENTREFUNCIONES_JWT_SECRET` como opción de JVM en el dominio GlassFish local (`asadmin create-jvm-options`), con un valor aleatorio que no se guarda en el repositorio. No se modificó código ni `db.properties`.
+- Pendiente: reiniciar GlassFish para que tome la opción y probar el login. No probado todavía.
+- Revertir: `asadmin delete-jvm-options` sobre esa opción y reiniciar el dominio.
+- Además se agregó `jwt.secret` (valor aleatorio de 64 caracteres) a `ConfiguracionCompartida/db.properties`, que `JwtServicio` lee cuando no hay propiedad de JVM ni variable de entorno. Queda versionado junto con las credenciales de BD por decisión del usuario; sin commit todavía. Requiere recompilar y redesplegar el WAR.
+- El servidor publicado sigue con el error hasta que reciba un WAR recompilado con esta línea o su propia clave externa.
+
+## Entorno local — 2026-11-16, cartelera con HTTP 500
+
+- Síntoma: tras reiniciar GlassFish (16:27), `GET /funciones` y `GET /eventos` devuelven 500 ("No se pudo listar las funciones" / "No se pudo listar los eventos"); el detalle de la `SQLException` no se registra en `server.log`.
+- Causa probable, no confirmada en BD: el commit `76d94e5` (PR #27) hizo que el backend lea `sede.distrito`, `sala.accesible`, `evento.tematica` y `evento.publico_objetivo`, creadas por `20261115_disponibilidad_cartelera.sql`, migración que según este mismo documento no se aplicó al esquema `entrefunciones`. No se consultó la BD.
+- Cambio local: se registró `-DDB_NAME=entrefunciones_lab12_test` como opción de JVM del GlassFish local para que el REST local use el esquema de pruebas ya instalado con los scripts consolidados. No se modificó ninguna BD, código ni `db.properties`.
+- Pendiente: reiniciar GlassFish y probar cartelera y login. No probado. Las cuentas creadas en `entrefunciones` no existen en el esquema de pruebas.
+- Revertir: `asadmin delete-jvm-options -DDB_NAME=entrefunciones_lab12_test` y reiniciar.
+- **Corrección 16:35:** las opciones registradas con `asadmin` (`ENTREFUNCIONES_JWT_SECRET` y `DB_NAME`) no sobreviven: IntelliJ regenera `domain.xml` en cada arranque a partir de "VM options" de la configuración "GlassFish 8.0.2" (`domain.jvm-options-IDEA.xml`, `domain.xml.bak`). Tras el reinicio de las 16:32 ninguna de las dos está activa. El JWT sí funciona por `jwt.secret` en el `db.properties` empaquetado (verificado en el JAR desplegado). `DB_NAME` debe añadirse en VM options de IntelliJ; pendiente del usuario.
+- **Decisión del usuario 16:40:** no usar esquema de pruebas; el proyecto debe funcionar desde cualquier máquina contra `entrefunciones`. Se comprobó que no queda ninguna opción `DB_NAME` en GlassFish ni en IntelliJ.
+- Se preparó `Backend/sql/migraciones/20261116_actualizar_bd_compartida.sql` (idempotente, MySQL 8 y MariaDB): agrega `sede.distrito`, `sala.accesible`, `evento.tematica`, `evento.publico_objetivo` y la tabla `bloqueo_sala` solo si faltan. Después debe ejecutarse `Backend/sql/procedimientos.sql` completo. **No ejecutado**: requiere autorización por modificar la BD compartida. Sintaxis no probada contra un servidor.
+- **17:17, causa confirmada:** `SQLSyntaxErrorException: Column 'tematica' not found` al listar funciones y eventos. Se agregó registro SEVERE de la causa en `FuncionesResource.error` y `EventosResource.error` para respuestas 5xx (antes se perdía).
+- Los scripts se ejecutaron a las 17:08 sin errores, pero en la conexión de Workbench "AGENTEC" (otro servidor RDS), no en el servidor de `ConfiguracionCompartida/db.properties` que usa el backend. Falta ejecutarlos en el servidor correcto.
+- **17:38, resuelto:** el usuario ejecutó ambos scripts en el servidor de `db.properties` (conexión Workbench "TRABAJO_FINAL"). `GET /funciones` y `GET /eventos` responden 200 con datos. El servidor de la conexión "AGENTEC" también recibió los scripts a las 17:08.
+
+## Frontend — 2026-11-16, validación del formulario de tarjeta
+
+- `Components/Pages/Cliente/ReservaPago.razor`: el pago (simulado) ahora valida en pantalla titular (nombre y apellido, solo letras, en mayúsculas), número (16 dígitos agrupados de 4 en 4, solo Visa/Mastercard, dígito verificador Luhn), vencimiento (MM/AA con barra automática, mes 01-12, no vencida, máximo 15 años) y CVV (3 dígitos). Los errores aparecen al salir del campo o al intentar pagar; no se abre la confirmación si hay errores.
+- Compilación aprobada (0 errores, 0 advertencias). No probado en el navegador: llegar al paso de pago requiere crear una reserva en la BD compartida.
+- Sin resolver para el equipo: aplicar las migraciones del 15/11 a `entrefunciones`. La migración usa `ADD COLUMN IF NOT EXISTS`, sintaxis de MariaDB que MySQL 8 no acepta; verificar el motor antes de ejecutarla.

@@ -28,6 +28,8 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Components.QuickGrid" Version="10.0.14" />
+    <!-- Dibuja el código QR de cada entrada dentro del propio servidor (RF-M5-03), sin servicios externos. -->
+    <PackageReference Include="QRCoder" Version="1.6.0" />
   </ItemGroup>
 
 </Project>
