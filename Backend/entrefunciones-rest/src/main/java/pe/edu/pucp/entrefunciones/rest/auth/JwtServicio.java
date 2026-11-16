@@ -19,16 +19,12 @@ public final class JwtServicio {
     private static final String ROL = "rol";
     private static final String ISSUER = configuracion("ENTREFUNCIONES_JWT_ISSUER", "entrefunciones-rest");
     private static final String AUDIENCE = configuracion("ENTREFUNCIONES_JWT_AUDIENCE", "entrefunciones-web");
-    private static final Duration DURACION = Duration.ofMinutes(
-            Long.parseLong(configuracion("ENTREFUNCIONES_JWT_MINUTOS", "480")));
-    private static final SecretKey CLAVE = cargarClave();
-
     private JwtServicio() {
     }
 
     public static Emision emitir(Usuario usuario) {
         Instant emitido = Instant.now();
-        Instant vence = emitido.plus(DURACION);
+        Instant vence = emitido.plus(cargarDuracion());
         String rol = usuario instanceof Administrador
                 ? "Administrador"
                 : "Cliente";
@@ -39,14 +35,14 @@ public final class JwtServicio {
                 .claim(ROL, rol)
                 .issuedAt(Date.from(emitido))
                 .expiration(Date.from(vence))
-                .signWith(CLAVE, Jwts.SIG.HS256)
+                .signWith(cargarClave(), Jwts.SIG.HS256)
                 .compact();
         return new Emision(token, vence, usuario.getId(), usuario.getCorreo(), rol);
     }
 
     public static Claims validar(String token) throws JwtException {
         Jws<Claims> firmado = Jwts.parser()
-                .verifyWith(CLAVE)
+                .verifyWith(cargarClave())
                 .requireIssuer(ISSUER)
                 .requireAudience(AUDIENCE)
                 .build()
@@ -71,6 +67,21 @@ public final class JwtServicio {
                     "Configure ENTREFUNCIONES_JWT_SECRET con al menos 32 bytes");
         }
         return Keys.hmacShaKeyFor(secreto.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private static Duration cargarDuracion() {
+        try {
+            long minutos = Long.parseLong(
+                    configuracion("ENTREFUNCIONES_JWT_MINUTOS", "480"));
+            if (minutos <= 0) {
+                throw new IllegalStateException(
+                        "ENTREFUNCIONES_JWT_MINUTOS debe ser positivo");
+            }
+            return Duration.ofMinutes(minutos);
+        } catch (NumberFormatException ex) {
+            throw new IllegalStateException(
+                    "ENTREFUNCIONES_JWT_MINUTOS no es valido", ex);
+        }
     }
 
     private static String configuracion(String nombre, String valorPorDefecto) {

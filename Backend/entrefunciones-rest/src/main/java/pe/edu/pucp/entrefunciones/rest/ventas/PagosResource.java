@@ -13,6 +13,7 @@ import pe.edu.pucp.entrefunciones.modelo.ventas.Pago;
 import pe.edu.pucp.entrefunciones.bl.impl.ventas.PagoBLImpl;
 import pe.edu.pucp.entrefunciones.rest.dto.ventas.PagoDTO;
 import pe.edu.pucp.entrefunciones.rest.mapper.ventas.PagoMapper;
+import pe.edu.pucp.entrefunciones.rest.AutorizacionRest;
 
 import java.util.Map;
 
@@ -34,6 +35,7 @@ public class PagosResource {
 
     @GET
     public Response findAll() {
+        AutorizacionRest.exigirAdministrador(securityContext);
         try {
             return Response.ok(PagoMapper.toDTOs(pagoBL.findAll()))
                     .build();
@@ -47,7 +49,9 @@ public class PagosResource {
     @Path("/{id}")
     public Response findById(@PathParam("id") int id) {
         try {
-            return Response.ok(PagoMapper.toDTO(pagoBL.findById(id)))
+            Pago pago = pagoBL.findById(id);
+            exigirPagoPropio(pago);
+            return Response.ok(PagoMapper.toDTO(pago))
                     .build();
         }
         catch (NoEncontradoException ex) {
@@ -63,6 +67,7 @@ public class PagosResource {
     public Response registrar(@PathParam("id") int id) {
         try {
             Pago pago = pagoBL.findById(id);
+            exigirPagoPropio(pago);
             pagoBL.procesarPago(id, pago.getMonto());
             return Response.ok(Map.of("mensaje", "Pago registrado correctamente")).build();
         }
@@ -119,11 +124,36 @@ public class PagosResource {
     }
 
     private Response soloAdministrador() {
-        if (securityContext.isUserInRole("Administrador")) {
+        if (AutorizacionRest.esAdministrador(securityContext)) {
             return null;
         }
         return error(Response.Status.FORBIDDEN,
                 new Exception("Solo un administrador puede validar o rechazar pagos"));
+    }
+
+    @GET
+    @Path("/codigo/{codigoPago}")
+    public Response findByCodigo(@PathParam("codigoPago") String codigoPago) {
+        AutorizacionRest.exigirAdministrador(securityContext);
+        try {
+            Pago pago = pagoBL.buscarPorCodigo(codigoPago);
+            if (pago == null) {
+                return error(Response.Status.NOT_FOUND,
+                        new NoEncontradoException("No existe un pago con el código indicado"));
+            }
+            return Response.ok(PagoMapper.toDTO(pago)).build();
+        }
+        catch (ValidacionException ex) {
+            return error(Response.Status.BAD_REQUEST, ex);
+        }
+        catch (BLException ex) {
+            return error(Response.Status.INTERNAL_SERVER_ERROR, ex);
+        }
+    }
+
+    private void exigirPagoPropio(Pago pago) {
+        AutorizacionRest.exigirPropietarioOAdministrador(
+                securityContext, pago.getReserva().getCliente().getId());
     }
 
     private Response error(Response.Status status, Exception ex) {

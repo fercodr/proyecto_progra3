@@ -82,6 +82,12 @@
     background: #adb5bd;
 }
 
+.butaca.retenida,
+.muestra.retenida {
+    color: #212529;
+    background: #ffc107;
+}
+
 .butaca.bloqueada,
 .muestra.bloqueada {
     color: #adb5bd;

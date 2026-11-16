@@ -106,6 +106,37 @@ class EspaciosBLImplTest {
     }
 
     @Test
+    void butacaConservaIdentidadYNoPuedeTrasladarseAOtraSala() {
+        Contexto contexto = new Contexto();
+        Sala origen = sala(1, contexto.sede, "Principal", 3);
+        Sala destino = sala(2, contexto.sede, "Secundaria", 3);
+        contexto.salaDAO.guardar(origen);
+        contexto.salaDAO.guardar(destino);
+        contexto.butacaDAO.guardar(butaca(9, origen, "A", 1));
+
+        BLException error = assertThrows(BLException.class,
+                () -> contexto.butacaBL().update(butaca(9, destino, "B", 2)));
+
+        assertTrue(error.getMessage().contains("no puede trasladarse"));
+        assertEquals(1, contexto.butacaDAO.butacas.get(9).getSala().getId());
+        assertEquals(0, contexto.butacaDAO.actualizaciones);
+    }
+
+    @Test
+    void desactivarButacaConservaElRegistroYElIdHistorico() {
+        Contexto contexto = new Contexto();
+        Sala sala = sala(1, contexto.sede, "Principal", 3);
+        contexto.salaDAO.guardar(sala);
+        contexto.butacaDAO.guardar(butaca(11, sala, "A", 1));
+
+        assertDoesNotThrow(() -> contexto.butacaBL().delete(11));
+
+        assertNotNull(contexto.butacaDAO.findById(11));
+        assertEquals(11, contexto.butacaDAO.findById(11).getId());
+        assertTrue(!contexto.butacaDAO.findById(11).estaActivo());
+    }
+
+    @Test
     void insertarEnPosicionInactivaReutilizaElRegistro() {
         Contexto contexto = new Contexto();
         Sala sala = sala(1, contexto.sede, "Principal", 3);

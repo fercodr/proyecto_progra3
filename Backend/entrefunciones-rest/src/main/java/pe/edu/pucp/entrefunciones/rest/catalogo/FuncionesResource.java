@@ -15,6 +15,8 @@ import pe.edu.pucp.entrefunciones.modelo.catalogo.Evento;
 import pe.edu.pucp.entrefunciones.modelo.catalogo.Funcion;
 import pe.edu.pucp.entrefunciones.rest.dto.catalogo.FuncionDTO;
 import pe.edu.pucp.entrefunciones.rest.mapper.catalogo.FuncionMapper;
+import pe.edu.pucp.entrefunciones.rest.AutorizacionRest;
+import pe.edu.pucp.entrefunciones.modelo.funciones.EstadoFuncion;
 
 import java.net.URI;
 import java.time.LocalDate;
@@ -49,7 +51,16 @@ public class FuncionesResource {
     @GET
     public Response findAll() {
         try {
-            return Response.ok(FuncionMapper.toDTOs(funcionBL.findAll()))
+            List<Funcion> funciones = funcionBL.findAll();
+            if (!AutorizacionRest.esAdministrador(securityContext)) {
+                funciones = funciones.stream()
+                        .filter(funcion -> funcion.getEstado() == EstadoFuncion.CONFIRMADA)
+                        .filter(funcion -> funcion.getEvento().estaActivo())
+                        .filter(funcion -> funcion.getSala().estaActivo()
+                                && funcion.getSala().getSede().estaActivo())
+                        .toList();
+            }
+            return Response.ok(FuncionMapper.toDTOs(funciones))
                     .build();
         } catch (BLException ex) {
             return error(Response.Status.INTERNAL_SERVER_ERROR, ex);
@@ -61,7 +72,8 @@ public class FuncionesResource {
     public Response reportes(@QueryParam("desde") String desdeTexto,
                              @QueryParam("hasta") String hastaTexto,
                              @QueryParam("sedeId") Integer sedeId,
-                             @QueryParam("salaId") Integer salaId) {
+                             @QueryParam("salaId") Integer salaId,
+                             @QueryParam("tipoEvento") String tipoEvento) {
         if (securityContext == null
                 || !securityContext.isUserInRole("Administrador")) {
             return error(Response.Status.FORBIDDEN,
@@ -75,7 +87,7 @@ public class FuncionesResource {
             LocalDate desde = LocalDate.parse(desdeTexto);
             LocalDate hasta = LocalDate.parse(hastaTexto);
             List<FuncionDTO> resultado = FuncionMapper.toDTOs(
-                    funcionBL.findReportes(desde, hasta, sedeId, salaId));
+                    funcionBL.findReportes(desde, hasta, sedeId, salaId, tipoEvento));
             return Response.ok(resultado).build();
         } catch (DateTimeParseException ex) {
             return error(Response.Status.BAD_REQUEST,
@@ -104,7 +116,12 @@ public class FuncionesResource {
     public Response findById(@PathParam("id") int id) {
         try {
             Funcion funcion = funcionBL.findById(id);
-            if (funcion == null) {
+            if (funcion == null
+                    || (!AutorizacionRest.esAdministrador(securityContext)
+                        && (funcion.getEstado() != EstadoFuncion.CONFIRMADA
+                            || !funcion.getEvento().estaActivo()
+                            || !funcion.getSala().estaActivo()
+                            || !funcion.getSala().getSede().estaActivo()))) {
                 return error(Response.Status.NOT_FOUND, new BLException("No existe una función con id " + id));
             }
             return Response.ok(FuncionMapper.toDTO(funcion)).build();
@@ -115,6 +132,7 @@ public class FuncionesResource {
 
     @POST
     public Response insert(FuncionDTO funcionDTO) {
+        AutorizacionRest.exigirAdministrador(securityContext);
         try {
             Evento evento = eventoBL.findById(funcionDTO.getIdEvento());
             if (evento == null) {
@@ -141,6 +159,7 @@ public class FuncionesResource {
     @PUT
     @Path("/{id}")
     public Response update(@PathParam("id") int id, FuncionDTO funcionDTO) {
+        AutorizacionRest.exigirAdministrador(securityContext);
         try {
             if (id != funcionDTO.getId()) {
                 return error(Response.Status.BAD_REQUEST, new BLException("El id y el payload no coinciden"));
@@ -169,6 +188,7 @@ public class FuncionesResource {
     @DELETE
     @Path("/{id}")
     public Response delete(@PathParam("id") int id) {
+        AutorizacionRest.exigirAdministrador(securityContext);
         try {
             if (funcionBL.findById(id) == null) {
                 return error(Response.Status.NOT_FOUND, new BLException("No existe una función con id " + id));

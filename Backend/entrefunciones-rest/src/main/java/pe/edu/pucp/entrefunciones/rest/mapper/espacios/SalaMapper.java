@@ -28,6 +28,7 @@ public final class SalaMapper {
         dto.setNombre(sala.getNombre());
         dto.setAforo(sala.getAforo());
         dto.setTipoSala(sala.getTipoSala());
+        dto.setAccesible(sala.esAccesible());
         return dto;
     }
 
@@ -50,6 +51,7 @@ public final class SalaMapper {
         Sala sala;
         try {
             sala = new Sala(dto.getId(), sede, dto.getNombre(), dto.getAforo(), dto.getTipoSala());
+            sala.setAccesible(dto.isAccesible());
         } catch (IllegalArgumentException e) {
             throw new ValidacionException(e.getMessage());
         }

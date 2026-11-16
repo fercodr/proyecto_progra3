@@ -10,6 +10,7 @@ public class Sala implements IEliminable {
     private String nombre;
     private int aforo;
     private String tipoSala;
+    private boolean accesible;
     private boolean activo;
     private List<Butaca> butacas = new ArrayList<>();
     private List<Funcion> funciones = new ArrayList<>();
@@ -37,6 +38,7 @@ public class Sala implements IEliminable {
         setNombre(sala.getNombre());
         setAforo(sala.getAforo());
         setTipoSala(sala.getTipoSala());
+        setAccesible(sala.esAccesible());
         if(sala.estaActivo()){
             activar();
         } else {
@@ -125,6 +127,9 @@ public class Sala implements IEliminable {
         }
         this.tipoSala=tipoSala;
     }
+
+    public boolean esAccesible(){ return accesible; }
+    public void setAccesible(boolean accesible){ this.accesible=accesible; }
 
     public List<Butaca> getButacas(){
         return List.copyOf(butacas);

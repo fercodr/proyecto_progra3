@@ -22,6 +22,7 @@ public interface AuditoriaBL extends BL<Auditoria, Integer> {
 
     Auditoria actualizarAtencion(Integer auditoriaId,
                                  Integer responsableId,
+                                 String descripcion,
                                  EstadoAuditoria estado)
             throws BLException;
 }

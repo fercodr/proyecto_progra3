@@ -74,9 +74,9 @@ public class SalaDAOImpl implements SalaDAO {
         }
 
         String placeholders = String.join(",", java.util.Collections.nCopies(validos.size(), "?"));
-        String sql = "SELECT sa.id, sa.nombre, sa.aforo, sa.tipo_sala, sa.activo, "
+        String sql = "SELECT sa.id, sa.nombre, sa.aforo, sa.tipo_sala, sa.accesible, sa.activo, "
                 + "sa.sede_id, se.razon_social AS sede_razon_social, "
-                + "se.direccion AS sede_direccion, se.ciudad AS sede_ciudad, "
+                + "se.direccion AS sede_direccion, se.ciudad AS sede_ciudad, se.distrito AS sede_distrito, "
                 + "se.telefono_contacto AS sede_telefono_contacto, "
                 + "se.activo AS sede_activo "
                 + "FROM sala sa INNER JOIN sede se ON se.id = sa.sede_id "
@@ -102,13 +102,13 @@ public class SalaDAOImpl implements SalaDAO {
     @Override
     public void insert(Sala sala) throws SQLException {
         validarSala(sala);
-        String sql = "{call insertar_sala(?, ?, ?, ?, ?, ?)}";
+        String sql = "{call insertar_sala(?, ?, ?, ?, ?, ?, ?)}";
         Connection conn = TransactionsManager.getConnection();
         try (CallableStatement cmd = conn.prepareCall(sql)) {
             asignarParametros(cmd, sala);
-            cmd.registerOutParameter(6, Types.INTEGER);
+            cmd.registerOutParameter(7, Types.INTEGER);
             cmd.executeUpdate();
-            sala.setId(cmd.getInt(6));
+            sala.setId(cmd.getInt(7));
             if (sala.getId() <= 0) {
                 throw new SQLException("No se obtuvo el id de la sala insertada");
             }
@@ -122,7 +122,7 @@ public class SalaDAOImpl implements SalaDAO {
     public void update(Sala sala) throws SQLException {
         validarSala(sala);
         validarId(sala.getId());
-        String sql = "{call modificar_sala(?, ?, ?, ?, ?, ?)}";
+        String sql = "{call modificar_sala(?, ?, ?, ?, ?, ?, ?)}";
         Connection conn = TransactionsManager.getConnection();
         try (CallableStatement cmd = conn.prepareCall(sql)) {
             cmd.setInt(1, sala.getId());
@@ -130,20 +130,17 @@ public class SalaDAOImpl implements SalaDAO {
             cmd.setString(3, sala.getNombre());
             cmd.setInt(4, sala.getAforo());
             cmd.setString(5, sala.getTipoSala());
-            cmd.setBoolean(6, sala.estaActivo());
+            cmd.setBoolean(6, sala.esAccesible());
+            cmd.setBoolean(7, sala.estaActivo());
             cmd.executeUpdate();
             if (!existe(conn, sala.getId())) {
                 throw new SQLException("No se pudo actualizar la sala con id " + sala.getId());
             }
         }
 
-        // Si el modelo trae butacas, se reemplazan todas: se borran y se vuelven a insertar
-        // (igual que las líneas de una orden). Si la lista viene vacía, no se tocan.
-        if (!sala.getButacas().isEmpty()) {
-            ButacaDAO butacaDAO = new ButacaDAOImpl();
-            butacaDAO.deleteButacas(sala.getId());
-            butacaDAO.insertButacas(sala.getId(), sala.getButacas());
-        }
+        // Las butacas tienen identidad histórica: reserva_butaca y entrada conservan
+        // sus ids. Por eso una actualización de la sala nunca reemplaza físicamente
+        // su mapa. Las altas, ediciones y bajas lógicas se realizan por ButacaBL.
     }
 
     @Override
@@ -175,7 +172,8 @@ public class SalaDAOImpl implements SalaDAO {
         cmd.setString(2, sala.getNombre());
         cmd.setInt(3, sala.getAforo());
         cmd.setString(4, sala.getTipoSala());
-        cmd.setBoolean(5, sala.estaActivo());
+        cmd.setBoolean(5, sala.esAccesible());
+        cmd.setBoolean(6, sala.estaActivo());
     }
 
     private Sala mapear(ResultSet rs) throws SQLException {
@@ -184,6 +182,7 @@ public class SalaDAOImpl implements SalaDAO {
         sede.setRazonSocial(rs.getString("sede_razon_social"));
         sede.setDireccion(rs.getString("sede_direccion"));
         sede.setCiudad(rs.getString("sede_ciudad"));
+        sede.setDistrito(rs.getString("sede_distrito"));
         sede.setTelefonoContacto(rs.getString("sede_telefono_contacto"));
         if (rs.getBoolean("sede_activo")) {
             sede.activar();
@@ -197,6 +196,7 @@ public class SalaDAOImpl implements SalaDAO {
         sala.setNombre(rs.getString("nombre"));
         sala.setAforo(rs.getInt("aforo"));
         sala.setTipoSala(rs.getString("tipo_sala"));
+        sala.setAccesible(rs.getBoolean("accesible"));
         if (rs.getBoolean("activo")) {
             sala.activar();
         } else {

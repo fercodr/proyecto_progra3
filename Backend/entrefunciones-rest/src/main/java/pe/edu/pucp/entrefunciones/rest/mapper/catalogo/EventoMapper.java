@@ -33,6 +33,8 @@ public final class EventoMapper {
         dto.setPrecio(evento.getPrecio());
         dto.setTitulo(evento.getTitulo());
         dto.setImagenUrl(evento.getImagenUrl());
+        dto.setTematica(evento.getTematica());
+        dto.setPublicoObjetivo(evento.getPublicoObjetivo());
         dto.setRequiereAsientoNumerado(evento.requiereAsientoNumerado());
 
         if (evento instanceof Pelicula pelicula) {
@@ -95,7 +97,9 @@ public final class EventoMapper {
                 default -> throw new ValidacionException("Tipo de evento no reconocido: " + dto.getTipo());
             }
 
-            evento.setImagenUrl(dto.getImagenUrl());
+        evento.setImagenUrl(dto.getImagenUrl());
+        evento.setTematica(dto.getTematica());
+        evento.setPublicoObjetivo(dto.getPublicoObjetivo());
 
             if (!dto.isActivo()) {
                 evento.desactivar();

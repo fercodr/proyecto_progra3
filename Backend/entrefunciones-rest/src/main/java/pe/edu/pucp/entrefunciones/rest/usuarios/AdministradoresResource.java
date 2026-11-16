@@ -2,6 +2,8 @@ package pe.edu.pucp.entrefunciones.rest.usuarios;
 
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.SecurityContext;
 import pe.edu.pucp.entrefunciones.bl.error.BLException;
 import pe.edu.pucp.entrefunciones.bl.error.NoEncontradoException;
 import pe.edu.pucp.entrefunciones.bl.error.ValidacionException;
@@ -9,6 +11,7 @@ import pe.edu.pucp.entrefunciones.bl.impl.usuarios.AdministradorBLImpl;
 import pe.edu.pucp.entrefunciones.modelo.usuarios.Administrador;
 import pe.edu.pucp.entrefunciones.rest.dto.usuarios.AdministradorDTO;
 import pe.edu.pucp.entrefunciones.rest.mapper.usuarios.AdministradorMapper;
+import pe.edu.pucp.entrefunciones.rest.AutorizacionRest;
 
 import java.util.Map;
 
@@ -20,12 +23,16 @@ public class AdministradoresResource {
 
     private final AdministradorBLImpl administradorBL;
 
+    @Context
+    private SecurityContext securityContext;
+
     public AdministradoresResource() {
         administradorBL = new AdministradorBLImpl();
     }
 
     @GET
     public Response listar() {
+        AutorizacionRest.exigirAdministrador(securityContext);
         try {
             return Response.ok(AdministradorMapper.toDTOs(administradorBL.findAll())).build();
         }
@@ -36,6 +43,7 @@ public class AdministradoresResource {
 
     @POST
     public Response registrar(AdministradorDTO dto) {
+        AutorizacionRest.exigirAdministrador(securityContext);
         try {
             if (dto == null) {
                 throw new ValidacionException("Envíe los datos del administrador");
@@ -63,6 +71,7 @@ public class AdministradoresResource {
     @DELETE
     @Path("/{id}")
     public Response desactivar(@PathParam("id") int id) {
+        AutorizacionRest.exigirAdministrador(securityContext);
         try {
             administradorBL.delete(id);
             return Response.noContent().build();
@@ -76,6 +85,7 @@ public class AdministradoresResource {
     @POST
     @Path("/{id}/activar")
     public Response activar(@PathParam("id") int id) {
+        AutorizacionRest.exigirAdministrador(securityContext);
         try {
             Administrador administrador = administradorBL.findById(id);
             if (administrador == null) {

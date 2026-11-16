@@ -27,6 +27,10 @@ public final class PagoMapper {
 
         if (pago.getReserva() != null) {
             dto.setReservaId(pago.getReserva().getId());
+            if (pago.getReserva().getCliente() != null) {
+                dto.setCliente((pago.getReserva().getCliente().getNombres() + " "
+                        + pago.getReserva().getCliente().getApellidos()).trim());
+            }
         }
 
         return dto;

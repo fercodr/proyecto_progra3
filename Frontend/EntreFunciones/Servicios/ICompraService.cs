@@ -15,6 +15,7 @@ namespace EntreFunciones.Servicios
         Task ValidarIngreso(string codigoQR);
         Task CancelarEntrada(int entradaId);
         Task<List<PagoDto>> ListarPagos();
+        Task<PagoDto> BuscarPagoPorCodigo(string codigoPago);
         Task Validar(int pagoId);
         Task Rechazar(int pagoId);
     }

@@ -2,6 +2,8 @@ package pe.edu.pucp.entrefunciones.rest.usuarios;
 
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.SecurityContext;
 import pe.edu.pucp.entrefunciones.bl.error.BLException;
 import pe.edu.pucp.entrefunciones.bl.error.NoEncontradoException;
 import pe.edu.pucp.entrefunciones.bl.error.ValidacionException;
@@ -17,13 +19,21 @@ import pe.edu.pucp.entrefunciones.rest.dto.usuarios.SesionDTO;
 import pe.edu.pucp.entrefunciones.rest.mapper.usuarios.AdministradorMapper;
 import pe.edu.pucp.entrefunciones.rest.mapper.usuarios.ClienteMapper;
 import pe.edu.pucp.entrefunciones.rest.mapper.usuarios.CuentaUsuarioMapper;
+import pe.edu.pucp.entrefunciones.rest.AutorizacionRest;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @Path("/cuentas")
 @Produces("application/json")
 @Consumes("application/json")
 public class CuentasResource {
+    private static final Logger LOGGER = Logger.getLogger(
+            CuentasResource.class.getName());
     private final CuentaUsuarioBL cuentaUsuarioBL;
+
+    @Context
+    private SecurityContext securityContext;
 
     public CuentasResource() { cuentaUsuarioBL = new CuentaUsuarioBLImpl(); }
 
@@ -44,6 +54,13 @@ public class CuentasResource {
             return error(Response.Status.BAD_REQUEST, ex);
         } catch (BLException ex) {
             return error(Response.Status.INTERNAL_SERVER_ERROR, ex);
+        } catch (IllegalStateException ex) {
+            LOGGER.log(Level.SEVERE,
+                    "No se pudo emitir la sesion por configuracion invalida de JWT", ex);
+            return Response.status(Response.Status.SERVICE_UNAVAILABLE)
+                    .entity(Map.of("mensaje",
+                            "El servicio de autenticacion no esta disponible"))
+                    .build();
         }
     }
 
@@ -51,7 +68,9 @@ public class CuentasResource {
     @Path("/{correo}")
     public Response findByCorreo(@PathParam("correo") String correo) {
         try {
-            return Response.ok(CuentaUsuarioMapper.toDTO(cuentaUsuarioBL.findByCorreo(correo))).build();
+            Usuario usuario = cuentaUsuarioBL.findByCorreo(correo);
+            AutorizacionRest.exigirPropietarioOAdministrador(securityContext, usuario.getId());
+            return Response.ok(CuentaUsuarioMapper.toDTO(usuario)).build();
         } catch (NoEncontradoException ex) { return error(Response.Status.NOT_FOUND, ex); }
         catch (BLException ex) { return error(Response.Status.INTERNAL_SERVER_ERROR, ex); }
     }
@@ -61,6 +80,7 @@ public class CuentasResource {
     public Response obtenerAdministrador(@PathParam("correo") String correo) {
         try {
             Usuario usuario = cuentaUsuarioBL.findByCorreo(correo);
+            AutorizacionRest.exigirPropietarioOAdministrador(securityContext, usuario.getId());
             if (!(usuario instanceof Administrador admin))
                 throw new NoEncontradoException("La cuenta no es de administrador");
             return Response.ok(AdministradorMapper.toDTO(admin)).build();
@@ -73,6 +93,7 @@ public class CuentasResource {
     public Response obtenerCliente(@PathParam("correo") String correo) {
         try {
             Usuario usuario = cuentaUsuarioBL.findByCorreo(correo);
+            AutorizacionRest.exigirPropietarioOAdministrador(securityContext, usuario.getId());
             if (!(usuario instanceof Cliente cliente))
                 throw new NoEncontradoException("La cuenta no es de cliente");
             return Response.ok(ClienteMapper.toDTO(cliente)).build();

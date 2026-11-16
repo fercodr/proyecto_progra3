@@ -47,6 +47,7 @@ public class FuncionDAOImpl implements FuncionDAO {
                 rs.getString("sede_direccion"),
                 rs.getString("sede_ciudad"),
                 rs.getString("sede_telefono_contacto"));
+        sede.setDistrito(rs.getString("sede_distrito"));
         if (!rs.getBoolean("sede_activo")) {
             sede.desactivar();
         }
@@ -57,6 +58,7 @@ public class FuncionDAOImpl implements FuncionDAO {
                 rs.getString("sala_nombre"),
                 rs.getInt("sala_aforo"),
                 rs.getString("tipo_sala"));
+        sala.setAccesible(rs.getBoolean("sala_accesible"));
         if (!rs.getBoolean("sala_activo")) {
             sala.desactivar();
         }
@@ -87,7 +89,7 @@ public class FuncionDAOImpl implements FuncionDAO {
         String tipo = rs.getString("tipo_evento");
         double precio = rs.getDouble("evento_precio");
         int id = rs.getInt("evento_id");
-        return switch (tipo) {
+        Evento evento = switch (tipo) {
             case "PELICULA" -> new Pelicula(
                     id, precio,
                     rs.getString("nombre_pelicula"),
@@ -110,6 +112,9 @@ public class FuncionDAOImpl implements FuncionDAO {
             default -> throw new SQLException(
                     "Tipo de evento desconocido: " + tipo);
         };
+        evento.setTematica(rs.getString("evento_tematica"));
+        evento.setPublicoObjetivo(rs.getString("evento_publico_objetivo"));
+        return evento;
     }
 
     @Override
@@ -195,9 +200,10 @@ public class FuncionDAOImpl implements FuncionDAO {
 
     @Override
     public List<Funcion> findReportes(LocalDate desde, LocalDate hasta,
-                                      Integer idSede, Integer idSala)
+                                      Integer idSede, Integer idSala,
+                                      String tipoEvento)
             throws SQLException {
-        String sql = "{call listar_reportes_funciones(?, ?, ?, ?)}";
+        String sql = "{call listar_reportes_funciones(?, ?, ?, ?, ?)}";
         try (ConnectionScope scope = ConnectionScope.openForRead();
              CallableStatement cmd = scope.connection().prepareCall(sql)) {
             cmd.setDate("p_desde", Date.valueOf(desde));
@@ -211,6 +217,11 @@ public class FuncionDAOImpl implements FuncionDAO {
                 cmd.setNull("p_sala_id", Types.INTEGER);
             } else {
                 cmd.setInt("p_sala_id", idSala);
+            }
+            if (tipoEvento == null) {
+                cmd.setNull("p_tipo_evento", Types.VARCHAR);
+            } else {
+                cmd.setString("p_tipo_evento", tipoEvento);
             }
 
             try (ResultSet rs = cmd.executeQuery()) {
@@ -230,6 +241,7 @@ public class FuncionDAOImpl implements FuncionDAO {
                 rs.getString("sede_direccion"),
                 rs.getString("sede_ciudad"),
                 rs.getString("sede_telefono_contacto"));
+        sede.setDistrito(rs.getString("sede_distrito"));
         if (!rs.getBoolean("sede_activo")) {
             sede.desactivar();
         }
@@ -240,6 +252,7 @@ public class FuncionDAOImpl implements FuncionDAO {
                 rs.getString("sala_nombre"),
                 rs.getInt("sala_aforo"),
                 rs.getString("sala_tipo_sala"));
+        sala.setAccesible(rs.getBoolean("sala_accesible"));
         if (!rs.getBoolean("sala_activo")) {
             sala.desactivar();
         }
@@ -259,11 +272,12 @@ public class FuncionDAOImpl implements FuncionDAO {
                 rs.getString("funcion_idioma"));
         funcion.setEstado(Enum.valueOf(
                 EstadoFuncion.class, rs.getString("funcion_estado")));
-        funcion.setEntradasNoCanceladas(rs.getInt("entradas_no_canceladas"));
+        funcion.setEntradasVigentes(rs.getInt("entradas_vigentes"));
+        funcion.setEntradasEmitidas(rs.getInt("entradas_emitidas"));
         funcion.setEntradasCanceladas(rs.getInt("entradas_canceladas"));
-        BigDecimal ingresos = rs.getBigDecimal("ingresos_validos");
-        funcion.setIngresosValidos(ingresos == null ? BigDecimal.ZERO : ingresos);
-        funcion.setAsistentes((Integer) rs.getObject("asistentes"));
+        BigDecimal ingresos = rs.getBigDecimal("ingresos_confirmados");
+        funcion.setIngresosConfirmados(
+                ingresos == null ? BigDecimal.ZERO : ingresos);
         funcion.setPorcentajeOcupacion(
                 rs.getBigDecimal("porcentaje_ocupacion"));
 

@@ -9,6 +9,7 @@ import java.util.List;
 
 public interface FuncionBL extends BL<Funcion, Integer> {
     List<Funcion> findReportes(LocalDate desde, LocalDate hasta,
-                               Integer idSede, Integer idSala)
+                               Integer idSede, Integer idSala,
+                               String tipoEvento)
             throws BLException;
 }

@@ -28,6 +28,12 @@ namespace EntreFunciones.DTOSS
         [JsonPropertyName("ciudadSede")]
         public string? CiudadSede { get; set; }
 
+        [JsonPropertyName("distritoSede")]
+        public string? DistritoSede { get; set; }
+
+        [JsonPropertyName("salaAccesible")]
+        public bool SalaAccesible { get; set; }
+
         // yyyy-MM-dd (ISO, LocalDate.toString() en Java)
         [JsonPropertyName("fecha")]
         public string Fecha { get; set; } = string.Empty;
@@ -55,17 +61,17 @@ namespace EntreFunciones.DTOSS
         [JsonPropertyName("sede")]
         public SedeDto? Sede { get; set; }
 
-        [JsonPropertyName("entradasNoCanceladas")]
-        public int? EntradasNoCanceladas { get; set; }
+        [JsonPropertyName("entradasVigentes")]
+        public int? EntradasVigentes { get; set; }
+
+        [JsonPropertyName("entradasEmitidas")]
+        public int? EntradasEmitidas { get; set; }
 
         [JsonPropertyName("entradasCanceladas")]
         public int? EntradasCanceladas { get; set; }
 
-        [JsonPropertyName("ingresosValidos")]
-        public decimal? IngresosValidos { get; set; }
-
-        [JsonPropertyName("asistentes")]
-        public int? Asistentes { get; set; }
+        [JsonPropertyName("ingresosConfirmados")]
+        public decimal? IngresosConfirmados { get; set; }
 
         [JsonPropertyName("porcentajeOcupacion")]
         public decimal? PorcentajeOcupacion { get; set; }

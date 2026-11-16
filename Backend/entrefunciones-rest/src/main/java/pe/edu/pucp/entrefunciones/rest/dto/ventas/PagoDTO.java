@@ -6,6 +6,7 @@ public class PagoDTO {
     private int id;
     private String codigoPago;
     private int reservaId;
+    private String cliente;
     private double monto;
     private LocalDateTime fechaPago;
     private String estado; // PENDIENTE, VALIDADO, RECHAZADO
@@ -35,6 +36,14 @@ public class PagoDTO {
 
     public void setReservaId(int reservaId) {
         this.reservaId = reservaId;
+    }
+
+    public String getCliente() {
+        return cliente;
+    }
+
+    public void setCliente(String cliente) {
+        this.cliente = cliente;
     }
 
     public double getMonto() {

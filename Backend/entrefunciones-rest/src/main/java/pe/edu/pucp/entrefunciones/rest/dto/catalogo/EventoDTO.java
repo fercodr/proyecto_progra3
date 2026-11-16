@@ -9,6 +9,8 @@ public class EventoDTO {
     private double precio;
     private String titulo;
     private String imagenUrl;
+    private String tematica;
+    private String publicoObjetivo;
     private boolean requiereAsientoNumerado;
 
     // Pelicula
@@ -77,6 +79,11 @@ public class EventoDTO {
     public void setImagenUrl(String imagenUrl) {
         this.imagenUrl = imagenUrl;
     }
+
+    public String getTematica() { return tematica; }
+    public void setTematica(String tematica) { this.tematica = tematica; }
+    public String getPublicoObjetivo() { return publicoObjetivo; }
+    public void setPublicoObjetivo(String publicoObjetivo) { this.publicoObjetivo = publicoObjetivo; }
 
     public boolean isRequiereAsientoNumerado() {
         return requiereAsientoNumerado;

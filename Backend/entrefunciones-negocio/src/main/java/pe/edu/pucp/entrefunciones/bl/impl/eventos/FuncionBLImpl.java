@@ -11,6 +11,7 @@ import pe.edu.pucp.entrefunciones.dao.espacios.SalaDAO;
 import pe.edu.pucp.entrefunciones.dao.impl.espacios.SalaDAOImpl;
 import pe.edu.pucp.entrefunciones.dao.espacios.SedeDAO;
 import pe.edu.pucp.entrefunciones.dao.impl.espacios.SedeDAOImpl;
+import pe.edu.pucp.entrefunciones.dao.impl.espacios.BloqueoSalaDAOImpl;
 import pe.edu.pucp.entrefunciones.modelo.catalogo.Funcion;
 import pe.edu.pucp.entrefunciones.modelo.catalogo.Evento;
 import pe.edu.pucp.entrefunciones.modelo.espacios.Sala;
@@ -24,22 +25,47 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 public class FuncionBLImpl implements FuncionBL {
 
-    private final FuncionDAO funcionDAO = new FuncionDAOImpl();
-    private final EventoDAO eventoDAO = new EventoDAOImpl();
-    private final SalaDAO salaDAO = new SalaDAOImpl();
-    private final SedeDAO sedeDAO = new SedeDAOImpl();
+    private static final Set<String> TIPOS_EVENTO_REPORTE = Set.of(
+            "PELICULA", "OBRA_TEATRO", "ACTIVIDAD_CULTURAL");
+
+    private final FuncionDAO funcionDAO;
+    private final EventoDAO eventoDAO;
+    private final SalaDAO salaDAO;
+    private final SedeDAO sedeDAO;
     private final pe.edu.pucp.entrefunciones.dao.impl.ControlOperacionesDAO control = new pe.edu.pucp.entrefunciones.dao.impl.ControlOperacionesDAO();
+    private final BloqueoSalaDAOImpl bloqueoSalaDAO = new BloqueoSalaDAOImpl();
+
+    public FuncionBLImpl() {
+        this(new FuncionDAOImpl(), new EventoDAOImpl(),
+                new SalaDAOImpl(), new SedeDAOImpl());
+    }
+
+    FuncionBLImpl(FuncionDAO funcionDAO, EventoDAO eventoDAO,
+                  SalaDAO salaDAO, SedeDAO sedeDAO) {
+        this.funcionDAO = Objects.requireNonNull(funcionDAO);
+        this.eventoDAO = Objects.requireNonNull(eventoDAO);
+        this.salaDAO = Objects.requireNonNull(salaDAO);
+        this.sedeDAO = Objects.requireNonNull(sedeDAO);
+    }
+
     private void validarDisponibilidad(Funcion funcion) throws SQLException, BLException {
         control.bloquearSala(funcion.getSala().getId());
         var sala = new pe.edu.pucp.entrefunciones.dao.impl.espacios.SalaDAOImpl().findById(funcion.getSala().getId());
         if(sala==null || !sala.estaActivo() || !sala.getSede().estaActivo()) throw new BLException("La sala o sede no está activa");
-        if(funcion.getEstado()!=pe.edu.pucp.entrefunciones.modelo.funciones.EstadoFuncion.CANCELADA)
+        if(funcion.getEstado()==pe.edu.pucp.entrefunciones.modelo.funciones.EstadoFuncion.CONFIRMADA
+                && bloqueoSalaDAO.existeSolapamiento(
+                    sala.getId(),
+                    funcion.getFecha().atTime(funcion.getHoraInicio()),
+                    funcion.getFecha().atTime(funcion.getHoraFin()), null))
+            throw new BLException("El horario se cruza con un bloqueo vigente de la sala");
+        if(funcion.getEstado()==pe.edu.pucp.entrefunciones.modelo.funciones.EstadoFuncion.CONFIRMADA)
             for(Funcion otra:funcionDAO.findBySalaId(sala.getId()))
-                if(otra.getId()!=funcion.getId() && otra.getEstado()!=pe.edu.pucp.entrefunciones.modelo.funciones.EstadoFuncion.CANCELADA
+                if(otra.getId()!=funcion.getId() && otra.getEstado()==pe.edu.pucp.entrefunciones.modelo.funciones.EstadoFuncion.CONFIRMADA
                     && otra.getFecha().equals(funcion.getFecha())
                     && funcion.getHoraInicio().isBefore(otra.getHoraFin()) && funcion.getHoraFin().isAfter(otra.getHoraInicio()))
                     throw new BLException("El horario se cruza con otra función de la misma sala");
@@ -69,7 +95,8 @@ public class FuncionBLImpl implements FuncionBL {
 
     @Override
     public List<Funcion> findReportes(LocalDate desde, LocalDate hasta,
-                                      Integer idSede, Integer idSala)
+                                      Integer idSede, Integer idSala,
+                                      String tipoEvento)
             throws BLException {
         if (desde == null || hasta == null) {
             throw new ValidacionException("Las fechas desde y hasta son obligatorias");
@@ -83,6 +110,7 @@ public class FuncionBLImpl implements FuncionBL {
         if (idSala != null && idSala <= 0) {
             throw new ValidacionException("El identificador de sala debe ser positivo");
         }
+        String tipoEventoNormalizado = normalizarTipoEvento(tipoEvento);
 
         try {
             Map<Integer, Sede> sedesPorId = new HashMap<>();
@@ -111,7 +139,8 @@ public class FuncionBLImpl implements FuncionBL {
                 }
             }
 
-            List<Funcion> resultados = funcionDAO.findReportes(desde, hasta, idSede, idSala);
+            List<Funcion> resultados = funcionDAO.findReportes(
+                    desde, hasta, idSede, idSala, tipoEventoNormalizado);
 
             Set<Integer> idsSala = new HashSet<>();
             Set<Integer> idsSede = new HashSet<>();
@@ -180,7 +209,7 @@ public class FuncionBLImpl implements FuncionBL {
                 }
 
                 int aforo = funcion.getSala() == null ? 0 : funcion.getSala().getAforo();
-                Integer entradas = funcion.getEntradasNoCanceladas();
+                Integer entradas = funcion.getEntradasVigentes();
                 if (aforo <= 0 || entradas == null) {
                     funcion.setPorcentajeOcupacion(null);
                 } else {
@@ -194,6 +223,17 @@ public class FuncionBLImpl implements FuncionBL {
         } catch (SQLException e) {
             throw new BLException("No se pudo consultar el reporte de funciones", e);
         }
+    }
+
+    private String normalizarTipoEvento(String tipoEvento) throws ValidacionException {
+        if (tipoEvento == null || tipoEvento.isBlank()) {
+            return null;
+        }
+        String normalizado = tipoEvento.trim();
+        if (!TIPOS_EVENTO_REPORTE.contains(normalizado)) {
+            throw new ValidacionException("El tipo de actividad no es válido");
+        }
+        return normalizado;
     }
 
     private boolean salaCompleta(Sala sala) {

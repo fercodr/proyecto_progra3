@@ -5,6 +5,7 @@
 @inject ICatalogoService Catalogo
 @inject ISedeService SedeServicio
 @inject ISalaService SalaServicio
+@inject IBloqueoSalaService BloqueosSala
 @using EntreFunciones.DTOSS
 @using EntreFunciones.Servicios
 @using EntreFunciones.Servicios.Rest
@@ -145,7 +146,7 @@ else
         {
             // Solo eventos activos: no tiene sentido programar una funcion de un evento dado de baja.
             Eventos = (await Catalogo.ListarEventos()).Where(e => e.Activo).OrderBy(e => e.Titulo).ToList();
-            Sedes = (await SedeServicio.FindAll()).OrderBy(s => s.RazonSocial).ToList();
+            Sedes = (await SedeServicio.FindAll()).Where(s => s.IsActivo).OrderBy(s => s.RazonSocial).ToList();
 
             if (Id != null)
             {
@@ -194,7 +195,7 @@ else
 
         try
         {
-            Salas = (await SalaServicio.FindBySede(idSede)).OrderBy(s => s.Nombre).ToList();
+            Salas = (await SalaServicio.FindBySede(idSede)).Where(s => s.IsActivo).OrderBy(s => s.Nombre).ToList();
         }
         catch (Exception ex)
         {
@@ -225,6 +226,19 @@ else
         MensajeError = null;
         try
         {
+            DisponibilidadProgramacionDto disponibilidad =
+                await BloqueosSala.ConsultarDisponibilidad(
+                    Formulario.IdSala,
+                    Formulario.Fecha,
+                    Formulario.HoraInicio,
+                    Formulario.HoraFin,
+                    Id);
+            if (!disponibilidad.Disponible)
+            {
+                MensajeError = disponibilidad.Motivo;
+                return;
+            }
+
             FuncionDTO funcion = new FuncionDTO
             {
                 Id = Id ?? 0,

@@ -37,10 +37,12 @@ public final class FuncionMapper {
         if (sala != null) {
             dto.setIdSala(sala.getId());
             dto.setNombreSala(sala.getNombre());
+            dto.setSalaAccesible(sala.esAccesible());
             if (sala.getSede() != null) {
                 dto.setIdSede(sala.getSede().getId());
                 dto.setNombreSede(sala.getSede().getRazonSocial());
                 dto.setCiudadSede(sala.getSede().getCiudad());
+                dto.setDistritoSede(sala.getSede().getDistrito());
             }
         }
 
@@ -50,10 +52,10 @@ public final class FuncionMapper {
         dto.setIdioma(funcion.getIdioma());
         dto.setEstado(funcion.getEstado() == null ? null : funcion.getEstado().name());
         dto.setEvento(funcion.getEvento() == null ? null : EventoMapper.toDTO(funcion.getEvento()));
-        dto.setEntradasNoCanceladas(funcion.getEntradasNoCanceladas());
+        dto.setEntradasVigentes(funcion.getEntradasVigentes());
+        dto.setEntradasEmitidas(funcion.getEntradasEmitidas());
         dto.setEntradasCanceladas(funcion.getEntradasCanceladas());
-        dto.setIngresosValidos(funcion.getIngresosValidos());
-        dto.setAsistentes(funcion.getAsistentes());
+        dto.setIngresosConfirmados(funcion.getIngresosConfirmados());
         dto.setPorcentajeOcupacion(funcion.getPorcentajeOcupacion());
 
         if (sala != null) {
@@ -63,6 +65,7 @@ public final class FuncionMapper {
             salaDTO.setNombre(sala.getNombre());
             salaDTO.setAforo(sala.getAforo());
             salaDTO.setTipoSala(sala.getTipoSala());
+            salaDTO.setAccesible(sala.esAccesible());
             if (sala.getSede() != null) {
                 SedeDTO sedeDTO = new SedeDTO();
                 sedeDTO.setId(sala.getSede().getId());
@@ -70,6 +73,7 @@ public final class FuncionMapper {
                 sedeDTO.setRazonSocial(sala.getSede().getRazonSocial());
                 sedeDTO.setDireccion(sala.getSede().getDireccion());
                 sedeDTO.setCiudad(sala.getSede().getCiudad());
+                sedeDTO.setDistrito(sala.getSede().getDistrito());
                 sedeDTO.setTelefonoContacto(sala.getSede().getTelefonoContacto());
                 salaDTO.setIdSede(sedeDTO.getId());
                 salaDTO.setSede(sedeDTO);

@@ -4,11 +4,14 @@ import java.util.List;
 import pe.edu.pucp.entrefunciones.bl.error.BLException;
 import pe.edu.pucp.entrefunciones.bl.ventas.EntradaBL;
 import pe.edu.pucp.entrefunciones.dao.ventas.EntradaDAO;
+import pe.edu.pucp.entrefunciones.dao.impl.ControlOperacionesDAO;
+import pe.edu.pucp.entrefunciones.bl.Transacciones;
 import pe.edu.pucp.entrefunciones.modelo.ventas.Entrada;
 
 public class EntradaBLImpl implements EntradaBL {
 
     private final EntradaDAO entradaDAO;
+    private final ControlOperacionesDAO control = new ControlOperacionesDAO();
 
     public EntradaBLImpl(EntradaDAO entradaDAO) {
         if (entradaDAO == null) {
@@ -99,7 +102,10 @@ public class EntradaBLImpl implements EntradaBL {
 
     @Override
     public void cancelar(int entradaId) throws BLException {
-        try {
+        Transacciones.ejecutar("Error de base de datos al cancelar la entrada " + entradaId, () -> {
+            int funcionId = control.funcionDeEntrada(entradaId);
+            control.bloquearFuncion(funcionId);
+            control.bloquearEntrada(entradaId);
             Entrada entrada = entradaDAO.findById(entradaId);
             if (entrada == null) {
                 throw new BLException("No existe la entrada " + entradaId);
@@ -109,8 +115,7 @@ public class EntradaBLImpl implements EntradaBL {
                         "La entrada " + entradaId + " no se pudo cancelar: ya estaba utilizada o cancelada");
             }
             entradaDAO.update(entrada);
-        } catch (SQLException ex) {
-            throw new BLException("Error de base de datos al cancelar la entrada " + entradaId, ex);
-        }
+            return null;
+        });
     }
 }

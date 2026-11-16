@@ -102,6 +102,7 @@ namespace EntreFunciones.Servicios.Rest
                 Nombre = dto.Nombre,
                 Aforo = dto.Aforo,
                 TipoSala = dto.TipoSala
+                ,Accesible = dto.Accesible
             };
         }
 
@@ -115,6 +116,7 @@ namespace EntreFunciones.Servicios.Rest
                 Nombre = modelo.Nombre,
                 Aforo = modelo.Aforo,
                 TipoSala = modelo.TipoSala
+                ,Accesible = modelo.Accesible
             };
         }
     }

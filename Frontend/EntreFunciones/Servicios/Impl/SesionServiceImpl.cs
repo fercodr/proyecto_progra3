@@ -12,13 +12,16 @@ namespace EntreFunciones.Servicios.Impl
 
         private readonly IHttpContextAccessor httpContextAccessor;
         private readonly ICuentaService cuentaService;
+        private readonly ILogger<SesionServiceImpl> logger;
 
         public SesionServiceImpl(
             IHttpContextAccessor httpContextAccessor,
-            ICuentaService cuentaService)
+            ICuentaService cuentaService,
+            ILogger<SesionServiceImpl> logger)
         {
             this.httpContextAccessor = httpContextAccessor;
             this.cuentaService = cuentaService;
+            this.logger = logger;
         }
 
         public async Task<string> IniciarSesion(
@@ -26,14 +29,38 @@ namespace EntreFunciones.Servicios.Impl
             string userName,
             string password)
         {
-            SesionDTO? sesion = await cuentaService.Autenticar(userName, password);
-            if (sesion is null
-                || string.IsNullOrWhiteSpace(sesion.Token)
-                || sesion.Id <= 0
-                || string.IsNullOrWhiteSpace(sesion.Rol)
-                || sesion.Vence <= DateTimeOffset.UtcNow)
+            SesionDTO? sesion;
+            try
+            {
+                sesion = await cuentaService.Autenticar(userName, password);
+            }
+            catch (ServiceException ex)
+            {
+                logger.LogError(ex,
+                    "Fallo el servicio REST durante el inicio de sesion. "
+                    + "Endpoint: {Endpoint}; estado HTTP: {StatusCode}; "
+                    + "tipo de contenido: {ResponseContentType}",
+                    ex.Endpoint,
+                    ex.StatusCode,
+                    ex.ResponseContentType);
+                return "/login?servicioNoDisponible=true";
+            }
+
+            if (sesion is null)
             {
                 return "/login?error=true";
+            }
+
+            if (string.IsNullOrWhiteSpace(sesion.Token)
+                || sesion.Id <= 0
+                || string.IsNullOrWhiteSpace(sesion.Correo)
+                || string.IsNullOrWhiteSpace(sesion.Rol)
+                || (sesion.Rol != "Administrador" && sesion.Rol != "Cliente")
+                || sesion.Vence <= DateTimeOffset.UtcNow)
+            {
+                logger.LogError(
+                    "El servicio REST devolvio una sesion incompleta o invalida; no se creo la cookie.");
+                return "/login?servicioNoDisponible=true";
             }
 
             List<Claim> claims = [
@@ -54,10 +81,20 @@ namespace EntreFunciones.Servicios.Impl
                 ExpiresUtc = sesion.Vence,
                 AllowRefresh = false
             };
-            await context.SignInAsync(
-                CookieAuthenticationDefaults.AuthenticationScheme,
-                new ClaimsPrincipal(identidad),
-                propiedades);
+            try
+            {
+                await context.SignInAsync(
+                    CookieAuthenticationDefaults.AuthenticationScheme,
+                    new ClaimsPrincipal(identidad),
+                    propiedades);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex,
+                    "No se pudo crear la cookie de sesion para la cuenta {CuentaId}.",
+                    sesion.Id);
+                return "/login?errorSesion=true";
+            }
 
             return sesion.Rol == "Administrador"
                 ? RutaInicioAdmin

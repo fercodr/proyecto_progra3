@@ -78,7 +78,7 @@ else
                                     <button type="button" class="butaca @ClaseButaca(butaca)"
                                             aria-label="@DescripcionButaca(butaca)"
                                             aria-pressed="@butaca.Elegida"
-                                            disabled="@(!butaca.Activo || butaca.Ocupada || Enviando)"
+                                            disabled="@(!butaca.Activo || butaca.Ocupada || butaca.Retenida || Enviando)"
                                             @onclick="() => ToggleButaca(butaca)">
                                         @butaca.Columna
                                     </button>
@@ -91,6 +91,7 @@ else
                 <div class="d-flex flex-wrap gap-3 mt-3 small text-muted leyenda" aria-label="Leyenda de butacas">
                     <span class="leyenda-item"><span class="muestra libre"></span>Libre</span>
                     <span class="leyenda-item"><span class="muestra ocupada"></span>Ocupada</span>
+                    <span class="leyenda-item"><span class="muestra retenida"></span>Retenida temporalmente</span>
                     <span class="leyenda-item"><span class="muestra bloqueada"></span>Inactiva</span>
                     <span class="leyenda-item"><span class="muestra elegida"></span>Elegida</span>
                 </div>
@@ -167,9 +168,9 @@ else
     private string ButacasElegidasTexto => string.Join(", ", Butacas.Where(b=>b.Elegida).OrderBy(b=>b.Fila).ThenBy(b=>b.Columna).Select(b=>$"{b.Fila}{b.Columna}"));
     private bool MostrarConfirmacion;
     private string ErrorAccion = "";
-    private string ClaseButaca(ButacaDto b)=>!b.Activo?"bloqueada":b.Ocupada?"ocupada":b.Elegida?"elegida":"libre";
-    private string DescripcionButaca(ButacaDto b)=>$"Butaca {b.Fila}{b.Columna}: {(!b.Activo?"inactiva":b.Ocupada?"ocupada":b.Elegida?"seleccionada":"libre")}";
-    private void ToggleButaca(ButacaDto b) { if(b.Activo && !b.Ocupada && !Enviando)b.Elegida=!b.Elegida; }
+    private string ClaseButaca(ButacaDto b)=>!b.Activo?"bloqueada":b.Retenida?"retenida":b.Ocupada?"ocupada":b.Elegida?"elegida":"libre";
+    private string DescripcionButaca(ButacaDto b)=>$"Butaca {b.Fila}{b.Columna}: {(!b.Activo?"inactiva":b.Retenida?"retenida temporalmente":b.Ocupada?"ocupada":b.Elegida?"seleccionada":"libre")}";
+    private void ToggleButaca(ButacaDto b) { if(b.Activo && !b.Ocupada && !b.Retenida && !Enviando)b.Elegida=!b.Elegida; }
     private void IncrementarCantidad() { if(Funcion!=null && Cantidad<Funcion.CuposDisponibles)Cantidad++; }
     private void DecrementarCantidad() { if(Cantidad>1)Cantidad--; }
     private async Task ContinuarAReserva()
