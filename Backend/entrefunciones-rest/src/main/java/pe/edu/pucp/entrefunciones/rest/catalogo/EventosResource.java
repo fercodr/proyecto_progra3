@@ -146,6 +146,10 @@ public class EventosResource {
     }
 
     private Response error(Response.Status status, Exception ex) {
+        if (status.getStatusCode() >= 500) {
+            java.util.logging.Logger.getLogger(EventosResource.class.getName())
+                    .log(java.util.logging.Level.SEVERE, ex.getMessage(), ex);
+        }
         return Response.status(status)
                 .entity(Map.of("error", ex.getMessage()))
                 .build();

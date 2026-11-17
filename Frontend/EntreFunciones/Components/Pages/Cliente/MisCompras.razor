@@ -11,7 +11,7 @@
     <div class="page-header">
         <div>
             <h1 class="page-title">Mis compras</h1>
-            <p class="page-description">Consulta el estado de tus reservas y completa los pagos pendientes.</p>
+            <p class="page-description">Consulta tus reservas, completa los pagos pendientes y revisa tus entradas con su código QR.</p>
         </div>
         <a class="btn btn-primary" href="/cartelera"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Nueva compra</a>
     </div>
@@ -21,6 +21,14 @@
         <div class="alert alert-success alert-dismissible" role="status" aria-live="polite">
             @Mensaje
             <button type="button" class="btn-close" aria-label="Cerrar" @onclick="() => Mensaje = string.Empty"></button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(ErrorAccion))
+    {
+        <div class="alert alert-danger alert-dismissible" role="alert" aria-live="assertive">
+            @ErrorAccion
+            <button type="button" class="btn-close" aria-label="Cerrar" @onclick="() => ErrorAccion = string.Empty"></button>
         </div>
     }
 
@@ -36,7 +44,7 @@
         <div class="alert alert-danger" role="alert" aria-live="assertive">
             <h2 class="h5 alert-heading">No pudimos cargar tus compras</h2>
             <p>@Error</p>
-            <button type="button" class="btn btn-danger btn-sm" @onclick="CargarAsync">Reintentar</button>
+            <button type="button" class="btn btn-danger btn-sm" @onclick="() => CargarAsync()">Reintentar</button>
         </div>
     }
     else if (Compras.Count == 0)
@@ -48,59 +56,150 @@
     }
     else
     {
-        <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
-            <label for="filtroEstado" class="form-label mb-0 small text-muted">Estado</label>
-            <select id="filtroEstado" class="form-select form-select-sm w-auto" @bind="FiltroEstado">
-                <option value="">Todos</option>
-                @foreach (string estado in Compras.Select(c => c.Estado).Distinct().Order())
-                {
-                    <option value="@estado">@estado</option>
-                }
-            </select>
-            <IconoInfo Texto="Pendiente de pago: aún puedes pagarla. Pago en validación: ya pagaste y el administrador lo está revisando. Confirmada: el pago fue validado. Expirada: pasaron los 15 minutos sin pagar. Cancelada: la anulaste." />
-        </div>
+        @* Dos vistas del mismo historial: las reservas (RF-M5-01 / RF-M5-02) y las entradas emitidas (RF-M5-03). *@
+        <ul class="nav nav-tabs mb-3" role="tablist" aria-label="Historial de compras">
+            <li class="nav-item" role="presentation">
+                <button type="button" class="nav-link @(Pestana == "reservas" ? "active" : "")" role="tab"
+                        aria-selected="@(Pestana == "reservas")" @onclick='() => Pestana = "reservas"'>
+                    Reservas <span class="badge text-bg-secondary ms-1">@Compras.Count</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button type="button" class="nav-link @(Pestana == "entradas" ? "active" : "")" role="tab"
+                        aria-selected="@(Pestana == "entradas")" @onclick='() => Pestana = "entradas"'>
+                    Entradas <span class="badge text-bg-secondary ms-1">@Entradas.Count</span>
+                </button>
+            </li>
+        </ul>
 
-        <div class="data-table-wrapper shadow-sm">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th scope="col">Código</th>
-                        <th scope="col">Función</th>
-                        <th scope="col">Fecha de la función</th>
-                        <th scope="col" class="text-end">Monto</th>
-                        <th scope="col">Estado</th>
-                        <th scope="col" class="text-end">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (CompraClienteViewModel compra in ComprasFiltradas)
+        @if (Pestana == "reservas")
+        {
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                <label for="filtroEstado" class="form-label mb-0 small text-muted">Estado</label>
+                <select id="filtroEstado" class="form-select form-select-sm w-auto" @bind="FiltroEstado">
+                    <option value="">Todos</option>
+                    @foreach (string estado in Compras.Select(c => c.Estado).Distinct().Order())
                     {
-                        <tr>
-                            <td class="font-monospace">@compra.Codigo</td>
-                            <td>@compra.Funcion</td>
-                            <td>@compra.FechaFuncion.ToString("dd/MM/yyyy HH:mm")</td>
-                            <td class="text-end">@CompraClienteMapper.Soles(compra.Monto)</td>
-                            <td><span class="badge @compra.EstadoClase">@compra.Estado</span></td>
-                            <td class="text-end text-nowrap">
-                                <button type="button" class="btn btn-outline-secondary btn-sm" aria-label="Ver detalle de @compra.Codigo"
-                                        @onclick="() => VerDetalle(compra)">
-                                    <i class="bi bi-eye" aria-hidden="true"></i>
-                                </button>
-                                @if (compra.Pendiente)
-                                {
-                                    <a class="btn btn-success btn-sm ms-1" href="@($"/reserva/{compra.Id}/pago")">Pagar</a>
-                                    <button type="button" class="btn btn-outline-danger btn-sm ms-1" @onclick="() => PorCancelar = compra">Cancelar</button>
-                                }
-                            </td>
-                        </tr>
+                        <option value="@estado">@estado</option>
                     }
-                </tbody>
-            </table>
-        </div>
+                </select>
+                <IconoInfo Texto="Pendiente de pago: aún puedes pagarla. Pago en validación: ya pagaste y el administrador lo está revisando. Confirmada: el pago fue validado o la reserva era gratuita, y tus entradas ya fueron emitidas. Expirada: venció el plazo sin pagar. Cancelada: fue anulada." />
+            </div>
+
+            <div class="data-table-wrapper shadow-sm">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col">Código</th>
+                            <th scope="col">Función</th>
+                            <th scope="col">Fecha de la función</th>
+                            <th scope="col" class="text-end">Monto</th>
+                            <th scope="col">Estado</th>
+                            <th scope="col" class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (CompraClienteViewModel compra in ComprasFiltradas)
+                        {
+                            <tr>
+                                <td class="font-monospace">@compra.Codigo</td>
+                                <td>@compra.Funcion</td>
+                                <td>@compra.FechaFuncion.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td class="text-end">@CompraClienteMapper.SolesOGratis(compra.Monto)</td>
+                                <td><span class="badge @compra.EstadoClase">@compra.Estado</span></td>
+                                <td class="text-end text-nowrap">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" aria-label="Ver detalle de @compra.Codigo"
+                                            @onclick="() => Detalle = compra">
+                                        <i class="bi bi-eye" aria-hidden="true"></i>
+                                    </button>
+                                    @if (compra.Pendiente)
+                                    {
+                                        <a class="btn btn-success btn-sm ms-1" href="@($"/reserva/{compra.Id}/pago")">Pagar</a>
+                                        <button type="button" class="btn btn-outline-danger btn-sm ms-1" @onclick="() => PorCancelar = compra">Cancelar</button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            @if (!string.IsNullOrEmpty(AvisoEntradas))
+            {
+                <div class="alert alert-warning py-2" role="alert">@AvisoEntradas</div>
+            }
+
+            @if (Entradas.Count == 0)
+            {
+                <div class="empty-state" role="status">
+                    <p class="mb-0">
+                        Todavía no tienes entradas emitidas. Se generan, una por cada cupo, cuando el administrador
+                        valida tu pago o apenas reservas una función gratuita.
+                    </p>
+                </div>
+            }
+            else
+            {
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                    <label for="filtroEntrada" class="form-label mb-0 small text-muted">Estado</label>
+                    <select id="filtroEntrada" class="form-select form-select-sm w-auto" @bind="FiltroEntrada">
+                        <option value="">Todos</option>
+                        @foreach (string estado in Entradas.Select(e => e.Estado).Distinct().Order())
+                        {
+                            <option value="@estado">@estado</option>
+                        }
+                    </select>
+                    <IconoInfo Texto="Cada entrada corresponde a un cupo de tu compra y tiene su propio código QR. Vigente: puedes presentarla para ingresar. Cancelada: la anulaste y su cupo o butaca quedó libre." />
+                </div>
+
+                <div class="data-table-wrapper shadow-sm">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col">Entrada</th>
+                                <th scope="col">Función</th>
+                                <th scope="col">Fecha y hora</th>
+                                <th scope="col">Butaca</th>
+                                <th scope="col" class="text-end">Precio</th>
+                                <th scope="col">Estado</th>
+                                <th scope="col" class="text-end">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (EntradaClienteViewModel entrada in EntradasFiltradas)
+                            {
+                                <tr>
+                                    <td>
+                                        <span class="font-monospace">@entrada.Codigo</span>
+                                        <div class="small text-muted">Reserva @entrada.CodigoReserva</div>
+                                    </td>
+                                    <td>@entrada.Funcion</td>
+                                    <td>@entrada.FechaFuncion.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td>@entrada.Butaca</td>
+                                    <td class="text-end">@CompraClienteMapper.SolesOGratis(entrada.Precio)</td>
+                                    <td><span class="badge @entrada.EstadoClase">@entrada.Estado</span></td>
+                                    <td class="text-end text-nowrap">
+                                        <button type="button" class="btn btn-outline-primary btn-sm" @onclick="() => EntradaQr = entrada">
+                                            <i class="bi bi-qr-code me-1" aria-hidden="true"></i>Ver QR
+                                        </button>
+                                        @if (entrada.Vigente)
+                                        {
+                                            <button type="button" class="btn btn-outline-danger btn-sm ms-1" @onclick="() => EntradaPorCancelar = entrada">Cancelar</button>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        }
     }
 </div>
 
-@* Pop-up con la información adicional de la compra, para no sobrecargar la tabla *@
+@* Pop-up con la información adicional de la reserva, para no sobrecargar la tabla *@
 <ModalConfirmacion Visible="Detalle != null" Titulo="@($"Detalle de {Detalle?.Codigo}")" Icono="bi-receipt"
                    TextoConfirmar="Cerrar" TextoCancelar="Volver" Variante="secondary"
                    OnConfirmar="() => Detalle = null" OnCancelar="() => Detalle = null">
@@ -114,7 +213,7 @@
             <dt class="col-5 text-muted fw-normal">Cantidad</dt>
             <dd class="col-7">@Detalle.Cantidad</dd>
             <dt class="col-5 text-muted fw-normal">Monto total</dt>
-            <dd class="col-7">@CompraClienteMapper.Soles(Detalle.Monto)</dd>
+            <dd class="col-7">@CompraClienteMapper.SolesOGratis(Detalle.Monto)</dd>
             <dt class="col-5 text-muted fw-normal">Reservado el</dt>
             <dd class="col-7">@Detalle.FechaCreacion.ToString("dd/MM/yyyy HH:mm")</dd>
             @if (Detalle.Pendiente)
@@ -126,51 +225,52 @@
             <dd class="col-7 mb-0"><span class="badge @Detalle.EstadoClase">@Detalle.Estado</span></dd>
         </dl>
 
-        @if (Detalle.Estado == "Confirmada")
+        @if (EntradasDeDetalle.Count > 0)
         {
             <hr class="my-3" />
-            <h3 class="h6">Tus entradas</h3>
-            @if (CargandoEntradas)
-            {
-                <div class="d-flex align-items-center gap-2 text-secondary" role="status" aria-live="polite">
-                    <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
-                    Generando tus códigos QR...
-                </div>
-            }
-            else if (!string.IsNullOrEmpty(ErrorEntradas))
-            {
-                <div class="alert alert-warning py-2 px-3 mb-0" role="alert">@ErrorEntradas</div>
-            }
-            else if (EntradasDetalle.Count == 0)
-            {
-                <p class="text-muted small mb-0">Todavía no se generaron entradas para esta compra.</p>
-            }
-            else
-            {
-                <div class="d-flex flex-wrap gap-3">
-                    @foreach (EntradaDto entrada in EntradasDetalle)
-                    {
-                        <div class="text-center border rounded p-2">
-                            <img src="@UrlQr(entrada.CodigoQR)" alt="Código QR de la entrada @entrada.Id" width="140" height="140" />
-                            @if (!string.IsNullOrEmpty(entrada.ButacaIdentificador))
-                            {
-                                <div class="small text-muted mt-1">Butaca @entrada.ButacaIdentificador</div>
-                            }
-                            <div class="mt-2">
-                                <span class="badge @ClaseEstadoEntrada(entrada.Estado)">@NombreEstadoEntrada(entrada.Estado)</span>
-                            </div>
-                            @if (entrada.Estado == "VIGENTE")
-                            {
-                                <button type="button" class="btn btn-outline-danger btn-sm mt-2"
-                                        disabled="@(EntradaProcesando == entrada.Id)"
-                                        @onclick="() => CancelarEntradaAsync(entrada)">
-                                    @(EntradaProcesando == entrada.Id ? "Cancelando..." : "Cancelar entrada")
-                                </button>
-                            }
-                        </div>
-                    }
-                </div>
-            }
+            <h3 class="h6">Entradas de esta reserva</h3>
+            <div class="d-flex flex-wrap gap-3">
+                @foreach (EntradaClienteViewModel entrada in EntradasDeDetalle)
+                {
+                    <div class="text-center border rounded p-2">
+                        <CodigoQr Valor="@entrada.CodigoQR" Tamano="120" TextoAlternativo="@($"Código QR de la entrada {entrada.Codigo}")" />
+                        <div class="small font-monospace mt-1">@entrada.Codigo</div>
+                        <div class="small text-muted">@entrada.Butaca</div>
+                        <span class="badge @entrada.EstadoClase mt-1">@entrada.Estado</span>
+                    </div>
+                }
+            </div>
+            <p class="small text-muted mt-2 mb-0">Para cancelar una entrada usa la pestaña Entradas.</p>
+        }
+    }
+</ModalConfirmacion>
+
+@* Entrada en grande, con su QR, para presentarla o guardarla *@
+<ModalConfirmacion Visible="EntradaQr != null" Titulo="@($"Entrada {EntradaQr?.Codigo}")" Icono="bi-qr-code"
+                   TextoConfirmar="Cerrar" TextoCancelar="Volver" Variante="secondary"
+                   OnConfirmar="() => EntradaQr = null" OnCancelar="() => EntradaQr = null">
+    @if (EntradaQr != null)
+    {
+        <div class="text-center">
+            <CodigoQr Valor="@EntradaQr.CodigoQR" Tamano="220" TextoAlternativo="@($"Código QR de la entrada {EntradaQr.Codigo}")" />
+            <div class="small font-monospace text-break mt-2">@EntradaQr.CodigoQR</div>
+            <span class="badge @EntradaQr.EstadoClase mt-2">@EntradaQr.Estado</span>
+        </div>
+        <dl class="row small mt-3 mb-0">
+            <dt class="col-5 text-muted fw-normal">Función</dt>
+            <dd class="col-7">@EntradaQr.Funcion</dd>
+            <dt class="col-5 text-muted fw-normal">Fecha y hora</dt>
+            <dd class="col-7">@EntradaQr.FechaFuncion.ToString("dd/MM/yyyy HH:mm")</dd>
+            <dt class="col-5 text-muted fw-normal">Butaca</dt>
+            <dd class="col-7">@EntradaQr.Butaca</dd>
+            <dt class="col-5 text-muted fw-normal">Reserva</dt>
+            <dd class="col-7 font-monospace">@EntradaQr.CodigoReserva</dd>
+            <dt class="col-5 text-muted fw-normal">Emitida el</dt>
+            <dd class="col-7 mb-0">@EntradaQr.FechaEmision.ToString("dd/MM/yyyy HH:mm")</dd>
+        </dl>
+        @if (!EntradaQr.Vigente)
+        {
+            <p class="small text-danger mt-2 mb-0">Esta entrada ya no está vigente: su código no sirve para ingresar.</p>
         }
     }
 </ModalConfirmacion>
@@ -184,37 +284,54 @@
     </p>
 </ModalConfirmacion>
 
+<ModalConfirmacion Visible="EntradaPorCancelar != null" Titulo="¿Cancelar entrada?" Variante="danger" Icono="bi-exclamation-triangle"
+                   TextoConfirmar="Sí, cancelar entrada" TextoCancelar="No, mantener" Procesando="Enviando"
+                   OnConfirmar="CancelarEntradaAsync" OnCancelar="() => EntradaPorCancelar = null">
+    <p class="mb-2">
+        Se cancelará la entrada <strong>@EntradaPorCancelar?.Codigo</strong> de <strong>@EntradaPorCancelar?.Funcion</strong>
+        (@EntradaPorCancelar?.Butaca). Su cupo quedará libre para otros clientes y su código QR dejará de ser válido.
+    </p>
+    <p class="small text-muted mb-0">Las demás entradas de la reserva no cambian. Esta acción no se puede deshacer.</p>
+</ModalConfirmacion>
+
 @code {
     private List<CompraClienteViewModel> Compras = [];
+    private List<EntradaClienteViewModel> Entradas = [];
+    private string Pestana = "reservas";
     private string FiltroEstado = string.Empty;
+    private string FiltroEntrada = string.Empty;
     private IEnumerable<CompraClienteViewModel> ComprasFiltradas =>
         string.IsNullOrEmpty(FiltroEstado) ? Compras : Compras.Where(c => c.Estado == FiltroEstado);
+    private IEnumerable<EntradaClienteViewModel> EntradasFiltradas =>
+        string.IsNullOrEmpty(FiltroEntrada) ? Entradas : Entradas.Where(e => e.Estado == FiltroEntrada);
+    private List<EntradaClienteViewModel> EntradasDeDetalle =>
+        Detalle == null
+            ? new List<EntradaClienteViewModel>()
+            : Entradas.Where(e => e.ReservaId == Detalle.Id).ToList();
     private CompraClienteViewModel? Detalle;
-    private List<EntradaDto> EntradasDetalle = [];
-    private bool CargandoEntradas;
-    private string ErrorEntradas = string.Empty;
-    private int? EntradaProcesando;
     private CompraClienteViewModel? PorCancelar;
+    private EntradaClienteViewModel? EntradaQr;
+    private EntradaClienteViewModel? EntradaPorCancelar;
     private bool Cargando;
     private bool Enviando;
     private string Error = string.Empty;
+    private string ErrorAccion = string.Empty;
+    private string AvisoEntradas = string.Empty;
     private string Mensaje = string.Empty;
 
     protected override Task OnInitializedAsync() => CargarAsync();
 
-    private async Task CargarAsync()
+    /// <param name="mostrarCarga">false al refrescar después de una acción, para no ocultar la tabla.</param>
+    private async Task CargarAsync(bool mostrarCarga = true)
     {
-        Cargando = true;
+        Cargando = mostrarCarga;
         Error = string.Empty;
         try
         {
             List<ReservaDto> reservas = await Api.ListarReservas();
-            // Una reserva ACTIVA puede estar ya pagada (esperando validación): se consulta su pago.
-            PagoDto[] pagos = await Task.WhenAll(reservas
-                .Where(r => r.Estado == "ACTIVA")
-                .Select(r => Api.GenerarPago(r.Id)));
-            HashSet<int> pagadas = pagos.Where(p => !string.IsNullOrEmpty(p.FechaPago)).Select(p => p.ReservaId).ToHashSet();
+            HashSet<int> pagadas = await ConsultarPagosRegistradosAsync(reservas);
             Compras = CompraClienteMapper.ToViewModels(reservas, pagadas);
+            await CargarEntradasAsync(reservas);
         }
         catch (Exception e) when (e is HttpRequestException or InvalidOperationException or ServiceException or TaskCanceledException)
         {
@@ -226,91 +343,108 @@
         }
     }
 
-    private async Task VerDetalle(CompraClienteViewModel compra)
+    // Una reserva ACTIVA puede estar ya pagada (esperando validación): se consulta su pago.
+    // Se omiten las que ya vencieron y, si la consulta de una reserva falla, esa reserva se
+    // muestra como pendiente en lugar de dejar toda la pantalla en error.
+    private async Task<HashSet<int>> ConsultarPagosRegistradosAsync(List<ReservaDto> reservas)
     {
-        Detalle = compra;
-        EntradasDetalle = [];
-        ErrorEntradas = string.Empty;
-        if (compra.Estado != "Confirmada") return;
-        CargandoEntradas = true;
+        PagoDto?[] pagos = await Task.WhenAll(reservas
+            .Where(r => CompraClienteMapper.EstadoEfectivo(r) == "ACTIVA")
+            .Select(ConsultarPagoAsync));
+        HashSet<int> pagadas = [];
+        foreach (PagoDto? pago in pagos)
+        {
+            if (pago != null && !string.IsNullOrEmpty(pago.FechaPago))
+            {
+                pagadas.Add(pago.ReservaId);
+            }
+        }
+        return pagadas;
+    }
+
+    private async Task<PagoDto?> ConsultarPagoAsync(ReservaDto reserva)
+    {
         try
         {
-            EntradasDetalle = await Api.ListarEntradas(compra.Id);
+            return await Api.GenerarPago(reserva.Id);
         }
-        catch (Exception e) when (e is HttpRequestException or InvalidOperationException or ServiceException or TaskCanceledException)
+        catch (ServiceException)
         {
-            ErrorEntradas = "No se pudieron cargar tus entradas: " + e.Message;
-        }
-        finally
-        {
-            CargandoEntradas = false;
+            return null;
         }
     }
 
-    // Genera la imagen del QR en el navegador a partir del texto guardado en Entrada.CodigoQR;
-    // el backend solo guarda el texto (ver EntradaBLImpl), no una imagen.
-    private static string UrlQr(string codigoQR) =>
-        $"https://api.qrserver.com/v1/create-qr-code/?size=140x140&data={Uri.EscapeDataString(codigoQR)}";
-
-    private async Task CancelarEntradaAsync(EntradaDto entrada)
+    // RF-M5-03: el historial de entradas se arma con las entradas de cada reserva confirmada
+    // (por pago validado o por ser gratuita), que son las únicas que tienen entradas emitidas.
+    private async Task CargarEntradasAsync(List<ReservaDto> reservas)
     {
-        if (Detalle is null || entrada.Estado != "VIGENTE" || EntradaProcesando.HasValue)
-        {
-            return;
-        }
-        EntradaProcesando = entrada.Id;
-        ErrorEntradas = string.Empty;
-        try
-        {
-            await Api.CancelarEntrada(entrada.Id);
-            EntradasDetalle = await Api.ListarEntradas(Detalle.Id);
-            Mensaje = $"La entrada #{entrada.Id} fue cancelada sin afectar las demás entradas de la reserva.";
-        }
-        catch (Exception e) when (e is HttpRequestException or InvalidOperationException or ServiceException or TaskCanceledException)
-        {
-            ErrorEntradas = "No se pudo cancelar la entrada: " + e.Message;
-        }
-        finally
-        {
-            EntradaProcesando = null;
-        }
+        bool huboError = false;
+        List<EntradaClienteViewModel>[] grupos = await Task.WhenAll(reservas
+            .Where(r => r.Estado == "CONFIRMADA")
+            .Select(async reserva =>
+            {
+                try
+                {
+                    List<EntradaDto> dtos = await Api.ListarEntradas(reserva.Id);
+                    return CompraClienteMapper.ToEntradaViewModels(dtos, reserva);
+                }
+                catch (ServiceException)
+                {
+                    huboError = true;
+                    return new List<EntradaClienteViewModel>();
+                }
+            }));
+        Entradas = grupos.SelectMany(g => g)
+            .OrderByDescending(e => e.FechaEmision)
+            .ThenBy(e => e.Id)
+            .ToList();
+        AvisoEntradas = huboError
+            ? "No se pudieron cargar las entradas de algunas reservas. Vuelve a intentarlo en unos segundos."
+            : string.Empty;
     }
-
-    private static string NombreEstadoEntrada(string estado) => estado switch
-    {
-        "VIGENTE" => "Vigente",
-        "CANCELADA" => "Cancelada",
-        "UTILIZADA" => "Utilizada",
-        _ => estado
-    };
-
-    private static string ClaseEstadoEntrada(string estado) => estado switch
-    {
-        "VIGENTE" => "text-bg-success",
-        "CANCELADA" => "text-bg-danger",
-        "UTILIZADA" => "text-bg-secondary",
-        _ => "text-bg-light"
-    };
 
     private async Task CancelarAsync()
     {
         if (PorCancelar == null || Enviando) return;
         Enviando = true;
+        ErrorAccion = string.Empty;
         string codigo = PorCancelar.Codigo;
         try
         {
             await Api.Cancelar(PorCancelar.Id);
             Mensaje = $"La reserva {codigo} fue cancelada.";
-            PorCancelar = null;
-            await CargarAsync();
+            await CargarAsync(mostrarCarga: false);
         }
         catch (Exception e) when (e is HttpRequestException or InvalidOperationException or ServiceException or TaskCanceledException)
         {
-            Error = e.Message;
-            PorCancelar = null;
+            ErrorAccion = $"No se pudo cancelar la reserva {codigo}: {e.Message}";
         }
         finally
         {
+            PorCancelar = null;
+            Enviando = false;
+        }
+    }
+
+    private async Task CancelarEntradaAsync()
+    {
+        if (EntradaPorCancelar == null || Enviando) return;
+        Enviando = true;
+        ErrorAccion = string.Empty;
+        string codigo = EntradaPorCancelar.Codigo;
+        try
+        {
+            await Api.CancelarEntrada(EntradaPorCancelar.Id);
+            Mensaje = $"La entrada {codigo} fue cancelada. Las demás entradas de la reserva siguen igual.";
+            await CargarAsync(mostrarCarga: false);
+        }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException or ServiceException or TaskCanceledException)
+        {
+            ErrorAccion = $"No se pudo cancelar la entrada {codigo}: {e.Message}";
+        }
+        finally
+        {
+            EntradaPorCancelar = null;
             Enviando = false;
         }
     }

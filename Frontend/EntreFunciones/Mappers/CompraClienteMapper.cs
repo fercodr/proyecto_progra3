@@ -62,6 +62,49 @@ namespace EntreFunciones.Mappers
             _ => "text-bg-light"
         };
 
+        // ---------- Entradas (RF-M5-03) ----------
+
+        /// <summary>Une una entrada con los datos de su reserva (función y fecha) para el historial.</summary>
+        public static EntradaClienteViewModel ToEntradaViewModel(EntradaDto dto, ReservaDto reserva) =>
+            new EntradaClienteViewModel
+            {
+                Id = dto.Id,
+                Codigo = $"ENT-{dto.Id:D6}",
+                CodigoQR = dto.CodigoQR,
+                ReservaId = reserva.Id,
+                CodigoReserva = reserva.CodigoOId,
+                Funcion = reserva.FuncionNombre,
+                FechaFuncion = reserva.FechaFuncion,
+                Butaca = string.IsNullOrWhiteSpace(dto.ButacaIdentificador) ? "Aforo general" : dto.ButacaIdentificador,
+                Precio = (decimal)dto.PrecioFinal,
+                FechaEmision = dto.FechaEmision,
+                Estado = EstadoEntradaTexto(dto.Estado),
+                EstadoClase = EstadoEntradaClase(dto.Estado),
+                Vigente = dto.Estado == "VIGENTE"
+            };
+
+        public static List<EntradaClienteViewModel> ToEntradaViewModels(IEnumerable<EntradaDto> dtos, ReservaDto reserva) =>
+            dtos.Select(d => ToEntradaViewModel(d, reserva)).ToList();
+
+        public static string EstadoEntradaTexto(string estado) => estado switch
+        {
+            "VIGENTE" => "Vigente",
+            "CANCELADA" => "Cancelada",
+            "UTILIZADA" => "Utilizada",
+            _ => estado
+        };
+
+        public static string EstadoEntradaClase(string estado) => estado switch
+        {
+            "VIGENTE" => "text-bg-success",
+            "CANCELADA" => "text-bg-danger",
+            "UTILIZADA" => "text-bg-secondary",
+            _ => "text-bg-light"
+        };
+
+        /// <summary>Precio para mostrar: "Gratuita" cuando el monto es cero.</summary>
+        public static string SolesOGratis(decimal monto) => monto == 0 ? "Gratuita" : Soles(monto);
+
         public static string Soles(decimal monto) => $"S/ {monto.ToString("N2", CultureInfo.InvariantCulture)}";
     }
 }
