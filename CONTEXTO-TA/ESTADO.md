@@ -15,7 +15,7 @@
 - Por el conflicto documental se ejecutó `mvnw.cmd -pl entrefunciones-rest -am package -DskipTests`: **BUILD SUCCESS** para los seis módulos. No se ejecutaron pruebas ni se accedió a la BD.
 - `dotnet build Frontend/EntreFunciones/EntreFunciones.csproj -c Release --no-restore` se detuvo porque `QRCoder`, agregado previamente en `main`, no está en la caché local. No se ejecutó `dotnet restore` para evitar descargar dependencias sin autorización. Este bloqueo no proviene de la resolución del conflicto.
 - No se repitieron las 8 pruebas integradas, no se modificó AWS/RDS y no se copiaron registros sensibles. La migración de fechas opcionales permanece confirmada en el RDS y esquema `entrefunciones_lab12_test` usados por el backend remoto.
-- Siguiente paso: publicar `update` y abrir la PR hacia `main`; la revisión deberá ejecutar la restauración autorizada de dependencias y la compilación .NET.
+- Git quedó publicado en `origin/update` y se abrió la PR [#28](https://github.com/fercodr/proyecto_progra3/pull/28) hacia `main`. Está pendiente de revisión; durante la revisión se deberá autorizar la restauración de dependencias y completar la compilación .NET.
 
 ## PASO 6.2 — migración focal y recorrido integrado de fechas (2026-11-17, 07:12 hora de Lima)
 
