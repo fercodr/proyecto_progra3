@@ -24,3 +24,6 @@ La autenticacion REST tambien requiere `ENTREFUNCIONES_JWT_SECRET` con al menos
 
 La URL que usa el Frontend para llamar a REST se configura por separado en
 `Frontend/EntreFunciones/appsettings.json` mediante `Rest:BaseUrl`.
+
+Las direcciones vigentes y la diferencia entre la configuración interna de
+AWS y el desarrollo local están documentadas en `docs/GUIA-ACCESO.md`.

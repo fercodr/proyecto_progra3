@@ -1,5 +1,47 @@
 # Estado de EntreFunciones
 
+## Integración Git de la entrega LAB12 (2026-11-17)
+
+### Integración y contenido preparado
+
+- La rama de trabajo `update` incorporó `origin/main` mediante una fusión normal, sin rebase ni reescritura de historia. Se conservaron los cambios del equipo sobre login, cartelera, compra, QR y validación de tarjeta junto con las fechas opcionales de reportes. El único conflicto fue documental en este archivo y se resolvió conservando ambos historiales.
+- La entrega versionada incluye el código productivo ya presente en `update`, las migraciones de reportes e incidencias y el nuevo `Backend/sql/migraciones/ROLLBACK_20261116_reportes_fechas_opcionales.sql`. No se incluyeron fixtures ni datos de prueba.
+- `docs/GUIA-ACCESO.md` distingue el frontend público `18.206.246.134`, el backend público `98.81.195.228`, el backend privado `172.31.21.178`, la configuración interna de AWS mediante `Rest__BaseUrl` y el valor local `localhost`. No se cambió `DB_NAME`.
+- `docs/reportes-incidencias.md` documenta RF-M6-02, RF-M6-03 y RF-M6-04, el orden de migración para otro esquema y la reversión de fechas opcionales. `.gitignore` excluye `.verification/` y `Entrega-AWS*/`, además de los patrones existentes para secretos y artefactos generados.
+- Los borrados locales del respaldo histórico LAB11 se mantuvieron fuera de la integración y del commit para no mezclar ni eliminar trabajo ajeno.
+
+### Comprobaciones y bloqueo
+
+- Por el conflicto documental se ejecutó `mvnw.cmd -pl entrefunciones-rest -am package -DskipTests`: **BUILD SUCCESS** para los seis módulos. No se ejecutaron pruebas ni se accedió a la BD.
+- `dotnet build Frontend/EntreFunciones/EntreFunciones.csproj -c Release --no-restore` se detuvo porque `QRCoder`, agregado previamente en `main`, no está en la caché local. No se ejecutó `dotnet restore` para evitar descargar dependencias sin autorización. Este bloqueo no proviene de la resolución del conflicto.
+- No se repitieron las 8 pruebas integradas, no se modificó AWS/RDS y no se copiaron registros sensibles. La migración de fechas opcionales permanece confirmada en el RDS y esquema `entrefunciones_lab12_test` usados por el backend remoto.
+- Siguiente paso: publicar `update` y abrir la PR hacia `main`; la revisión deberá ejecutar la restauración autorizada de dependencias y la compilación .NET.
+
+## PASO 6.2 — migración focal y recorrido integrado de fechas (2026-11-17, 07:12 hora de Lima)
+
+### Migración aplicada y objetos conservados
+
+- Con autorización expresa se aplicó exactamente `Entrega-AWS-Lab12-Fechas-Vacias-20261116/BaseDatos/20261116_reportes_fechas_opcionales.sql`, SHA-256 `75DD83E8CD845BE1EF820377ADEE5E52AE96EE67E6ADF9CE6B37C54F55BEF34A`, exclusivamente sobre `entrefunciones_lab12_test`.
+- El único objeto SQL afectado es el procedimiento `listar_reportes_funciones`. El script no contiene `USE`, operaciones sobre bases de datos, nombres de otro esquema ni DML; la utilidad protegida comprobó `SELECT DATABASE()` antes de ejecutar, después de ejecutar y durante la inspección final.
+- La definición previa ya admitía fechas opcionales, por lo que la migración fue idempotente. El `SHOW CREATE PROCEDURE` previo y posterior conservó el mismo SHA-256 `2910CDAB835922F03635B80C8151335E81C983090128F2D3192B8D515A8B45E0`. La captura exacta previa está en `.verification/step-6.2-20261117/PRECAMBIO-listar_reportes_funciones.txt`.
+- Los conteos de las 17 tablas se conservaron individualmente: 254 filas antes y 254 después de la migración y del recorrido focal. No se ejecutó DML ni se recreó el esquema. La captura previa está en `.verification/step-6.2-20261117/PRECAMBIO-conteos.txt`.
+
+### Recorrido focal C# → REST Java → MySQL
+
+- Se redesplegó temporalmente en el GlassFish local aislado el WAR nuevo del paquete, SHA-256 `345C51327369F77180A8C5BD18E313F3BCF64AFD52AC050188A813C66861609B`, con `DB_NAME=entrefunciones_lab12_test`.
+- El verificador C# cargó `EntreFunciones.dll` con SHA-256 `0E345194BF34A577876E8D5F8B708174C2AB8254891C92CCF556CA56DDF6EE2D`, idéntico al DLL incluido en la publicación nueva del paquete.
+- Modo ejecutado: exclusivamente `m6-optional-dates`; resultado **8/8 PASS**, 0 fallos. Aprobó autenticación requerida, ambos límites vacíos, solo `desde`, solo `hasta`, rango inclusivo, rango invertido rechazado por REST con HTTP 400, rango invertido rechazado por C# antes de consultar y rango sin resultados con lista/totales en cero. Fixture: `STEP6-20261115231300-9942`.
+- No se ejecutaron suites Maven, suites generales, pruebas de incidencias ni aceptación de navegador. El GlassFish local quedó detenido al terminar.
+- `entrefunciones`, DB2 y AWS no fueron conectados, modificados ni desplegados durante este paso.
+
+### Entrega manual pendiente en AWS
+
+1. Respaldar el procedimiento vigente, el WAR desplegado y la publicación frontend vigente.
+2. Aplicar `BaseDatos/20261116_reportes_fechas_opcionales.sql` en el esquema AWS confirmado.
+3. Desplegar `Backend/entrefunciones-rest.war` en GlassFish.
+4. Reemplazar la publicación completa del sitio por todo el contenido de `Frontend/`; no copiar solamente `EntreFunciones.dll`.
+5. Ejecutar el humo focal de fechas. Para revertir los binarios, restaurar frontend y WAR anteriores; para volver a fechas obligatorias, usar `BaseDatos/ROLLBACK_20261116_reportes_fechas_opcionales.sql` sobre el mismo esquema autorizado.
+
 ## Ajuste de fechas vacías en reportes y paquete final (2026-11-16, 22:25 hora de Lima)
 
 ### Implementación por código
