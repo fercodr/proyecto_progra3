@@ -18,9 +18,12 @@ mvn clean package
 
 `DBManager` permite reemplazar cada valor sin modificar el archivo mediante
 las variables `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` y `DB_PASSWORD`.
+Los campos `usuario` y `password` del archivo versionado permanecen vacíos;
+cada entorno debe proporcionar sus credenciales mediante esas variables.
 
 La autenticacion REST tambien requiere `ENTREFUNCIONES_JWT_SECRET` con al menos
-32 bytes. Esa variable es independiente de la conexion a la base de datos.
+32 bytes. `jwt.secret` permanece vacío en el archivo versionado: la clave debe
+inyectarse externamente y nunca guardarse en Git.
 
 La URL que usa el Frontend para llamar a REST se configura por separado en
 `Frontend/EntreFunciones/appsettings.json` mediante `Rest:BaseUrl`.
