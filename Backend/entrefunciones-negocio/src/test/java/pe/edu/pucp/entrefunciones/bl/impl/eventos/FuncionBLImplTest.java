@@ -96,6 +96,28 @@ class FuncionBLImplTest {
     }
 
     @Test
+    void aceptaNingunoOUnoDeLosLimitesDeFecha() throws Exception {
+        Contexto contexto = new Contexto();
+
+        assertEquals(List.of(1, 2, 4), contexto.bl.findReportes(
+                null, null, 1, null, null).stream().map(Funcion::getId).toList());
+        assertEquals(List.of(4), contexto.bl.findReportes(
+                LocalDate.of(2026, 11, 25), null, 1, null, null)
+                .stream().map(Funcion::getId).toList());
+        assertEquals(List.of(1, 2), contexto.bl.findReportes(
+                null, LocalDate.of(2026, 11, 18), 1, null, null)
+                .stream().map(Funcion::getId).toList());
+    }
+
+    @Test
+    void rechazaRangoDeFechaInvertido() {
+        Contexto contexto = new Contexto();
+
+        assertThrows(ValidacionException.class, () -> contexto.bl.findReportes(
+                HASTA, DESDE, 1, null, null));
+    }
+
+    @Test
     void ocupacionUsaEntradasVigentesYConservaElTotalEmitido() throws Exception {
         Contexto contexto = new Contexto();
 
@@ -204,7 +226,8 @@ class FuncionBLImplTest {
             ultimaSede = idSede;
             ultimoTipoEvento = tipoEvento;
             return funciones.stream()
-                    .filter(f -> !f.getFecha().isBefore(desde) && !f.getFecha().isAfter(hasta))
+                    .filter(f -> desde == null || !f.getFecha().isBefore(desde))
+                    .filter(f -> hasta == null || !f.getFecha().isAfter(hasta))
                     .filter(f -> idSede == null || f.getSala().getSede().getId() == idSede)
                     .filter(f -> idSala == null || f.getSala().getId() == idSala)
                     .filter(f -> tipoEvento == null || tipoEvento(f.getEvento()).equals(tipoEvento))

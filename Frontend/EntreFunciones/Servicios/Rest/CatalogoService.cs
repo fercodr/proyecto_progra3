@@ -41,6 +41,13 @@ namespace EntreFunciones.Servicios.Rest
                 CrearUrl("funciones"));
         }
 
+        public async Task<List<FuncionDTO>> ListarFuncionesAdministrativas()
+        {
+            return await HttpUtils.DoGet<List<FuncionDTO>>(
+                CrearUrl("funciones"),
+                cabeceras: await CrearCabecerasAutenticadas());
+        }
+
         public async Task<EventoDTO> CrearEvento(EventoDTO evento)
         {
             return await HttpUtils.DoPost<EventoDTO, EventoDTO>(

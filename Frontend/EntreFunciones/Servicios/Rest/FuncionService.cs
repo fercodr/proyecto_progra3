@@ -44,13 +44,13 @@ namespace EntreFunciones.Servicios.Rest
         }
 
         public async Task<List<FuncionViewModel>> FindReportes(
-            DateOnly desde,
-            DateOnly hasta,
+            DateOnly? desde,
+            DateOnly? hasta,
             int? idSede = null,
             int? idSala = null,
             string? tipoEvento = null)
         {
-            if (desde > hasta)
+            if (desde.HasValue && hasta.HasValue && desde.Value > hasta.Value)
             {
                 throw new ArgumentException(
                     "La fecha desde no puede ser posterior a hasta.");
@@ -77,8 +77,8 @@ namespace EntreFunciones.Servicios.Rest
 
             Dictionary<string, string?> parametros = new()
             {
-                ["desde"] = desde.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-                ["hasta"] = hasta.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                ["desde"] = desde?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                ["hasta"] = hasta?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                 ["sedeId"] = idSede?.ToString(CultureInfo.InvariantCulture),
                 ["salaId"] = idSala?.ToString(CultureInfo.InvariantCulture),
                 ["tipoEvento"] = tipoEventoNormalizado

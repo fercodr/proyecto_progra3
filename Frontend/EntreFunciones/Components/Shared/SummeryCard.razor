@@ -4,8 +4,7 @@
     <div class="card-body p-3">
         
         <h6 class="small fw-semibold text-secondary mb-1">@Atribute</h6>
-        <h5 class="fs-2 fw-bold text-dark mb-0">@Unit</h5>
-        <h5 class="fs-2 fw-bold text-dark mb-0">@(AmountText ?? Amount.ToString("N2"))</h5>
+        <h5 class="fs-2 fw-bold text-dark mb-0 text-nowrap">@TextoResumen</h5>
 
     </div>
 </div>
@@ -21,5 +20,22 @@
 
     [Parameter]
     public string? AmountText { get; set; }
+
+    private bool EsMonetario => string.Equals(Unit, "S/", StringComparison.Ordinal);
+
+    private string TextoResumen
+    {
+        get
+        {
+            string valor = AmountText
+                ?? Amount.ToString(EsMonetario ? "N2" : "N0");
+            if (string.IsNullOrWhiteSpace(Unit))
+            {
+                return valor;
+            }
+
+            return EsMonetario ? $"{Unit} {valor}" : $"{valor} {Unit}";
+        }
+    }
 
 }

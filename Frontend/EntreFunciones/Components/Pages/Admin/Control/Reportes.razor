@@ -16,7 +16,7 @@
             @if (tieneConsulta)
             {
                 <p class="small text-secondary mt-2 mb-0">
-                    Resumen del @periodoDesde.ToString("dd/MM/yyyy") al @periodoHasta.ToString("dd/MM/yyyy")
+                    @ResumenPeriodo
                 </p>
             }
         </div>
@@ -95,10 +95,14 @@
                 <label for="hasta" class="form-label">Hasta (fecha de función)</label>
                 <input type="date" id="hasta" class="form-control form-control-sm" @bind="fechaHasta" />
             </div>
-            <div class="col-12 col-lg-2">
-                <button type="button" class="btn btn-primary btn-sm w-100"
+            <div class="col-12 col-lg-2 d-grid gap-2">
+                <button type="button" class="btn btn-primary btn-sm"
                         @onclick="Consultar" disabled="@(cargandoConsulta || cargandoSalas || cargandoCatalogos)">
                     @(cargandoConsulta ? "Consultando..." : "Consultar")
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        @onclick="Limpiar" disabled="@(cargandoConsulta || cargandoSalas || cargandoCatalogos)">
+                    Limpiar
                 </button>
             </div>
         </div>
@@ -209,10 +213,10 @@
 </div>
 
 @code {
-    private DateOnly fechaDesde = DateOnly.FromDateTime(DateTime.Today);
-    private DateOnly fechaHasta = DateOnly.FromDateTime(DateTime.Today);
-    private DateOnly periodoDesde;
-    private DateOnly periodoHasta;
+    private DateOnly? fechaDesde;
+    private DateOnly? fechaHasta;
+    private DateOnly? periodoDesde;
+    private DateOnly? periodoHasta;
     private int? sedeSeleccionada;
     private int? salaSeleccionada;
     private string tipoEventoSeleccionado = string.Empty;
@@ -231,6 +235,13 @@
     private int TotalEntradasVigentes => resultados.Sum(x => x.EntradasVigentes ?? 0);
     private int TotalEntradasEmitidas => resultados.Sum(x => x.EntradasEmitidas ?? 0);
     private int TotalEntradasCanceladas => resultados.Sum(x => x.EntradasCanceladas ?? 0);
+    private string ResumenPeriodo => (periodoDesde, periodoHasta) switch
+    {
+        (null, null) => "Todo el periodo",
+        (DateOnly desde, null) => $"Desde el {desde:dd/MM/yyyy}",
+        (null, DateOnly hasta) => $"Hasta el {hasta:dd/MM/yyyy}",
+        (DateOnly desde, DateOnly hasta) => $"Del {desde:dd/MM/yyyy} al {hasta:dd/MM/yyyy}"
+    };
 
     protected override async Task OnInitializedAsync()
     {
@@ -281,7 +292,8 @@
             return;
         }
         errorConsulta = null;
-        if (fechaDesde > fechaHasta)
+        if (fechaDesde.HasValue && fechaHasta.HasValue
+            && fechaDesde.Value > fechaHasta.Value)
         {
             resultados = new List<FuncionViewModel>();
             tieneConsulta = false;
@@ -315,6 +327,22 @@
         {
             cargandoConsulta = false;
         }
+    }
+
+    private async Task Limpiar()
+    {
+        if (cargandoConsulta || cargandoSalas || cargandoCatalogos)
+        {
+            return;
+        }
+
+        fechaDesde = null;
+        fechaHasta = null;
+        sedeSeleccionada = null;
+        salaSeleccionada = null;
+        tipoEventoSeleccionado = string.Empty;
+        await CambiarSede();
+        await Consultar();
     }
 
     private async Task CambiarReporte(bool ocupacion)

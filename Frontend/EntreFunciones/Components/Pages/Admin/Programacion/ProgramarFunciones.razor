@@ -150,7 +150,7 @@ else
 
             if (Id != null)
             {
-                FuncionDTO funcion = (await Catalogo.ListarFunciones()).FirstOrDefault(f => f.Id == Id)
+                FuncionDTO funcion = (await Catalogo.ListarFuncionesAdministrativas()).FirstOrDefault(f => f.Id == Id)
                     ?? throw new ServiceException($"No se encontró la función {Id}.");
 
                 Formulario = new FuncionFormulario

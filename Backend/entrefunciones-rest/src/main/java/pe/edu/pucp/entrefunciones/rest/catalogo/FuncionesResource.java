@@ -80,12 +80,8 @@ public class FuncionesResource {
                     new BLException("Se requiere administrador"));
         }
         try {
-            if (desdeTexto == null || hastaTexto == null) {
-                return error(Response.Status.BAD_REQUEST,
-                        new BLException("Los parámetros desde y hasta son obligatorios"));
-            }
-            LocalDate desde = LocalDate.parse(desdeTexto);
-            LocalDate hasta = LocalDate.parse(hastaTexto);
+            LocalDate desde = parseFechaOpcional(desdeTexto);
+            LocalDate hasta = parseFechaOpcional(hastaTexto);
             List<FuncionDTO> resultado = FuncionMapper.toDTOs(
                     funcionBL.findReportes(desde, hasta, sedeId, salaId, tipoEvento));
             return Response.ok(resultado).build();
@@ -98,6 +94,12 @@ public class FuncionesResource {
             return error(Response.Status.INTERNAL_SERVER_ERROR,
                     new BLException("No se pudo consultar el reporte de funciones", ex));
         }
+    }
+
+    private LocalDate parseFechaOpcional(String valor) {
+        return valor == null || valor.isBlank()
+                ? null
+                : LocalDate.parse(valor);
     }
 
     /**

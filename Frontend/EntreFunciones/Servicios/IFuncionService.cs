@@ -6,8 +6,8 @@ namespace EntreFunciones.Servicios
     {
         Task<List<FuncionViewModel>> FindAll();
         Task<List<FuncionViewModel>> FindReportes(
-            DateOnly desde,
-            DateOnly hasta,
+            DateOnly? desde,
+            DateOnly? hasta,
             int? idSede = null,
             int? idSala = null,
             string? tipoEvento = null);

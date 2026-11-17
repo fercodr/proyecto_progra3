@@ -98,10 +98,7 @@ public class FuncionBLImpl implements FuncionBL {
                                       Integer idSede, Integer idSala,
                                       String tipoEvento)
             throws BLException {
-        if (desde == null || hasta == null) {
-            throw new ValidacionException("Las fechas desde y hasta son obligatorias");
-        }
-        if (desde.isAfter(hasta)) {
+        if (desde != null && hasta != null && desde.isAfter(hasta)) {
             throw new ValidacionException("La fecha desde no puede ser posterior a hasta");
         }
         if (idSede != null && idSede <= 0) {

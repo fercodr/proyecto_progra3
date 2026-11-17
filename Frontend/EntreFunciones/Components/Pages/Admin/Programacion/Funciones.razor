@@ -158,7 +158,7 @@ else
         ErrorCarga = null;
         try
         {
-            Todas = (await Catalogo.ListarFunciones())
+            Todas = (await Catalogo.ListarFuncionesAdministrativas())
                 .OrderBy(f => f.Fecha).ThenBy(f => f.HoraInicio)
                 .ToList();
             AplicarFiltros();
