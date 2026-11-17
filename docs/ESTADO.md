@@ -1,5 +1,67 @@
 # Estado de EntreFunciones
 
+Este documento conserva el registro cronológico del proyecto. La información
+más reciente aparece primero; los bloqueos y pendientes de secciones antiguas
+se mantienen como historial y pueden haber sido resueltos por una sección
+posterior.
+
+## Reorganización documental (2026-11-17, 18:14 hora de Lima)
+
+- El catálogo y el estado se trasladaron con su historial a
+  `docs/CATALOGO.md` y `docs/ESTADO.md`. La carpeta documental anterior quedó
+  retirada y la documentación técnica e histórica existente en `docs` se
+  conservó.
+- `README.md` concentra la presentación, el inicio rápido y los enlaces a la
+  documentación. `docs/GUIA-ACCESO.md` incorpora el procedimiento de despliegue
+  y rollback de binarios en AWS sin incluir credenciales.
+- Maven consume `ConfiguracionCompartida/db.properties` desde el POM de
+  `entrefunciones-dbmanager`. Se conservaron en esa carpeta únicamente ese
+  archivo no sensible y su explicación breve; dos copias locales ignoradas y
+  equivalentes dentro de Backend se retiraron para evitar duplicación.
+- Se actualizaron las referencias a las rutas anteriores, incluida la copia
+  local externa de instrucciones para Codex. La comprobación recorrió todos los
+  enlaces Markdown versionados: 0 enlaces locales rotos, 0 referencias a la
+  ruta anterior, 0 secretos no vacíos en propiedades versionadas y 0 cambios
+  de código en Backend o Frontend.
+- Por tratarse solo de documentación y organización de configuración no se
+  recompiló, no se repitieron pruebas y no se modificaron AWS ni bases de datos.
+
+## Cierre operativo AWS (2026-11-17, 17:42 hora de Lima)
+
+### Versión observada y configuración efectiva
+
+- Referencia local: `Entrega-AWS-Lab12-Integrada-20261117`; WAR SHA-256
+  `20008B94C29AF39ECE2CEF6EA9E9126421AAE9920551787DA2551F0A1B1CCBAA` y
+  `EntreFunciones.dll` SHA-256
+  `A7877DE74119702CD99F39086F9B61826541B34FF316D879E493BA19AD1E29D9`.
+- Los 14 activos web públicos no comprimidos del paquete coincidieron por
+  SHA-256 con lo servido por el frontend AWS. El login integrado creó una
+  cookie y redirigió a `/admin`, por lo que la URL REST externa del frontend
+  está operativa. El backend consultó y escribió datos y emitió un JWT, por lo
+  que su configuración de BD y JWT está operativa; no se leyeron ni registraron
+  valores secretos.
+- **Comparación binaria pendiente:** no se pudieron leer los hashes del WAR ni
+  de `EntreFunciones.dll` remotos. Los hosts solo exponen RDP; los `.rdp`
+  disponibles contienen usuario pero no contraseña, y SSH, WinRM, SMB y la
+  administración de GlassFish no están accesibles. Sin acceso seguro al sistema
+  de archivos tampoco era posible respaldar antes de reemplazar. No se realizó
+  despliegue ni se modificó configuración remota.
+
+### Comprobaciones focales aprobadas
+
+- Login administrativo REST: HTTP 200, rol `Administrador` y token emitido.
+  Login por el frontend: GET/POST 200, redirección a `/admin` y cookie de sesión.
+- Ocupación sin fechas: 7 funciones. Con `sedeId=1` y `salaId=1`, sin fechas:
+  2 funciones y todos los resultados respetaron los filtros.
+- Ingresos/cancelaciones sin fechas: 7 funciones. Con `sedeId=4` y tipo
+  `PELICULA`, sin fechas: 3 funciones, S/ 75 confirmados, 2 entradas emitidas y
+  1 cancelada.
+- Caso vacío: `sedeId=1` y tipo `OBRA_TEATRO`, sin fechas, HTTP 200 y 0 filas.
+- Incidencia #4 reabierta de `RESUELTA` a `EN_PROCESO`: PUT 200 y GET posterior
+  200. Se conservaron función, responsable, fecha y hash de la descripción.
+- Evidencia sanitizada local en `.verification/aws-close-20261117/`. No se
+  ejecutaron suites generales, scripts SQL ni la migración nuevamente.
+
 ## Integración Git de la entrega LAB12 (2026-11-17)
 
 ### Integración y contenido preparado
@@ -233,7 +295,7 @@ El siguiente paso técnico es desplegar, con autorización expresa, los artefact
 
 - **Implementación por código, no probada.** Los cambios se escribieron sin compilar: el entorno de edición no disponía de .NET. No se ejecutó `dotnet build`, ni el recorrido C# → REST → MySQL.
 - **Pendiente inmediato:** `dotnet restore` (descarga `QRCoder`) y `dotnet build` de `Frontend/EntreFunciones`; luego recorrer una compra pagada (validada por el administrador), una reserva gratuita y la cancelación de una entrada, comprobando que el QR se dibuja y que la butaca se libera.
-- **Cómo revertir:** `git checkout -- Frontend/EntreFunciones CONTEXTO-TA/ESTADO.md` y borrar `Components/Shared/CodigoQr.razor` y `ViewModels/EntradaClienteViewModel.cs`.
+- **Cómo revertir:** `git checkout -- Frontend/EntreFunciones docs/ESTADO.md` y borrar `Components/Shared/CodigoQr.razor` y `ViewModels/EntradaClienteViewModel.cs`.
 
 ## Paso 6 — diagnóstico y corrección del login (2026-11-15, 22:45 hora de Lima)
 
@@ -392,7 +454,7 @@ El catálogo continúa pendiente de conformidad de la JP. Hay implementación to
 
 ### Bloqueo y siguiente paso
 
-El bloqueo exacto es la ausencia de una BD MySQL de pruebas identificada y autorizada. El siguiente paso es recibir host, puerto y nombre de esa BD (sin registrar secretos en `CONTEXTO-TA`), aplicar allí las tres migraciones y ejecutar por bloque pruebas REST + MySQL y recorridos C#. La prioridad es ventas/entradas y los dos reportes porque comparten los datos de pago, emisión gratuita y cancelación.
+El bloqueo exacto es la ausencia de una BD MySQL de pruebas identificada y autorizada. El siguiente paso es recibir host, puerto y nombre de esa BD (sin registrar secretos en `docs/ESTADO.md`), aplicar allí las tres migraciones y ejecutar por bloque pruebas REST + MySQL y recorridos C#. La prioridad es ventas/entradas y los dos reportes porque comparten los datos de pago, emisión gratuita y cancelación.
 
 ## Avance LAB12 — PASO 5 cerrado por código
 

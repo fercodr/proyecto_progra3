@@ -46,6 +46,25 @@ Las variables `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` y
 `ENTREFUNCIONES_JWT_SECRET` se configuran en el entorno de ejecución. Sus
 valores no deben almacenarse en Git ni escribirse en registros.
 
+## Despliegue seguro en AWS
+
+1. Generar el WAR desde `Backend` y la publicación completa del frontend en
+   modo `Release`.
+2. Respaldar el WAR y toda la publicación frontend que estén desplegados antes
+   de sustituirlos.
+3. Confirmar la presencia de las variables requeridas sin imprimir sus valores.
+   El frontend usa `Rest__BaseUrl`; el backend usa `DB_*` y
+   `ENTREFUNCIONES_JWT_SECRET`.
+4. Desplegar el WAR en el servidor de aplicaciones y reemplazar la publicación
+   frontend completa, no solo `EntreFunciones.dll`.
+5. Verificar login, reportes e incidencias. Si falla el humo operativo,
+   restaurar ambos respaldos y conservar la configuración externa.
+
+Las migraciones no forman parte automática del despliegue de binarios. Su
+orden, alcance y rollback se documentan en
+[reportes-incidencias.md](reportes-incidencias.md). Nunca se cambia `DB_NAME`
+para aplicar una migración en otro esquema sin autorización expresa.
+
 ## Desarrollo local y desde casa
 
 `Frontend/EntreFunciones/appsettings.json` conserva como valor predeterminado:
