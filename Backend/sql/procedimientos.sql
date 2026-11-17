@@ -633,7 +633,8 @@ BEGIN
         WHERE p.estado = 'VALIDADO'
         GROUP BY r.funcion_id
     ) pg ON pg.funcion_id = f.id
-    WHERE f.fecha BETWEEN p_desde AND p_hasta
+    WHERE (p_desde IS NULL OR f.fecha >= p_desde)
+      AND (p_hasta IS NULL OR f.fecha <= p_hasta)
       AND (p_sede_id IS NULL OR s.sede_id = p_sede_id)
       AND (p_sala_id IS NULL OR f.sala_id = p_sala_id)
       AND (p_tipo_evento IS NULL OR v.tipo_evento = p_tipo_evento)

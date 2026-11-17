@@ -1,5 +1,222 @@
 # Estado de EntreFunciones
 
+## Integración Git de la entrega LAB12 (2026-11-17)
+
+### Integración y contenido preparado
+
+- La rama de trabajo `update` incorporó `origin/main` mediante una fusión normal, sin rebase ni reescritura de historia. Se conservaron los cambios del equipo sobre login, cartelera, compra, QR y validación de tarjeta junto con las fechas opcionales de reportes. El único conflicto fue documental en este archivo y se resolvió conservando ambos historiales.
+- La entrega versionada incluye el código productivo ya presente en `update`, las migraciones de reportes e incidencias y el nuevo `Backend/sql/migraciones/ROLLBACK_20261116_reportes_fechas_opcionales.sql`. No se incluyeron fixtures ni datos de prueba.
+- `docs/GUIA-ACCESO.md` distingue el frontend público `18.206.246.134`, el backend público `98.81.195.228`, el backend privado `172.31.21.178`, la configuración interna de AWS mediante `Rest__BaseUrl` y el valor local `localhost`. No se cambió `DB_NAME`.
+- `docs/reportes-incidencias.md` documenta RF-M6-02, RF-M6-03 y RF-M6-04, el orden de migración para otro esquema y la reversión de fechas opcionales. `.gitignore` excluye `.verification/` y `Entrega-AWS*/`, además de los patrones existentes para secretos y artefactos generados.
+- Los borrados locales del respaldo histórico LAB11 se mantuvieron fuera de la integración y del commit para no mezclar ni eliminar trabajo ajeno.
+
+### Comprobaciones y bloqueo
+
+- Por el conflicto documental se ejecutó `mvnw.cmd -pl entrefunciones-rest -am package -DskipTests`: **BUILD SUCCESS** para los seis módulos. No se ejecutaron pruebas ni se accedió a la BD.
+- `dotnet build Frontend/EntreFunciones/EntreFunciones.csproj -c Release --no-restore` se detuvo porque `QRCoder`, agregado previamente en `main`, no está en la caché local. No se ejecutó `dotnet restore` para evitar descargar dependencias sin autorización. Este bloqueo no proviene de la resolución del conflicto.
+- No se repitieron las 8 pruebas integradas, no se modificó AWS/RDS y no se copiaron registros sensibles. La migración de fechas opcionales permanece confirmada en el RDS y esquema `entrefunciones_lab12_test` usados por el backend remoto.
+- Git quedó publicado en `origin/update` y se abrió la PR [#28](https://github.com/fercodr/proyecto_progra3/pull/28) hacia `main`. Está pendiente de revisión; durante la revisión se deberá autorizar la restauración de dependencias y completar la compilación .NET.
+
+## PASO 6.2 — migración focal y recorrido integrado de fechas (2026-11-17, 07:12 hora de Lima)
+
+### Migración aplicada y objetos conservados
+
+- Con autorización expresa se aplicó exactamente `Entrega-AWS-Lab12-Fechas-Vacias-20261116/BaseDatos/20261116_reportes_fechas_opcionales.sql`, SHA-256 `75DD83E8CD845BE1EF820377ADEE5E52AE96EE67E6ADF9CE6B37C54F55BEF34A`, exclusivamente sobre `entrefunciones_lab12_test`.
+- El único objeto SQL afectado es el procedimiento `listar_reportes_funciones`. El script no contiene `USE`, operaciones sobre bases de datos, nombres de otro esquema ni DML; la utilidad protegida comprobó `SELECT DATABASE()` antes de ejecutar, después de ejecutar y durante la inspección final.
+- La definición previa ya admitía fechas opcionales, por lo que la migración fue idempotente. El `SHOW CREATE PROCEDURE` previo y posterior conservó el mismo SHA-256 `2910CDAB835922F03635B80C8151335E81C983090128F2D3192B8D515A8B45E0`. La captura exacta previa está en `.verification/step-6.2-20261117/PRECAMBIO-listar_reportes_funciones.txt`.
+- Los conteos de las 17 tablas se conservaron individualmente: 254 filas antes y 254 después de la migración y del recorrido focal. No se ejecutó DML ni se recreó el esquema. La captura previa está en `.verification/step-6.2-20261117/PRECAMBIO-conteos.txt`.
+
+### Recorrido focal C# → REST Java → MySQL
+
+- Se redesplegó temporalmente en el GlassFish local aislado el WAR nuevo del paquete, SHA-256 `345C51327369F77180A8C5BD18E313F3BCF64AFD52AC050188A813C66861609B`, con `DB_NAME=entrefunciones_lab12_test`.
+- El verificador C# cargó `EntreFunciones.dll` con SHA-256 `0E345194BF34A577876E8D5F8B708174C2AB8254891C92CCF556CA56DDF6EE2D`, idéntico al DLL incluido en la publicación nueva del paquete.
+- Modo ejecutado: exclusivamente `m6-optional-dates`; resultado **8/8 PASS**, 0 fallos. Aprobó autenticación requerida, ambos límites vacíos, solo `desde`, solo `hasta`, rango inclusivo, rango invertido rechazado por REST con HTTP 400, rango invertido rechazado por C# antes de consultar y rango sin resultados con lista/totales en cero. Fixture: `STEP6-20261115231300-9942`.
+- No se ejecutaron suites Maven, suites generales, pruebas de incidencias ni aceptación de navegador. El GlassFish local quedó detenido al terminar.
+- `entrefunciones`, DB2 y AWS no fueron conectados, modificados ni desplegados durante este paso.
+
+### Entrega manual pendiente en AWS
+
+1. Respaldar el procedimiento vigente, el WAR desplegado y la publicación frontend vigente.
+2. Aplicar `BaseDatos/20261116_reportes_fechas_opcionales.sql` en el esquema AWS confirmado.
+3. Desplegar `Backend/entrefunciones-rest.war` en GlassFish.
+4. Reemplazar la publicación completa del sitio por todo el contenido de `Frontend/`; no copiar solamente `EntreFunciones.dll`.
+5. Ejecutar el humo focal de fechas. Para revertir los binarios, restaurar frontend y WAR anteriores; para volver a fechas obligatorias, usar `BaseDatos/ROLLBACK_20261116_reportes_fechas_opcionales.sql` sobre el mismo esquema autorizado.
+
+## Ajuste de fechas vacías en reportes y paquete final (2026-11-16, 22:25 hora de Lima)
+
+### Implementación por código
+
+- **Terminado y empaquetado.** RF-M6-02 y RF-M6-03 aceptan ambos límites de fecha vacíos, únicamente `desde`, únicamente `hasta` o el rango completo. Si ambas fechas existen, se conserva el rechazo de un rango invertido.
+- El frontend usa `DateOnly?`, omite de la URL los límites vacíos, muestra un resumen acorde al rango y agrega `Limpiar`, que restablece todos los filtros y consulta todo el periodo.
+- REST interpreta cada fecha como parámetro opcional; negocio valida el orden solo cuando ambas existen; DAO envía `NULL` SQL para el límite ausente. El procedimiento `listar_reportes_funciones` aplica cada límite de forma independiente e inclusiva.
+- Se conserva como fecha del periodo la fecha de la función y no se modificaron los cálculos de ocupación, ingresos, entradas emitidas o canceladas. La definición uniforme de la fecha de periodo continúa pendiente de conformidad de la JP según el catálogo.
+
+### Verificación ejecutada
+
+- Prueba focal `FuncionBLImplTest`: **7/7 aprobadas**, 0 fallos y 0 omitidas. Incluye ninguna fecha, solo desde, solo hasta y rango invertido.
+- Empaquetado Maven final: **BUILD SUCCESS**. En negocio se detectaron 50 pruebas: 32 aprobadas, 0 fallos, 0 errores y 18 omitidas por sus guardias de BD. En REST se detectaron 3 pruebas de integración: 3 omitidas por su guardia de entorno. El WAR fue generado correctamente.
+- `dotnet publish -c Release --no-restore`: aprobado. Se creó una publicación nueva directamente dentro del paquete final.
+- Integridad del paquete: 49 archivos y 17,166,361 bytes. WAR, DLL y migración copiados coinciden con sus orígenes por SHA-256.
+- **No probado de forma integrada:** no se aplicó la migración, no se modificó ninguna BD y no se desplegó frontend ni WAR. Falta comprobar el recorrido C# → REST Java → MySQL con los cuatro casos de fechas en un esquema autorizado.
+
+### Paquete y reemplazo requerido
+
+- Carpeta final: `Entrega-AWS-Lab12-Fechas-Vacias-20261116/`.
+- Frontend completo: `Frontend/`, con `EntreFunciones.dll` SHA-256 `0E345194BF34A577876E8D5F8B708174C2AB8254891C92CCF556CA56DDF6EE2D`.
+- WAR: `Backend/entrefunciones-rest.war`, SHA-256 `345C51327369F77180A8C5BD18E313F3BCF64AFD52AC050188A813C66861609B`.
+- Migración: `BaseDatos/20261116_reportes_fechas_opcionales.sql`, SHA-256 `75DD83E8CD845BE1EF820377ADEE5E52AE96EE67E6ADF9CE6B37C54F55BEF34A`. Se incluye también un rollback del procedimiento.
+- **Requiere actualizar frontend completo, WAR y procedimiento de BD; no basta reemplazar solo el frontend.** `LEEME-DESPLIEGUE.md` indica el orden y la reversión. El paquete previo `Entrega-AWS-Lab12/` no fue sobrescrito.
+
+### Siguiente paso y autorización pendiente
+
+- Con autorización explícita sobre el esquema de destino: respaldar el procedimiento vigente, aplicar la migración, desplegar WAR y frontend y hacer el humo de fechas vacías/único límite/rango completo/rango invertido.
+- Para revertir: restaurar el frontend y WAR anteriores y, si se desea volver a fechas obligatorias, ejecutar el rollback incluido sobre el mismo esquema autorizado.
+
+## Aceptación mínima real en navegador de RF-M6-02, RF-M6-03 y RF-M6-04 (2026-11-16, 21:32 hora de Lima)
+
+### Estado y entorno ejecutado
+
+- **Terminado, no bloqueado.** No había una ejecución previa de Playwright ni Playwright instalado en el proyecto. Se realizó la aceptación solicitada en **Chrome visible 142.0.7444.176**, controlado mediante Chrome DevTools Protocol y reutilizando los verificadores y datos focales existentes; no se instaló ninguna dependencia.
+- Frontend del paquete vigente servido temporalmente en `http://127.0.0.1:16100`; REST local en `http://127.0.0.1:16080/entrefunciones-rest/v1/api/`; dominio GlassFish aislado `.verification/glassfish-domains/lab12-login-test`; esquema efectivo exigido y comprobado: **`entrefunciones_lab12_test`**. El fixture identificable fue `STEP6-20261115231300-9942`.
+- El registro de red no contiene solicitudes a EC2 ni AWS. La aplicación cargó sus dependencias visuales ya configuradas desde `cdn.jsdelivr.net` (Bootstrap, Bootstrap Icons y Bootstrap JS). Al finalizar se detuvieron el frontend y GlassFish locales; solo quedó abierto el informe final local en Chrome.
+- Antes del navegador se ejecutó únicamente el verificador focal existente `.verification/Lab12Step6/bin/Release/net10.0/Lab12Step6.dll` con `EF_STEP6_MODE=m6-focused`: **11/11 PASS**, con `incident_update=not-executed`. No se ejecutó ninguna suite general.
+
+### Resultados ejecutados en navegador
+
+- **RF-M6-02 — PASS, 13/13 comprobaciones.** Con sede, sala y periodo `30/12/2026–31/12/2026`: función pagada `1/4 = 25.00 %`, función adyacente `0/4 = 0.00 %`, función gratuita `2/4 = 50.00 %`; totales `3 funciones` y `3 entradas`. Para `01/01/2035` se mostró el resultado vacío y totales `0/0`.
+- **RF-M6-03 — PASS, 16/16 comprobaciones.** Con sede del fixture, periodo `30/12/2026–31/12/2026` y tipo `PELÍCULA`: `S/ 75.00`, `2 entradas` emitidas y `1 entrada` cancelada; la fila adyacente quedó en `S/ 0.00`, `0/0`, y la actividad gratuita no generó ingreso. Con `OBRA_TEATRO` se obtuvo vacío `S/ 0.00`, `0/0`. Las tres tarjetas conservaron `text-nowrap` y `white-space: nowrap` calculado.
+- **RF-M6-04 — PASS, 13/13 comprobaciones.** Se buscó y reabrió la incidencia persistida **#3** del fixture. Lista y detalle conservaron función, fecha `16/11/2026, 04:31`, descripción `STEP6-20261115231300-9942 descripcion actualizada focal M6`, responsable `Katita Laboratorio` y estado `En proceso`. Esta comprobación fue de solo lectura: no se pulsó «Guardar cambios».
+- Resultado final conjunto: **3/3 casos PASS, 42 comprobaciones, 0 fallos**. Inicio `16/11/2026 21:14:03 PET`; fin `16/11/2026 21:32:13 PET`.
+- Los primeros recorridos detectaron esperas insuficientes del verificador durante la transición SSR→interactiva de Blazor, no fallos funcionales del producto. Se corrigieron únicamente las esperas del arnés y se repitieron solo los casos afectados: primero RF-M6-02/RF-M6-03 y después RF-M6-02. RF-M6-04 no se repitió después de aprobar. Los informes de esos intentos se conservaron separados.
+
+### Evidencia, prueba manual y paquete
+
+- Informe final abierto: `.verification/browser-acceptance-m6/informe.html`; resultado estructurado: `.verification/browser-acceptance-m6/resultados.json`; seis capturas finales: `.verification/browser-acceptance-m6/capturas/01-rf-m6-02-ocupacion-con-datos.png` a `06-rf-m6-04-incidencia-detalle.png`. El arnés reproducible quedó en `.verification/browser-acceptance-m6/acceptance.js`.
+- **Prueba manual de la usuaria, conservada por separado:** alta de una incidencia y edición posterior desde el frontend desplegado, ambas persistentes. Es evidencia comunicada por la usuaria; no se ejecutó ni se atribuye a la automatización de este cierre. La prueba automática actual solo reabrió y leyó una incidencia identificable.
+- No hubo cambios de código de producto ni defectos funcionales que corregir; solo se añadieron el arnés/evidencias de verificación y este registro. Por tanto, **no se reconstruyó ni cambió el paquete**. Continúan vigentes `Entrega-AWS-Lab12/Frontend/` (DLL SHA-256 `EC4FCF16CAC4A55E3F939299C3B372B8E470A8C60AAD0C1F782739D672E65C13`) y el WAR `Backend/entrefunciones-rest/target/entrefunciones-rest.war` (SHA-256 `0041FB8525620B7BEBC9B89C2E911565BD414AC5086BD9B413CE2098952EE34C`). El manifiesto vigente es `Entrega-AWS-Lab12/MANIFIESTO-SHA256.md` (SHA-256 `0B350E5FAE54658A204DF85B97BA2B1190CAA692398140598C01B5BC45896C9B`).
+- **Pendiente concreto fuera de esta aceptación local:** desplegar el frontend completo de `Entrega-AWS-Lab12/Frontend/` en AWS y hacer el humo mínimo de los tres recorridos contra el esquema de prueba; el WAR no necesita reemplazo para los cambios frontend ya empaquetados. No hay operación de prueba activa ni pendiente local.
+
+## Corrección del listado administrativo de funciones (2026-11-16, 12:14 hora de Lima)
+
+### Implementación y conservación de alcances
+
+- Se separó la lectura pública `ICatalogoService.ListarFunciones()` de la nueva lectura `ListarFuncionesAdministrativas()`. La segunda obtiene el token de la sesión mediante `HttpUtils.CrearCabecerasAutenticadas` y envía `Authorization: Bearer` al mismo `GET /funciones`.
+- `/admin/funciones` y la carga de una función para edición usan la consulta administrativa. Cartelera conserva la llamada pública sin token.
+- REST no necesitó cambios: `AccesoRest` permite el GET público sin cabecera, pero valida cualquier token recibido y construye el rol real desde la cuenta activa; `FuncionesResource.findAll()` devuelve `FuncionBL.findAll()` completo para `Administrador` y solo `CONFIRMADA` con evento, sala y sede activos para los demás casos. DAO/procedimiento `listar_funciones` no elimina estados ni registros históricos.
+- La creación de reservas conserva su guardia de negocio: exige función `CONFIRMADA`, evento/sala/sede activos y fecha futura. No se modificaron reservas, reportes, sus procedimientos ni `SummeryCard`; permanecen los conteos `N0`, el importe `N2` y `text-nowrap`.
+
+### Verificación de solo lectura contra `entrefunciones_lab12_test`
+
+- **Pública, REST AWS:** `GET /funciones` sin token terminó HTTP 200 y Postman registró 3/3 aserciones aprobadas, salida 0. Devolvió exactamente `[1, 2, 15]`, las tres `CONFIRMADA` con evento/sala/sede activos.
+- **Administrativa, REST AWS:** se leyó por `SELECT` un administrador activo del esquema de prueba; correo y contraseña se mantuvieron en memoria y no se imprimieron. Login terminó HTTP 200 y `GET /funciones` con el token terminó HTTP 200; 4/4 comprobaciones aprobaron. Devolvió exactamente `[1, 2, 15, 16, 17, 18, 19]`.
+- Distribución administrativa observada: 6 `CONFIRMADA`, 0 `PROGRAMADA` y 1 `CANCELADA`. El esquema no contiene actualmente una programada con la cual observar ese estado por HTTP; la ausencia no proviene de un filtro, porque la rama administrativa devolvió los siete registros de `findAll()` y no aplica condición de estado o activo.
+- Exclusiones públicas explicadas: 16, 17 y 19 son confirmadas, pero su sede está inactiva; 18 está cancelada y además su sede está inactiva. La consulta administrativa incluyó las cuatro por revisión histórica. No hubo IDs ausentes en la consulta administrativa.
+- Las conexiones JDBC usadas para contrastar el fixture se marcaron como solo lectura y finalizaron con `rollback`. No hubo DML, DDL, scripts de carga, cambios de `DB_NAME`, borrado de STEP6/cuentas ni despliegue en AWS.
+
+### Evidencia manual comunicada y artefactos
+
+- **RF-M6-04 — prueba manual reportada por la usuaria:** la usuaria comprobó desde el frontend desplegado el alta de una incidencia y su edición posterior, ambas persistentes. Se registra como evidencia manual de navegador reportada por la usuaria; no fue repetida ni observada de forma independiente en este cierre y no acredita por sí sola cobertura exhaustiva del RF.
+- `dotnet publish -c Release --no-restore` terminó correctamente. **Frontend vigente:** `Frontend/EntreFunciones/bin/Release/net10.0/publish/EntreFunciones.dll`, 575 488 bytes, 2026-11-16 12:12:53 -05:00, SHA-256 `EC4FCF16CAC4A55E3F939299C3B372B8E470A8C60AAD0C1F782739D672E65C13`.
+- **WAR sin cambios:** `Backend/entrefunciones-rest/target/entrefunciones-rest.war`, SHA-256 `0041FB8525620B7BEBC9B89C2E911565BD414AC5086BD9B413CE2098952EE34C`. No necesita reemplazo para esta corrección.
+- `Entrega-AWS-Lab12/Frontend` se actualizó desde la publicación vigente. El paquete conserva 45 archivos (WAR + 44 frontend), 17 154 514 bytes, con 45/45 coincidencias por tamaño y SHA-256 y 45 filas de manifiesto sin discrepancias. SHA-256 de `MANIFIESTO-SHA256.md`: `0B350E5FAE54658A204DF85B97BA2B1190CAA692398140598C01B5BC45896C9B`.
+- Para aplicar la corrección se debe reemplazar el contenido completo del frontend por `Entrega-AWS-Lab12/Frontend/`. No se debe reemplazar el WAR por esta tarea. La publicación y la entrega están preparadas localmente; no se desplegaron ni se verificó todavía `/admin/funciones` en navegador con la nueva DLL.
+
+## Diagnóstico Funciones/Reportes y publicación visual (2026-11-16, 12:00 hora de Lima)
+
+### Evidencia de datos y esquema desplegado
+
+- Se ejecutaron exclusivamente consultas `SELECT`, dentro de una conexión marcada como solo lectura y cerrada con `rollback`, sobre `entrefunciones_lab12_test` y `entrefunciones`. No se ejecutaron cargas, DDL, DML, suites ni pruebas; no se cambió `DB_NAME`, no se borraron datos STEP6 ni cuentas y no se alteró GlassFish.
+- `entrefunciones_lab12_test` contiene 7 funciones: 6 `CONFIRMADA` y 1 `CANCELADA`. Tres confirmadas tienen evento, sala y sede activos; otras 3 confirmadas y la cancelada tienen evento/sala activos pero sede inactiva. Por ello, exactamente 3 cumplen simultáneamente `CONFIRMADA` + evento activo + sala activa + sede activa.
+- `entrefunciones` contiene 6 funciones: 3 `CONFIRMADA`, 2 `PROGRAMADA` y 1 `CANCELADA`; las seis tienen evento, sala y sede activos. Por ello también tiene 3 funciones públicamente visibles, pero no contiene registros STEP6.
+- El REST AWS de solo lectura `GET /funciones` devolvió 3 filas: IDs 1, 2 y 15, todas `CONFIRMADA`, fechadas 2026-11-18 y con los mismos títulos que `entrefunciones_lab12_test`. Esa firma no coincide con `entrefunciones`, cuyas funciones tienen otros IDs/fechas y ningún título STEP6. Por comportamiento y datos, el despliegue consulta `entrefunciones_lab12_test`.
+- No se leyó la variable efectiva `DB_NAME` del proceso remoto ni su configuración de servidor. La confirmación remota anterior es por una firma de datos inequívoca del endpoint desplegado. En contraste, los `db.properties` locales versionados/configurados conservan `esquema=entrefunciones` y no había una variable local `DB_NAME`; ese valor es solo el predeterminado local, no evidencia del entorno AWS.
+
+| Esquema | Total | Confirmadas | Programadas | Canceladas | Relaciones evento/sala/sede activas | Visibles en consulta pública |
+|---|---:|---:|---:|---:|---:|---:|
+| `entrefunciones_lab12_test` | 7 | 6 | 0 | 1 | 3 | 3 |
+| `entrefunciones` | 6 | 3 | 2 | 1 | 6 | 3 |
+
+### Causa confirmada de 3 filas en Funciones y 6 en Reportes
+
+- La pantalla administrativa **Funciones** llama `CatalogoService.ListarFunciones()`. Ese método realiza `GET /funciones` sin cabecera autenticada incluso si existe una sesión de administrador. `FuncionesResource.findAll()` obtiene primero todas las filas mediante negocio/DAO (`listar_funciones` no filtra) y, al recibir la llamada como pública, conserva únicamente `CONFIRMADA` con evento, sala y sede activos. En el esquema desplegado el resultado exacto son los IDs 1, 2 y 15.
+- **Reportes** usa `FuncionService.FindReportes()`, que sí crea cabeceras autenticadas, y REST exige rol `Administrador`. `listar_reportes_funciones` filtra solo por intervalo de fecha y por sede, sala o tipo cuando esos parámetros se informan; no contiene condición por `f.estado`, `e.activo`, `s.activo` ni `se.activo`.
+- En `entrefunciones_lab12_test` existen, además de las tres funciones visibles, tres confirmadas STEP6 con sede inactiva dentro del bloque de fechas de pruebas: dos `PAGO` y una `GRATIS`. El reporte puede devolver las seis porque no aplica el filtro público de activos. La cancelada `BORRADOR` queda en 2027-01-01 y depende del intervalo seleccionado. No hay evidencia de datos borrados y no se atribuye la diferencia a una eliminación.
+
+### Ajuste visual, publicación local y entrega
+
+- `Frontend/EntreFunciones/Components/Shared/SummeryCard.razor` cambió solo la representación: conteos con formato `N0`, importe con `N2`, orden legible valor/unidad y clase `text-nowrap` para mantenerlos en una sola línea. Las propiedades `TotalIngresos`, `TotalEntradasVigentes`, `TotalEntradasEmitidas`, `TotalEntradasCanceladas` y `resultados.Count` no cambiaron.
+- Se ejecutó únicamente `dotnet publish -c Release --no-restore`, requerido por el cambio Razor; terminó correctamente. No se ejecutó ninguna prueba. La publicación sigue incluyendo la URL REST `http://ec2-34-229-12-45.compute-1.amazonaws.com:8080/entrefunciones-rest/v1/api/`.
+- **Frontend publicado localmente:** `Frontend/EntreFunciones/bin/Release/net10.0/publish/EntreFunciones.dll`, 574 464 bytes, 2026-11-16 11:54:32 -05:00, SHA-256 `A174041759A8686009EF2FA0929C7913C92E61A00E81D0A912D3F72B3D04D1B8`.
+- **WAR sin cambios:** `Backend/entrefunciones-rest/target/entrefunciones-rest.war`, 14 275 142 bytes, 2026-11-15 23:25:03 -05:00, SHA-256 `0041FB8525620B7BEBC9B89C2E911565BD414AC5086BD9B413CE2098952EE34C`.
+- `Entrega-AWS-Lab12/Frontend` se actualizó desde la publicación vigente, sin usar `Entrega-AWS`. Los 45 archivos del paquete (WAR + 44 del frontend) coinciden 45/45 con sus originales en tamaño y SHA-256; el manifiesto contiene 45 filas sin discrepancias. SHA-256 del manifiesto: `E9B5592DC7C13CCAF92CF8C5A49E4CF69F061020A86F12E7A01CC77C96A28EA1`.
+- La corrección está preparada localmente, pero el nuevo frontend no se desplegó ni se verificó en navegador/AWS. Tras desplegar quedan por comprobar las cinco tarjetas de ambos reportes: enteros sin decimales, ingresos con dos decimales, ausencia de salto entre valor y unidad, totales sin cambios y comportamiento responsivo. RF-M1-03 permanece pendiente.
+
+## Cierre integrado y paquete local LAB12 (2026-11-16)
+
+### Alcance y estado de la evidencia
+
+- Este bloque actualiza el corte posterior al diagnóstico de login y conserva íntegramente el historial que aparece debajo. La discrepancia anterior era de lectura: el archivo está codificado en UTF-8 sin BOM y el intento fallido lo interpretó como ANSI; no se perdió contenido.
+- El catálogo funcional vigente continúa siendo la versión 0.2, con 17 RF y conformidad de la JP pendiente. RF-M1-03 se mantiene pendiente; RF-M6-01 sigue fuera del catálogo propuesto y no se eliminó su implementación histórica.
+- No se repitieron las 29 comprobaciones focales finales ni `IntegracionLab11Test`, porque esa suite limpia tablas completas y contradiría la conservación de datos solicitada.
+- En el corte final no había pruebas, Maven, .NET ni GlassFish locales en ejecución. No se modificó AWS ni una BD publicada.
+
+### Resultados finales disponibles
+
+- **Empaquetado local más reciente:** los reportes Surefire conservados a las 23:24-23:25 registran 50 pruebas detectadas, 30 aprobadas, 0 fallos, 0 errores y 20 omitidas por guardias: 16 integradas, 1 bootstrap, 2 de login REST y 1 de aprovisionamiento. Esta ejecución valida el empaquetado y las pruebas locales; no sustituye la evidencia integrada.
+- **Suite integrada completa anterior:** `IntegracionLab11Test` ejecutó 16 casos contra `entrefunciones_lab12_test`: 14 aprobados, 2 fallidos y 0 omitidos. Los dos fallos tenían una precondición obsoleta con funciones `PROGRAMADA`; tras usar `CONFIRMADA`, ambos aprobaron focalmente 2/2. No existe una corrida consolidada posterior de 16/16.
+- **Focales negocio/DAO + MySQL:** bootstrap 1/1; RF-M2-03, RF-M3-01 y RF-M5-02, 1/1 cada uno; login/JWT 2/2; aprovisionamiento de administrador 1/1.
+- **Verificador aditivo final:** una ejecución alcanzó 32 comprobaciones aprobadas y se detuvo por timeout al listar entradas. El mismo `GET /entradas?idReserva=31` tardó 29.852 s, por encima del timeout C# de 20 s.
+- **Corrección del timeout:** `EntradaDAOImpl.findByReserva` y `EntradasResource` reutilizan la reserva y sus butacas ya cargadas, evitando recargar el grafo por cada entrada. No cambió el esquema ni el contrato DTO. La misma lectura aprobó por HTTP en 11.372 s y mediante `CompraService` C# en 9.319 s, conservando dos entradas vigentes y dos QR únicos.
+- **Reanudación focal:** 29/29 comprobaciones pendientes aprobaron sobre el fixture existente, sin repetir los 32 casos previos. Cubrieron cancelación individual y liberación exacta, emisión gratuita y QR, publicación/permisos, bloqueos y solapamientos, cartelera, reportes e incidencias.
+- **Navegador:** no ejecutado para este cierre. La evidencia C# corresponde a servicios reales y al login con formulario/antiforgery ya comprobado; no equivale a verificar todas las pantallas visualmente.
+- **AWS:** desconocido. No se comprobó qué WAR, publicación frontend, esquema o configuración efectiva están desplegados actualmente.
+
+### Matriz final de los 17 RF
+
+`Sí` indica al menos un escenario representativo aprobado en esa capa, no cobertura exhaustiva de todo el RF. `Desconocido` indica ausencia de evidencia disponible.
+
+| RF | Código | Negocio/DAO | HTTP REST → MySQL | Servicios C# → REST → MySQL | Navegador | AWS |
+|---|---|---|---|---|---|---|
+| RF-M1-01 | Implementado | Parcial: autenticación/JWT | Parcial: alta, login y perfil propio | Parcial: login, redirección y cookie | Pendiente: edición propia y cierre de sesión | Desconocido |
+| RF-M1-02 | Implementado | Desconocido como prueba aislada | Sí: autenticación, rol, propiedad y rechazos 401/403 | Parcial: sesión administrativa; las restricciones se comprobaron principalmente por HTTP directo | Pendiente con ambos roles | Desconocido |
+| RF-M1-03 | **Pendiente** | Desconocido | Desconocido | Desconocido | Pendiente | Desconocido |
+| RF-M2-01 | Implementado | Parcial: pruebas transaccionales locales; recorrido MySQL aislado no consolidado | Sí: alta, edición y baja lógica | Sí mediante servicios de catálogo | Pendiente: CRUD visual e historial | Desconocido |
+| RF-M2-02 | Implementado | Parcial: 2 unitarias; prueba DAO/MySQL separada no consolidada | Sí: bloqueo, disponibilidad, solapamiento y desactivación | Sí mediante servicio de bloqueos | Pendiente en pantalla administrativa | Desconocido |
+| RF-M2-03 | Implementado | Sí: focal MySQL 1/1 | Sí: edición, desactivación e historial | Sí | Pendiente: mapa e historial visual | Desconocido |
+| RF-M3-01 | Implementado | Sí: focal MySQL 1/1 | Sí | Sí: contenido y programación inicial | Pendiente para los tres tipos y edición | Desconocido |
+| RF-M3-02 | Implementado | Sí: focal MySQL 2/2 | Sí: bloqueos, cruces y límite adyacente | Sí | Pendiente: validaciones y mensajes de formulario | Desconocido |
+| RF-M3-03 | Implementado | Sí: cancelación persistente | Sí: programada no pública, confirmada pública y cancelada histórica | Sí | Pendiente: publicación y retiro visibles | Desconocido |
+| RF-M4-01 | Implementado | Desconocido como prueba DAO/MySQL independiente | Sí: filtros combinados y conjunto vacío | Sí mediante `FuncionService` | Pendiente: combinaciones y detalle visual | Desconocido |
+| RF-M4-02 | Implementado | Sí: contención de una misma butaca | Sí: libre, retenida y ocupada | Sí mediante servicios | Pendiente: mapa visual y dos navegadores | Desconocido |
+| RF-M5-01 | Implementado | Sí: vencimiento, cancelación e idempotencia | Sí | Sí | Pendiente: temporizador y liberación visibles | Desconocido |
+| RF-M5-02 | Implementado | Sí: búsqueda focal por código 1/1 | Sí: búsqueda y validación | Sí | Pendiente en pantalla de ventas/pago | Desconocido |
+| RF-M5-03 | Implementado | Sí: emisión, concurrencia, rollback y liberación | Sí: emisión pagada/gratuita, cancelación exacta y QR | Sí | Pendiente: QR, historial y cancelación visual | Desconocido |
+| RF-M6-02 | Implementado | Lógica unitaria aprobada; DAO/MySQL aislado desconocido | Sí: vigentes, gratuitas y canceladas | Sí | Pendiente: pantalla y totales | Desconocido |
+| RF-M6-03 | Implementado | Filtros unitarios aprobados; DAO/MySQL aislado desconocido | Sí: ingresos, emitidas, canceladas y filtros | Sí | Pendiente: filtros, vacío y totales | Desconocido |
+| RF-M6-04 | Implementado | Negocio unitario aprobado; DAO/MySQL aislado desconocido | Sí: alta y edición persistente | Sí | Pendiente: alta, edición y consulta visual | Desconocido |
+
+### Artefactos vigentes y entrega local
+
+- No hay cambios de código productivo posteriores a los artefactos. El `git pull` posterior actualizó fechas de archivos, pero el contenido productivo coincide con `HEAD`; la única diferencia local del frontend es `appsettings.json`, y su copia en `publish` coincide por SHA-256. Por ello no se recompiló.
+- **WAR vigente:** `Backend/entrefunciones-rest/target/entrefunciones-rest.war`, 14 275 142 bytes, 2026-11-15 23:25:03 -05:00, SHA-256 `0041FB8525620B7BEBC9B89C2E911565BD414AC5086BD9B413CE2098952EE34C`.
+- **Frontend vigente:** `Frontend/EntreFunciones/bin/Release/net10.0/publish/`; `EntreFunciones.dll`, 574 976 bytes, 2026-11-15 22:42:52 -05:00, SHA-256 `979436242619A4481026870DE181C3F5EC88C6F2CFBB1BB7944B61AB3B651B94`.
+- **Nueva carpeta preparada:** `Entrega-AWS-Lab12/`, con `Backend/entrefunciones-rest.war` y el contenido completo de `publish` bajo `Frontend/`. No se utilizó `Entrega-AWS` como origen.
+- **Verificación de copia:** 45/45 archivos de producto coinciden con sus originales en tamaño y SHA-256; el manifiesto completo está en `Entrega-AWS-Lab12/MANIFIESTO-SHA256.md`.
+- **URL REST incluida:** `http://ec2-3-89-249-99.compute-1.amazonaws.com:8080/entrefunciones-rest/v1/api/`. `web.config` no fija `Rest__BaseUrl`; puede sobrescribirse externamente durante la ejecución.
+- No se añadieron claves JWT, contraseñas, tokens ni credenciales al paquete, al manifiesto o a esta carpeta de contexto.
+
+### Pendientes posteriores al despliegue
+
+1. Confirmar por navegador login válido e inválido, redirección por rol, cookie y cierre de sesión.
+2. Verificar CRUD visual de sedes, salas, butacas y bloqueos, incluida la conservación histórica.
+3. Programar, confirmar, publicar y cancelar funciones; comprobar mensajes ante bloqueos y cruces.
+4. Probar cartelera y mapa de butacas con filtros combinados, retención y dos sesiones concurrentes.
+5. Completar visualmente reserva, pago, emisión pagada/gratuita, QR, cancelación individual y liberación exacta.
+6. Revisar ambos reportes e incidencias con datos pagados, gratuitos y cancelados, incluido un conjunto sin resultados.
+7. Verificar en AWS los artefactos, el esquema y la configuración efectivos. Esta acción requiere autorización de despliegue y no se realizó.
+
+El siguiente paso técnico es desplegar, con autorización expresa, los artefactos de `Entrega-AWS-Lab12` y ejecutar estas comprobaciones de navegador. RF-M1-03 permanece pendiente de implementación.
+
 ## Flujo de compra del cliente: entradas con QR local (2026-11-16, bloque del Integrante 4)
 
 ### Cambios realizados (solo frontend C#, sin commit)

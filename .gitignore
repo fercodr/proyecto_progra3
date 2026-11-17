@@ -57,6 +57,8 @@ Thumbs.db
 *.tgz
 *.patch
 *.diff
+.verification/
+Entrega-AWS*/
 /docs/LAB11/
 
 # Final delivery documents are intentionally versioned.

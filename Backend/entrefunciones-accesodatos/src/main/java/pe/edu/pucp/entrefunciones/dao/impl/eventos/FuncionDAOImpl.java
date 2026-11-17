@@ -206,8 +206,16 @@ public class FuncionDAOImpl implements FuncionDAO {
         String sql = "{call listar_reportes_funciones(?, ?, ?, ?, ?)}";
         try (ConnectionScope scope = ConnectionScope.openForRead();
              CallableStatement cmd = scope.connection().prepareCall(sql)) {
-            cmd.setDate("p_desde", Date.valueOf(desde));
-            cmd.setDate("p_hasta", Date.valueOf(hasta));
+            if (desde == null) {
+                cmd.setNull("p_desde", Types.DATE);
+            } else {
+                cmd.setDate("p_desde", Date.valueOf(desde));
+            }
+            if (hasta == null) {
+                cmd.setNull("p_hasta", Types.DATE);
+            } else {
+                cmd.setDate("p_hasta", Date.valueOf(hasta));
+            }
             if (idSede == null) {
                 cmd.setNull("p_sede_id", Types.INTEGER);
             } else {
