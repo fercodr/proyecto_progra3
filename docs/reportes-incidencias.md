@@ -1,7 +1,8 @@
 # Reportes e incidencias
 
 Este documento resume el alcance implementado para RF-M6-02, RF-M6-03 y
-RF-M6-04. El catálogo funcional vigente continúa en `CONTEXTO-TA/CATALOGO.md`.
+RF-M6-04. El [catálogo funcional vigente](CATALOGO.md) es la referencia de
+alcance.
 
 ## Reportes
 
