@@ -1,23 +1,62 @@
 ﻿@page "/"
-@* Provisional: según el documento, "/" será la Cartelera (pantalla 04). Reemplazar cuando exista. *@
 
-<PageTitle>Inicio</PageTitle>
+<PageTitle>EntreFunciones</PageTitle>
 
-<div class="page-shell page-shell-narrow py-4">
-<AuthorizeView>
-    <Authorized>
-        <h1 class="page-title mb-3">Bienvenido, @context.User.Identity?.Name</h1>
-        <AuthorizeView Roles="Administrador" Context="admin">
-            <p>Use el menú <strong>Seguridad</strong> para gestionar usuarios y roles.</p>
+<div class="page-shell">
+    <section class="hero-cartelera hero-lg">
+        <span class="hero-kicker"><i class="bi bi-camera-reels"></i> Cine · Teatro · Cultura</span>
+
+        <AuthorizeView>
+            <Authorized>
+                <h1 class="hero-title">Hola, <span>@context.User.Identity?.Name</span></h1>
+                <p class="hero-sub">¿Qué vas a ver hoy? Elige tu función y reserva tus butacas.</p>
+                <div class="d-flex flex-wrap gap-2 mt-4">
+                    <a class="btn btn-primary btn-lg" href="cartelera"><i class="bi bi-ticket-perforated me-2"></i>Ver cartelera</a>
+                    <a class="btn btn-outline-primary btn-lg" href="mis-compras">Mis compras</a>
+                </div>
+                <AuthorizeView Roles="Administrador" Context="admin">
+                    <p class="small mt-3 mb-0 text-secondary">Usa el menú superior para gestionar usuarios y roles.</p>
+                </AuthorizeView>
+            </Authorized>
+            <NotAuthorized>
+                <h1 class="hero-title">Tu próxima <span>función</span> empieza aquí</h1>
+                <p class="hero-sub">Estrenos, obras de teatro y actividades culturales. Inicia sesión o regístrate para reservar.</p>
+                <div class="d-flex flex-wrap gap-2 mt-4">
+                    <a class="btn btn-primary btn-lg" href="cartelera"><i class="bi bi-ticket-perforated me-2"></i>Ver cartelera</a>
+                    <a class="btn btn-outline-primary btn-lg" href="login">Iniciar sesión</a>
+                    <a class="btn btn-outline-secondary btn-lg" href="registro">Registrarse</a>
+                </div>
+            </NotAuthorized>
         </AuthorizeView>
-    </Authorized>
-    <NotAuthorized>
-        <h1 class="page-title mb-3">Bienvenido a EntreFunciones</h1>
-        <p>Inicie sesión para continuar o regístrese como cliente.</p>
-        <div class="d-flex gap-2">
-            <a class="btn btn-primary" href="login">Iniciar sesión</a>
-            <a class="btn btn-outline-primary" href="registro">Registrarse</a>
+    </section>
+
+    <div class="row g-3">
+        <div class="col-12 col-md-4">
+            <a href="cartelera" class="card h-100 text-decoration-none event-card">
+                <div class="card-body">
+                    <i class="bi bi-film fs-1" style="color:#E11D48"></i>
+                    <h2 class="h5 mt-2">Películas</h2>
+                    <p class="text-secondary mb-0">Los últimos estrenos en tus salas favoritas.</p>
+                </div>
+            </a>
         </div>
-    </NotAuthorized>
-</AuthorizeView>
+        <div class="col-12 col-md-4">
+            <a href="cartelera" class="card h-100 text-decoration-none event-card">
+                <div class="card-body">
+                    <i class="bi bi-emoji-smile fs-1" style="color:#F97316"></i>
+                    <h2 class="h5 mt-2">Obras de teatro</h2>
+                    <p class="text-secondary mb-0">Vive el teatro en vivo, a pocos metros del escenario.</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-12 col-md-4">
+            <a href="cartelera" class="card h-100 text-decoration-none event-card">
+                <div class="card-body">
+                    <i class="bi bi-people fs-1" style="color:#F8FAFC"></i>
+                    <h2 class="h5 mt-2">Actividades</h2>
+                    <p class="text-secondary mb-0">Talleres, charlas, exposiciones y conversatorios.</p>
+                </div>
+            </a>
+        </div>
+    </div>
 </div>
