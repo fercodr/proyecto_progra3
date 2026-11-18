@@ -12,7 +12,10 @@ namespace EntreFunciones.Servicios.Rest
     {
         private static readonly HttpClient _http = new()
         {
-            Timeout = TimeSpan.FromSeconds(20)
+            // La RDS compartida esta lejos (us-east-1) y sin pool de conexiones del lado
+            // del backend una query puede tardar unos segundos; 20s hacia cortaba de
+            // mas esos picos y se sentia como que "se cae" cuando solo iba lento.
+            Timeout = TimeSpan.FromSeconds(40)
         };
 
         private static async Task<HttpResponseMessage> Enviar(

@@ -20,6 +20,7 @@ import pe.edu.pucp.entrefunciones.modelo.funciones.EstadoFuncion;
 
 import java.net.URI;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Map;
@@ -58,6 +59,11 @@ public class FuncionesResource {
                         .filter(funcion -> funcion.getEvento().estaActivo())
                         .filter(funcion -> funcion.getSala().estaActivo()
                                 && funcion.getSala().getSede().estaActivo())
+                        // Una funcion confirmada que ya empezo no se debe seguir mostrando en
+                        // Cartelera como comprable; el historial se conserva igual para Reportes,
+                        // solo se oculta de este listado publico.
+                        .filter(funcion -> funcion.getFecha().atTime(funcion.getHoraInicio())
+                                .isAfter(LocalDateTime.now()))
                         .toList();
             }
             return Response.ok(FuncionMapper.toDTOs(funciones))

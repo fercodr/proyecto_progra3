@@ -15,6 +15,7 @@ import pe.edu.pucp.entrefunciones.rest.AutorizacionRest;
 import pe.edu.pucp.entrefunciones.modelo.funciones.EstadoFuncion;
 
 import java.net.URI;
+import java.time.LocalDateTime;
 import java.util.Map;
 
 /**
@@ -50,7 +51,9 @@ public class EventosResource {
                 eventos = eventos.stream()
                         .filter(Evento::estaActivo)
                         .filter(evento -> evento.getFunciones().stream()
-                                .anyMatch(funcion -> funcion.getEstado() == EstadoFuncion.CONFIRMADA))
+                                .anyMatch(funcion -> funcion.getEstado() == EstadoFuncion.CONFIRMADA
+                                        && funcion.getFecha().atTime(funcion.getHoraInicio())
+                                                .isAfter(LocalDateTime.now())))
                         .toList();
             }
             return Response.ok(EventoMapper.toDTOs(eventos))
@@ -71,7 +74,9 @@ public class EventosResource {
 
             if (!AutorizacionRest.esAdministrador(securityContext)) {
                 evento.getFunciones().removeIf(
-                        funcion -> funcion.getEstado() != EstadoFuncion.CONFIRMADA);
+                        funcion -> funcion.getEstado() != EstadoFuncion.CONFIRMADA
+                                || !funcion.getFecha().atTime(funcion.getHoraInicio())
+                                        .isAfter(LocalDateTime.now()));
                 if (!evento.estaActivo() || evento.getFunciones().isEmpty()) {
                     return error(Response.Status.NOT_FOUND,
                             new BLException("No existe un evento publicado con id " + id));
