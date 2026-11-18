@@ -1,16 +1,3 @@
-.quantity-card,
-.summary-card {
-    max-width: 420px;
-}
-
-.quantity-input {
-    max-width: 200px;
-}
-
-.seat-map {
-    max-width: 680px;
-}
-
 .screen {
     max-width: 70%;
     margin-inline: auto;
@@ -18,28 +5,10 @@
     text-align: center;
     font-size: 0.75rem;
     letter-spacing: 0.15em;
-    color: #6c757d;
-    border-top: 6px solid #6f42c1;
+    color: #94A3B8;
+    border-top: 6px solid #E11D48;
     border-radius: 50% 50% 0 0 / 14px 14px 0 0;
-}
-
-.seat-map-scroll {
-    overflow-x: auto;
-    padding-bottom: 4px;
-}
-
-.seat-rows {
-    width: max-content;
-    min-width: 100%;
-}
-
-.seat-row {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    min-width: max-content;
-    margin-bottom: 6px;
+    box-shadow: 0 -14px 28px -10px rgba(225, 29, 72, 0.55);
 }
 
 .fila-letra {
@@ -48,68 +17,42 @@
     text-align: center;
     font-size: 0.8rem;
     font-weight: 600;
-    color: #6c757d;
-}
-
-.butaca {
-    width: 32px;
-    height: 30px;
-    padding: 0;
-    font-size: 0.7rem;
-    border: 1px solid transparent;
-    border-radius: 6px 6px 10px 10px;
-    transition: transform 0.1s;
-}
-
-.butaca:not(:disabled):hover {
-    transform: translateY(-2px);
+    color: #94A3B8;
 }
 
 .butaca:focus-visible {
-    outline: 2px solid #0d6efd;
+    outline: 2px solid #F97316;
     outline-offset: 2px;
 }
 
 .butaca.libre,
 .muestra.libre {
-    color: #343a40;
-    background: #dee2e6;
+    color: #111827;
+    background: #E2E8F0;
 }
 
 .butaca.ocupada,
 .muestra.ocupada {
-    color: #fff;
-    background: #adb5bd;
+    color: #64748B;
+    background: #334155;
 }
 
 .butaca.retenida,
 .muestra.retenida {
-    color: #212529;
-    background: #ffc107;
+    color: #111827;
+    background: #F97316;
 }
 
 .butaca.bloqueada,
 .muestra.bloqueada {
-    color: #adb5bd;
-    background: repeating-linear-gradient(45deg, #f8f9fa 0 4px, #ced4da 4px 6px);
-    border-color: #ced4da;
+    color: #64748B;
+    background: repeating-linear-gradient(45deg, #1E293B 0 4px, #334155 4px 6px);
+    border-color: #334155;
 }
 
 .butaca.elegida,
 .muestra.elegida {
     color: #fff;
-    background: #6f42c1;
-}
-
-.leyenda-item {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.muestra {
-    display: inline-block;
-    width: 14px;
-    height: 14px;
-    border-radius: 3px;
+    background: #E11D48;
+    box-shadow: 0 0 12px rgba(225, 29, 72, 0.7);
 }

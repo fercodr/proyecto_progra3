@@ -8,94 +8,94 @@
 <PageTitle>@(Evento?.Titulo ?? "Detalle del evento")</PageTitle>
 
 <div class="page-shell">
-@if (Cargando)
-{
-    <div class="text-center my-5" role="status">
-        <div class="spinner-border" aria-hidden="true"></div>
-        <p class="text-muted mt-2">Cargando evento...</p>
-    </div>
-}
-else if (ErrorCarga is not null)
-{
-    <div class="alert alert-danger" role="alert">
-        No se pudo cargar el evento: @ErrorCarga
-        <button type="button" class="btn btn-sm btn-outline-danger ms-2" @onclick="Cargar">Reintentar</button>
-    </div>
-}
-else if (Evento == null)
-{
-    <div class="alert alert-warning" role="status">
-        No se encontró el evento solicitado.
-        <a class="alert-link" href="/cartelera">Volver a la cartelera</a>
-    </div>
-}
-else
-{
-    <nav aria-label="breadcrumb" class="mb-3">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="/cartelera">Cartelera</a></li>
-            <li class="breadcrumb-item active">@Evento.Titulo</li>
-        </ol>
-    </nav>
-
-    <div class="row g-4">
-        <div class="col-12 col-md-7">
-            @if (Evento.ImagenUrl != null && Evento.ImagenUrl.StartsWith("http"))
-            {
-                @* Póster guardado en Amazon S3 *@
-                <img src="@Evento.ImagenUrl" alt="Póster de @Evento.Titulo" class="rounded mb-3 w-100" style="height:220px; object-fit:cover;" />
-            }
-            else
-            {
-                <div class="d-flex align-items-center justify-content-center bg-light rounded mb-3" style="height:220px;">
-                    <i class="@IconoTipo(Evento.Tipo) text-secondary" style="font-size:5rem;"></i>
-                </div>
-            }
-            <span class="badge text-bg-secondary mb-2">@TextoTipo(Evento.Tipo)</span>
-            <h1 class="page-title mb-2">@Evento.Titulo</h1>
-            @if (Evento.DuracionMinutos is not null)
-            {
-                <p class="text-muted mb-1">@Evento.DuracionMinutos min &middot; @TextoClasificacion(Evento.ClasificacionPorEdad)</p>
-            }
-            @if (!string.IsNullOrWhiteSpace(EtiquetaSecundaria))
-            {
-                <p class="mb-1"><strong>@EtiquetaSecundaria</strong>: @ValorSecundario</p>
-            }
-            <p class="fs-4"><strong>S/ @Evento.Precio.ToString("N2", CultureInfo.InvariantCulture)</strong></p>
+    @if (Cargando)
+    {
+        <div class="text-center my-5" role="status">
+            <div class="spinner-border" aria-hidden="true"></div>
+            <p class="text-muted mt-2">Cargando evento...</p>
         </div>
-        <div class="col-12 col-md-5">
-            <div class="card">
-                <div class="card-body">
-                    <h2 class="card-title h5">
-                        Funciones disponibles
-                        <i class="bi bi-info-circle text-muted" title="Solo se muestran funciones confirmadas o programadas; una función cancelada no aparece aquí."></i>
-                    </h2>
-                    @if (!Funciones.Any())
-                    {
-                        <p class="text-muted mb-0">No hay funciones programadas por el momento.</p>
-                    }
-                    else
-                    {
-                        <div class="list-group">
-                            @foreach (FuncionDTO funcion in Funciones)
-                            {
-                                <div class="list-group-item d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <div><strong>@FormatearFecha(funcion.Fecha)</strong> &middot; @FormatearHora(funcion.HoraInicio)</div>
-                                        <div class="text-muted small">@funcion.NombreSede &middot; Sala @funcion.NombreSala &middot; @funcion.Idioma</div>
+    }
+    else if (ErrorCarga is not null)
+    {
+        <div class="alert alert-danger" role="alert">
+            No se pudo cargar el evento: @ErrorCarga
+            <button type="button" class="btn btn-sm btn-outline-danger ms-2" @onclick="Cargar">Reintentar</button>
+        </div>
+    }
+    else if (Evento == null)
+    {
+        <div class="alert alert-warning" role="status">
+            No se encontró el evento solicitado.
+            <a class="alert-link" href="/cartelera">Volver a la cartelera</a>
+        </div>
+    }
+    else
+    {
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/cartelera">Cartelera</a></li>
+                <li class="breadcrumb-item active">@Evento.Titulo</li>
+            </ol>
+        </nav>
+
+        <div class="row g-4">
+            <div class="col-12 col-md-7">
+                @if (Evento.ImagenUrl != null && Evento.ImagenUrl.StartsWith("http"))
+                {
+                    @* Póster guardado en Amazon S3 *@
+                    <img src="@Evento.ImagenUrl" alt="Póster de @Evento.Titulo" class="detail-poster" />
+                }
+                else
+                {
+                    <div class="detail-poster detail-poster-fallback">
+                        <i class="@IconoTipo(Evento.Tipo)"></i>
+                    </div>
+                }
+                <span class="badge text-bg-secondary mb-2">@TextoTipo(Evento.Tipo)</span>
+                <h1 class="page-title mb-2">@Evento.Titulo</h1>
+                @if (Evento.DuracionMinutos is not null)
+                {
+                    <p class="text-muted mb-1">@Evento.DuracionMinutos min &middot; @TextoClasificacion(Evento.ClasificacionPorEdad)</p>
+                }
+                @if (!string.IsNullOrWhiteSpace(EtiquetaSecundaria))
+                {
+                    <p class="mb-1"><strong>@EtiquetaSecundaria</strong>: @ValorSecundario</p>
+                }
+                <p class="price-tag">S/ @Evento.Precio.ToString("N2", CultureInfo.InvariantCulture)</p>
+            </div>
+            <div class="col-12 col-md-5">
+                <div class="card">
+                    <div class="card-body">
+                        <h2 class="card-title h5">
+                            Funciones disponibles
+                            <i class="bi bi-info-circle text-muted" title="Solo se muestran funciones confirmadas o programadas; una función cancelada no aparece aquí."></i>
+                        </h2>
+                        @if (!Funciones.Any())
+                        {
+                            <p class="text-muted mb-0">No hay funciones programadas por el momento.</p>
+                        }
+                        else
+                        {
+                            <div class="list-group">
+                                @foreach (FuncionDTO funcion in Funciones)
+                                {
+                                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <div><strong>@FormatearFecha(funcion.Fecha)</strong> &middot; @FormatearHora(funcion.HoraInicio)</div>
+                                            <div class="text-muted small">@funcion.NombreSede &middot; Sala @funcion.NombreSala &middot; @funcion.Idioma</div>
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-primary" @onclick="() => ElegirFuncion(funcion.Id)">
+                                            Elegir
+                                        </button>
                                     </div>
-                                    <button type="button" class="btn btn-sm btn-primary" @onclick="() => ElegirFuncion(funcion.Id)">
-                                        Elegir
-                                    </button>
-                                </div>
-                            }
-                        </div>
-                    }
+                                }
+                            </div>
+                        }
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-}
+    }
 </div>
 
 @code {
@@ -187,3 +187,4 @@ else
         Nav.NavigateTo($"/funcion/{funcionId}/butacas");
     }
 }
+
