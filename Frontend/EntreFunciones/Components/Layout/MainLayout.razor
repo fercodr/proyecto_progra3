@@ -3,14 +3,17 @@
 <div class="d-flex min-vh-100 flex-column">
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary" aria-label="Navegación principal">
     <div class="container-fluid px-3 px-lg-4">
-        <a class="navbar-brand fw-semibold" href="">EntreFunciones</a>
+        <a class="navbar-brand fw-semibold d-flex align-items-center gap-2" href="">
+            <img src="img/logo.png" alt="" width="48" height="48" />
+            EntreFunciones
+        </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavigation"
                 aria-controls="mainNavigation" aria-expanded="false" aria-label="Mostrar u ocultar navegación">
             <span class="navbar-toggler-icon"></span>
         </button>
 
         <div class="collapse navbar-collapse" id="mainNavigation">
-            <div class="navbar-nav me-auto">
+            <div class="navbar-nav me-auto flex-wrap row-gap-1">
         @* ---------- Solo administrador ---------- *@
         <AuthorizeView Policy="Reportes">
             <NavLink class="nav-link" href="admin" Match="NavLinkMatch.All">Reportes</NavLink>
