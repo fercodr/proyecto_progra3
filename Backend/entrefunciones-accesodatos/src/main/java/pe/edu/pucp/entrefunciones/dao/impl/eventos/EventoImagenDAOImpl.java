@@ -19,7 +19,7 @@ public class EventoImagenDAOImpl implements EventoImagenDAO {
             throw new IllegalArgumentException("El evento no puede ser nulo");
         }
 
-        String sql = "{call modificar_evento(?, ?, ?, ?)}";
+        String sql = "{call modificar_evento(?, ?, ?, ?, ?, ?)}";;
 
         try (
             ConnectionScope scope = ConnectionScope.openForRead();
@@ -29,6 +29,8 @@ public class EventoImagenDAOImpl implements EventoImagenDAO {
             cmd.setDouble("p_precio", evento.getPrecio());
             cmd.setBoolean("p_activo", evento.estaActivo());
             cmd.setString("p_imagen_url", imagenUrl);
+            cmd.setString("p_tematica", evento.getTematica());
+            cmd.setString("p_publico_objetivo", evento.getPublicoObjetivo());
             cmd.executeUpdate();
         }
     }
