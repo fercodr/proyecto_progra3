@@ -99,11 +99,13 @@ else
             <TemplateColumn Title="Acciones">
                 @if (context.Estado == "PROGRAMADA")
                 {
+                    <button type="button" class="btn btn-outline-secondary btn-sm" @onclick='() => Nav.NavigateTo($"admin/funciones/editar/{context.Id}")'>Editar</button>
                     <button type="button" class="btn btn-success btn-sm" @onclick="() => Confirmar(context)">Confirmar</button>
                     <button type="button" class="btn btn-outline-danger btn-sm" @onclick="() => PedirConfirmacionCancelar(context)">Cancelar</button>
                 }
                 else if (context.Estado == "CONFIRMADA")
                 {
+                    <button type="button" class="btn btn-outline-secondary btn-sm" @onclick='() => Nav.NavigateTo($"admin/funciones/editar/{context.Id}")'>Editar</button>
                     <button type="button" class="btn btn-outline-danger btn-sm" @onclick="() => PedirConfirmacionCancelar(context)">Cancelar</button>
                 }
                 else
