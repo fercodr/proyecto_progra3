@@ -3,15 +3,20 @@ package pe.edu.pucp.entrefunciones.rest.reportes;
 import net.sf.jasperreports.engine.JRException;
 import net.sf.jasperreports.engine.JRParameter;
 import net.sf.jasperreports.engine.JasperCompileManager;
+import net.sf.jasperreports.engine.DefaultJasperReportsContext;
 import net.sf.jasperreports.engine.JasperExportManager;
 import net.sf.jasperreports.engine.JasperFillManager;
 import net.sf.jasperreports.engine.JasperPrint;
 import net.sf.jasperreports.engine.JasperReport;
+import net.sf.jasperreports.engine.SimpleJasperReportsContext;
 import net.sf.jasperreports.engine.data.JRMapCollectionDataSource;
+import net.sf.jasperreports.engine.design.JRCompiler;
 import pe.edu.pucp.entrefunciones.modelo.catalogo.Funcion;
 
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.net.URISyntaxException;
+import java.nio.file.Path;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
@@ -94,11 +99,34 @@ public final class ReporteFuncionesPdf {
             if (recurso == null) {
                 throw new JRException("No se encontró la plantilla " + ruta);
             }
-            JasperReport nueva = JasperCompileManager.compileReport(recurso);
+            SimpleJasperReportsContext contexto =
+                    new SimpleJasperReportsContext(
+                            DefaultJasperReportsContext.getInstance());
+            contexto.setProperty(JRCompiler.COMPILER_CLASSPATH,
+                    classpathJasper());
+            JasperReport nueva = JasperCompileManager.getInstance(contexto)
+                    .compile(recurso);
             JasperReport previa = PLANTILLAS.putIfAbsent(ruta, nueva);
             return previa == null ? nueva : previa;
         } catch (java.io.IOException ex) {
             throw new JRException("No se pudo cerrar la plantilla " + ruta, ex);
+        }
+    }
+
+    /**
+     * GlassFish no incorpora los JAR de WEB-INF/lib en java.class.path.
+     * Jasper necesita al menos su propio JAR para compilar el evaluador del
+     * JRXML, por lo que se le entrega la ubicación que ya resolvió el
+     * classloader de la aplicación.
+     */
+    private static String classpathJasper() throws JRException {
+        try {
+            return Path.of(JasperReport.class.getProtectionDomain()
+                            .getCodeSource().getLocation().toURI())
+                    .toString();
+        } catch (NullPointerException | URISyntaxException ex) {
+            throw new JRException(
+                    "No se pudo resolver el classpath de JasperReports", ex);
         }
     }
 
