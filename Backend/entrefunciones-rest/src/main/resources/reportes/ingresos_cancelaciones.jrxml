@@ -1,0 +1,76 @@
+<jasperReport name="IngresosCancelaciones" pageWidth="842" pageHeight="595"
+              orientation="Landscape" whenNoDataType="AllSectionsNoDetail"
+              columnWidth="802" leftMargin="20" rightMargin="20"
+              topMargin="20" bottomMargin="20">
+    <property name="net.sf.jasperreports.export.pdf.metadata.title" value="Ingresos y cancelaciones"/>
+    <style name="Base" default="true" fontName="SansSerif" fontSize="9.0"/>
+    <style name="Encabezado" mode="Opaque" forecolor="#FFFFFF" backcolor="#273746"
+           bold="true" vTextAlign="Middle"/>
+    <parameter name="TITULO" class="java.lang.String"/>
+    <parameter name="FILTROS" class="java.lang.String"/>
+    <field name="funcion" class="java.lang.String"/>
+    <field name="fecha" class="java.lang.String"/>
+    <field name="ingresos" class="java.math.BigDecimal"/>
+    <field name="entradasEmitidas" class="java.lang.Integer"/>
+    <field name="entradasCanceladas" class="java.lang.Integer"/>
+    <title height="72">
+        <element kind="textField" x="0" y="0" width="802" height="28"
+                 fontSize="20.0" bold="true">
+            <expression><![CDATA[$P{TITULO}]]></expression>
+        </element>
+        <element kind="staticText" x="0" y="36" width="50" height="16" bold="true">
+            <text><![CDATA[Filtros:]]></text>
+        </element>
+        <element kind="textField" x="52" y="36" width="750" height="30"
+                 textAdjust="StretchHeight">
+            <expression><![CDATA[$P{FILTROS}]]></expression>
+        </element>
+    </title>
+    <columnHeader height="30">
+        <element kind="staticText" x="0" y="0" width="310" height="30" style="Encabezado">
+            <text><![CDATA[Función]]></text><box leftPadding="5"/>
+        </element>
+        <element kind="staticText" x="310" y="0" width="110" height="30" style="Encabezado">
+            <text><![CDATA[Fecha]]></text><box leftPadding="5"/>
+        </element>
+        <element kind="staticText" x="420" y="0" width="145" height="30" style="Encabezado" hTextAlign="Right">
+            <text><![CDATA[Ingresos (S/)]]></text><box rightPadding="5"/>
+        </element>
+        <element kind="staticText" x="565" y="0" width="120" height="30" style="Encabezado" hTextAlign="Right">
+            <text><![CDATA[Entradas emitidas]]></text><box rightPadding="5"/>
+        </element>
+        <element kind="staticText" x="685" y="0" width="117" height="30" style="Encabezado" hTextAlign="Right">
+            <text><![CDATA[Canceladas]]></text><box rightPadding="5"/>
+        </element>
+    </columnHeader>
+    <detail>
+        <band height="25">
+            <element kind="textField" x="0" y="0" width="310" height="24" textAdjust="StretchHeight" vTextAlign="Middle">
+                <expression><![CDATA[$F{funcion}]]></expression><box leftPadding="5"><bottomPen lineWidth="0.5" lineColor="#D5D8DC"/></box>
+            </element>
+            <element kind="textField" x="310" y="0" width="110" height="24" vTextAlign="Middle">
+                <expression><![CDATA[$F{fecha}]]></expression><box leftPadding="5"><bottomPen lineWidth="0.5" lineColor="#D5D8DC"/></box>
+            </element>
+            <element kind="textField" x="420" y="0" width="145" height="24" hTextAlign="Right" vTextAlign="Middle" pattern="S/ #,##0.00">
+                <expression><![CDATA[$F{ingresos}]]></expression><box rightPadding="5"><bottomPen lineWidth="0.5" lineColor="#D5D8DC"/></box>
+            </element>
+            <element kind="textField" x="565" y="0" width="120" height="24" hTextAlign="Right" vTextAlign="Middle" pattern="#0">
+                <expression><![CDATA[$F{entradasEmitidas}]]></expression><box rightPadding="5"><bottomPen lineWidth="0.5" lineColor="#D5D8DC"/></box>
+            </element>
+            <element kind="textField" x="685" y="0" width="117" height="24" hTextAlign="Right" vTextAlign="Middle" pattern="#0">
+                <expression><![CDATA[$F{entradasCanceladas}]]></expression><box rightPadding="5"><bottomPen lineWidth="0.5" lineColor="#D5D8DC"/></box>
+            </element>
+        </band>
+    </detail>
+    <pageFooter height="22">
+        <element kind="textField" x="690" y="7" width="112" height="15" hTextAlign="Right">
+            <expression><![CDATA["Página " + $V{PAGE_NUMBER}]]></expression>
+        </element>
+    </pageFooter>
+    <summary height="35">
+        <element kind="staticText" x="0" y="10" width="802" height="20" hTextAlign="Center" italic="true">
+            <printWhenExpression><![CDATA[$V{REPORT_COUNT} == 0]]></printWhenExpression>
+            <text><![CDATA[No se encontraron resultados para los filtros seleccionados.]]></text>
+        </element>
+    </summary>
+</jasperReport>

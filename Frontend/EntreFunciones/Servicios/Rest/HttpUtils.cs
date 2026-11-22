@@ -206,6 +206,36 @@ namespace EntreFunciones.Servicios.Rest
                 cabeceras);
         }
 
+        public static async Task<byte[]> DoGetBytes(
+            string url,
+            string? token = null,
+            IReadOnlyDictionary<string, string>? cabeceras = null)
+        {
+            using HttpResponseMessage respuesta = await Enviar(
+                HttpMethod.Get,
+                url,
+                token: token,
+                cabeceras: cabeceras);
+            try
+            {
+                return await respuesta.Content.ReadAsByteArrayAsync();
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new ServiceException(
+                    "No se pudo leer el documento devuelto por el servicio REST.",
+                    ex,
+                    ObtenerEndpointSeguro(respuesta.RequestMessage?.RequestUri));
+            }
+            catch (TaskCanceledException ex)
+            {
+                throw new ServiceException(
+                    "La lectura del documento excedio el tiempo esperado.",
+                    ex,
+                    ObtenerEndpointSeguro(respuesta.RequestMessage?.RequestUri));
+            }
+        }
+
         public static async Task<TResponse> DoPost<TRequest, TResponse>(
             string url,
             TRequest payload,
