@@ -68,11 +68,12 @@ else
         <div class="row g-3">
             @foreach (EventoDTO evento in EventosFiltrados)
             {
+                string? imagenUrl = EntreFunciones.Mappers.EventoMapper.ResolverImagenUrl(evento.ImagenUrl, Nav.BaseUri);
                 <div class="col-12 col-md-6 col-xl-3">
                     <TarjetaResumen Titulo="@evento.Titulo"
                                    Tipo="@TextoTipo(evento.Tipo)"
-                                   Imagen="@(TienePoster(evento) ? evento.ImagenUrl! : "")"
-                                   IconoClase="@(TienePoster(evento) ? null : IconoTipo(evento.Tipo))"
+                                   Imagen="@(imagenUrl ?? "")"
+                                   IconoClase="@(imagenUrl is null ? IconoTipo(evento.Tipo) : null)"
                                    Detalle="@Detalle(evento)"
                                    Inactivo="@(!evento.Activo)"
                                    Enlace="@($"admin/catalogo/editar/{evento.Id}")"
@@ -222,10 +223,6 @@ else
         "ACTIVIDAD_CULTURAL" => "bi bi-people",
         _ => "bi bi-calendar-event"
     };
-    // Tiene póster si la URL viene de S3
-    private static bool TienePoster(EventoDTO evento) =>
-    !string.IsNullOrWhiteSpace(evento.ImagenUrl) && evento.ImagenUrl.StartsWith("http");
-
     private string TextoTipo(string tipo) => tipo switch
     {
         "PELICULA" => "Película",

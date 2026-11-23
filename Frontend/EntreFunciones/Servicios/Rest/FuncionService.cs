@@ -1,4 +1,5 @@
 using EntreFunciones.DTOSS;
+using EntreFunciones.Mappers;
 using EntreFunciones.ViewModels;
 using Microsoft.AspNetCore.Components.Authorization;
 using System.Globalization;
@@ -150,14 +151,9 @@ namespace EntreFunciones.Servicios.Rest
                 Sala = dto.NombreSala ?? string.Empty,
                 Estado = dto.Estado ?? string.Empty
             };
-            modelo.Evento = dto.Evento is null ? null : new EventoViewModel
-            {
-                Id = dto.Evento.Id,
-                IsActivo = dto.Evento.Activo,
-                Titulo = dto.Evento.Titulo,
-                Tipo = dto.Evento.Tipo,
-                Precio = (decimal)dto.Evento.Precio
-            };
+            modelo.Evento = dto.Evento is null
+                ? null
+                : EventoMapper.ToViewModel(dto.Evento);
             modelo.SedeRelacionada = ToViewModel(dto.Sede);
             modelo.SalaRelacionada = ToViewModel(dto.Sala);
             modelo.Aforo = dto.Sala?.Aforo ?? 0;
