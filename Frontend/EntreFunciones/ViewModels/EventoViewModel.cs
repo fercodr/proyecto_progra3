@@ -5,5 +5,6 @@ namespace EntreFunciones.ViewModels
         public string Titulo { get; set; } = string.Empty;
         public string Tipo { get; set; } = string.Empty;
         public decimal Precio { get; set; }
+        public string? ImagenUrl { get; set; }
     }
 }
