@@ -51,6 +51,7 @@ public class FuncionesResource {
     private final SedeBL sedeBL;
     private final SalaBL salaBL;
     private final ReporteFuncionesPdf reportePdf;
+    private final pe.edu.pucp.entrefunciones.rest.reportes.ReporteDetalleEventoPdf reportePdfDetalle;
     private static final DateTimeFormatter FECHA_REPORTE =
             DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
@@ -66,6 +67,7 @@ public class FuncionesResource {
         sedeBL = new SedeBLImpl();
         salaBL = new SalaBLImpl();
         reportePdf = new ReporteFuncionesPdf();
+        reportePdfDetalle = new pe.edu.pucp.entrefunciones.rest.reportes.ReporteDetalleEventoPdf();
     }
 
     @GET
@@ -182,6 +184,54 @@ public class FuncionesResource {
         } catch (BLException | JRException ex) {
             return error(Response.Status.INTERNAL_SERVER_ERROR,
                     new BLException("No se pudo generar el reporte de ingresos y cancelaciones", ex));
+        }
+    }
+
+    @GET
+    @Path("reportes/ocupacion/detalle/pdf")
+    @Produces("application/pdf")
+    public Response reporteOcupacionDetallePdf(
+            @QueryParam("eventoId") Integer eventoId) {
+        if (!AutorizacionRest.esAdministrador(securityContext)) {
+            return error(Response.Status.FORBIDDEN,
+                    new BLException("Se requiere administrador"));
+        }
+        if (eventoId == null) {
+            return error(Response.Status.BAD_REQUEST,
+                    new BLException("Debe indicar el evento"));
+        }
+        try (java.sql.Connection conexion =
+                pe.edu.pucp.entrefunciones.db.DBManager.getInstance().getConnection()) {
+            byte[] contenido = reportePdfDetalle.generarOcupacion(eventoId, conexion);
+            return pdf(contenido,
+                    "reporte-ocupacion-detalle-evento-" + eventoId + ".pdf");
+        } catch (java.sql.SQLException | JRException ex) {
+            return error(Response.Status.INTERNAL_SERVER_ERROR,
+                    new BLException("No se pudo generar el detalle de ocupación", ex));
+        }
+    }
+
+    @GET
+    @Path("reportes/ingresos/detalle/pdf")
+    @Produces("application/pdf")
+    public Response reporteIngresosDetallePdf(
+            @QueryParam("eventoId") Integer eventoId) {
+        if (!AutorizacionRest.esAdministrador(securityContext)) {
+            return error(Response.Status.FORBIDDEN,
+                    new BLException("Se requiere administrador"));
+        }
+        if (eventoId == null) {
+            return error(Response.Status.BAD_REQUEST,
+                    new BLException("Debe indicar el evento"));
+        }
+        try (java.sql.Connection conexion =
+                pe.edu.pucp.entrefunciones.db.DBManager.getInstance().getConnection()) {
+            byte[] contenido = reportePdfDetalle.generarIngresos(eventoId, conexion);
+            return pdf(contenido,
+                    "reporte-ingresos-detalle-evento-" + eventoId + ".pdf");
+        } catch (java.sql.SQLException | JRException ex) {
+            return error(Response.Status.INTERNAL_SERVER_ERROR,
+                    new BLException("No se pudo generar el detalle de ingresos", ex));
         }
     }
 

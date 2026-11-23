@@ -1,3 +1,5 @@
+USE entrefunciones;
+
 DELIMITER %%
 
 DROP PROCEDURE IF EXISTS `sp_reporte_ocupacion_evento`%%

@@ -21,5 +21,7 @@ namespace EntreFunciones.Servicios
             DateOnly? hasta,
             int? idSede = null,
             string? tipoEvento = null);
+        Task<byte[]> DescargarReporteDetalleOcupacion(int idEvento);
+        Task<byte[]> DescargarReporteDetalleIngresos(int idEvento);
     }
 }

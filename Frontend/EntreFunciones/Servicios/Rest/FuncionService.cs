@@ -82,6 +82,26 @@ namespace EntreFunciones.Servicios.Rest
                 UrlReporte("reportes/ingresos/pdf", parametros));
         }
 
+        public async Task<byte[]> DescargarReporteDetalleOcupacion(int idEvento)
+        {
+            Dictionary<string, string?> parametros = new()
+            {
+                ["eventoId"] = idEvento.ToString(CultureInfo.InvariantCulture)
+            };
+            return await ConsultarBytes(
+                UrlReporte("reportes/ocupacion/detalle/pdf", parametros));
+        }
+
+        public async Task<byte[]> DescargarReporteDetalleIngresos(int idEvento)
+        {
+            Dictionary<string, string?> parametros = new()
+            {
+                ["eventoId"] = idEvento.ToString(CultureInfo.InvariantCulture)
+            };
+            return await ConsultarBytes(
+                UrlReporte("reportes/ingresos/detalle/pdf", parametros));
+        }
+
         private string UrlReporte(
             string subruta,
             Dictionary<string, string?> parametros)

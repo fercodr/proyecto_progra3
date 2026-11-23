@@ -15,7 +15,6 @@
         <module>entrefunciones-accesodatos</module>
         <module>entrefunciones-negocio</module>
         <module>entrefunciones-rest</module>
-         <module>entrefunciones-reportes</module>
     </modules>
 
     <properties>
