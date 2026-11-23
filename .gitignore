@@ -28,6 +28,7 @@ coverage.*
 *.key
 *.pem
 *.pfx
+ConfiguracionCompartida/credenciales_usuarios.txt
 
 # Temporary and generated files
 .codex-*/
