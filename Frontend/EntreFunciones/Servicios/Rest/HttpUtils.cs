@@ -21,10 +21,19 @@ namespace EntreFunciones.Servicios.Rest
         // Fuerza DateTime a serializarse sin offset de zona horaria: el backend
         // espera java.time.LocalDateTime, que no acepta offset (ver
         // LocalDateTimeJsonConverter).
-        private static readonly JsonSerializerOptions _opcionesJson = new()
-        {
-            Converters = { new LocalDateTimeJsonConverter() }
-        };
+        // JsonSerializerDefaults.Web agrega camelCase + comparacion
+        // case-insensitive, que es lo que Jakarta JSON-B espera del lado del
+        // backend (java, responsable, descripcion, etc. en minuscula). Sin
+        // esto, JsonContent.Create(datos, options: _opcionesJson) serializa
+        // las propiedades tal cual estan declaradas en C# (PascalCase) y el
+        // backend las ignora silenciosamente (quedan en null), de ahi
+        // errores como "La funcion es obligatoria" o "El responsable es
+        // obligatoria" al editar aunque el campo si se haya seleccionado.
+        private static readonly JsonSerializerOptions _opcionesJson =
+            new(JsonSerializerDefaults.Web)
+            {
+                Converters = { new LocalDateTimeJsonConverter() }
+            };
 
         private static async Task<HttpResponseMessage> Enviar(
             HttpMethod metodo,

@@ -90,7 +90,7 @@ public class AuditoriaResource {
                 .entity(Map.of("mensaje", "entidad no especificada"))
                 .build();
         try{
-            validarRelaciones(solicitud);
+            validarRelacionesInsert(solicitud);
             Auditoria registradaModelo = auditorias.registrar(
                     solicitud.getFuncion().getId(),
                     solicitud.getResponsable().getId(),
@@ -125,7 +125,7 @@ public class AuditoriaResource {
                         .entity(Map.of("mensaje", "El id y el payload no coinciden"))
                         .build();
             }
-            validarRelaciones(solicitud);
+            validarRelacionesUpdate(solicitud);
             if (solicitud.getEstado() == null) {
                 throw new ValidacionException("El estado es obligatorio");
             }
@@ -195,12 +195,22 @@ public class AuditoriaResource {
         }
     }
 
-    private void validarRelaciones(AuditoriaDTO solicitud)
+    private void validarRelacionesInsert(AuditoriaDTO solicitud)
             throws ValidacionException {
         if (solicitud.getFuncion() == null
                 || solicitud.getFuncion().getId() <= 0) {
             throw new ValidacionException("La funcion es obligatoria");
         }
+        validarResponsable(solicitud);
+    }
+
+    private void validarRelacionesUpdate(AuditoriaDTO solicitud)
+            throws ValidacionException {
+        validarResponsable(solicitud);
+    }
+
+    private void validarResponsable(AuditoriaDTO solicitud)
+            throws ValidacionException {
         if (solicitud.getResponsable() == null
                 || solicitud.getResponsable().getId() <= 0) {
             throw new ValidacionException("El responsable es obligatorio");
