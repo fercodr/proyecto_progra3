@@ -18,6 +18,14 @@ namespace EntreFunciones.Servicios.Rest
             Timeout = TimeSpan.FromSeconds(40)
         };
 
+        // Fuerza DateTime a serializarse sin offset de zona horaria: el backend
+        // espera java.time.LocalDateTime, que no acepta offset (ver
+        // LocalDateTimeJsonConverter).
+        private static readonly JsonSerializerOptions _opcionesJson = new()
+        {
+            Converters = { new LocalDateTimeJsonConverter() }
+        };
+
         private static async Task<HttpResponseMessage> Enviar(
             HttpMethod metodo,
             string url,
@@ -29,7 +37,8 @@ namespace EntreFunciones.Servicios.Rest
 
             if (datos is not null && (metodo == HttpMethod.Post || metodo == HttpMethod.Put))
             {
-                peticion.Content = JsonContent.Create(datos);
+                peticion.Content = JsonContent.Create(
+                    datos, inputType: datos.GetType(), options: _opcionesJson);
             }
 
             if (!string.IsNullOrWhiteSpace(token))
