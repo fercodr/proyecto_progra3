@@ -5,6 +5,7 @@
 @inject IFuncionService FuncionesService
 @inject ISedeService SedesService
 @inject ISalaService SalasService
+@inject IJSRuntime JS
 
 <PageTitle>Reportes</PageTitle>
 
@@ -97,11 +98,15 @@
             </div>
             <div class="col-12 col-lg-2 d-grid gap-2">
                 <button type="button" class="btn btn-primary btn-sm"
-                        @onclick="Consultar" disabled="@(cargandoConsulta || cargandoSalas || cargandoCatalogos)">
+                        @onclick="Consultar" disabled="@(Ocupado)">
                     @(cargandoConsulta ? "Consultando..." : "Consultar")
                 </button>
+                <button type="button" class="btn btn-outline-primary btn-sm"
+                        @onclick="DescargarPdf" disabled="@(Ocupado || !tieneConsulta)">
+                    @(descargandoPdf ? "Generando PDF..." : "Descargar PDF")
+                </button>
                 <button type="button" class="btn btn-outline-secondary btn-sm"
-                        @onclick="Limpiar" disabled="@(cargandoConsulta || cargandoSalas || cargandoCatalogos)">
+                        @onclick="Limpiar" disabled="@(Ocupado)">
                     Limpiar
                 </button>
             </div>
@@ -163,6 +168,7 @@
                                 <th>Aforo</th>
                                 <th>Entradas vigentes emitidas</th>
                                 <th>Ocupación</th>
+                                <th>Reporte</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -174,6 +180,12 @@
                                     <td>@funcion.Aforo</td>
                                     <td>@(funcion.EntradasVigentes?.ToString() ?? "0")</td>
                                     <td>@Porcentaje(funcion)</td>
+                                    <td>
+                                        <button type="button" class="btn btn-outline-primary btn-sm"
+                                                @onclick="() => ImprimirDetalle(funcion)" disabled="@descargandoDetalle">
+                                            Imprimir
+                                        </button>
+                                    </td>
                                 </tr>
                             }
                         </tbody>
@@ -191,6 +203,7 @@
                                 <th>Ingresos confirmados</th>
                                 <th>Entradas emitidas</th>
                                 <th>Entradas canceladas</th>
+                                <th>Reporte</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -202,6 +215,12 @@
                                     <td>S/ @((funcion.IngresosConfirmados ?? 0m).ToString("N2"))</td>
                                     <td>@(funcion.EntradasEmitidas?.ToString() ?? "0")</td>
                                     <td>@(funcion.EntradasCanceladas?.ToString() ?? "0")</td>
+                                    <td>
+                                        <button type="button" class="btn btn-outline-primary btn-sm"
+                                                @onclick="() => ImprimirDetalle(funcion)" disabled="@descargandoDetalle">
+                                            Imprimir
+                                        </button>
+                                    </td>
                                 </tr>
                             }
                         </tbody>
@@ -227,9 +246,13 @@
     private bool cargandoConsulta;
     private bool cargandoCatalogos;
     private bool cargandoSalas;
+    private bool descargandoPdf;
+    private bool descargandoDetalle;
     private bool tieneConsulta;
     private string? errorCatalogos;
     private string? errorConsulta;
+    private bool Ocupado => cargandoConsulta || cargandoSalas
+        || cargandoCatalogos || descargandoPdf || descargandoDetalle;
 
     private decimal TotalIngresos => resultados.Sum(x => x.IngresosConfirmados ?? 0m);
     private int TotalEntradasVigentes => resultados.Sum(x => x.EntradasVigentes ?? 0);
@@ -343,6 +366,99 @@
         tipoEventoSeleccionado = string.Empty;
         await CambiarSede();
         await Consultar();
+    }
+
+    private async Task DescargarPdf()
+    {
+        if (Ocupado || !tieneConsulta)
+        {
+            return;
+        }
+
+        errorConsulta = null;
+        descargandoPdf = true;
+        try
+        {
+            // Actualiza primero la tabla con los mismos filtros que recibirá el PDF.
+            await Consultar();
+            if (!tieneConsulta || !string.IsNullOrWhiteSpace(errorConsulta))
+            {
+                return;
+            }
+
+            byte[] contenido;
+            string nombre;
+            if (mostrarOcupacion)
+            {
+                contenido = await FuncionesService.DescargarReporteOcupacion(
+                    fechaDesde, fechaHasta, sedeSeleccionada, salaSeleccionada);
+                nombre = "reporte-ocupacion-funciones.pdf";
+            }
+            else
+            {
+                contenido = await FuncionesService.DescargarReporteIngresos(
+                    fechaDesde,
+                    fechaHasta,
+                    sedeSeleccionada,
+                    string.IsNullOrWhiteSpace(tipoEventoSeleccionado)
+                        ? null
+                        : tipoEventoSeleccionado);
+                nombre = "reporte-ingresos-cancelaciones.pdf";
+            }
+
+            using DotNetStreamReference referencia = new(
+                new MemoryStream(contenido));
+            await JS.InvokeVoidAsync(
+                "entreFunciones.descargarStream",
+                nombre,
+                "application/pdf",
+                referencia);
+        }
+        catch (Exception ex)
+        {
+            errorConsulta = ex.Message;
+        }
+        finally
+        {
+            descargandoPdf = false;
+        }
+    }
+
+    private async Task ImprimirDetalle(FuncionViewModel funcion)
+    {
+        if (descargandoDetalle)
+        {
+            return;
+        }
+
+        int eventoId = funcion.Evento?.Id ?? funcion.Id;
+        errorConsulta = null;
+        descargandoDetalle = true;
+        try
+        {
+            byte[] contenido = mostrarOcupacion
+                ? await FuncionesService.DescargarReporteDetalleOcupacion(eventoId)
+                : await FuncionesService.DescargarReporteDetalleIngresos(eventoId);
+            string nombre = mostrarOcupacion
+                ? $"reporte-ocupacion-detalle-evento-{eventoId}.pdf"
+                : $"reporte-ingresos-detalle-evento-{eventoId}.pdf";
+
+            using DotNetStreamReference referencia = new(
+                new MemoryStream(contenido));
+            await JS.InvokeVoidAsync(
+                "entreFunciones.descargarStream",
+                nombre,
+                "application/pdf",
+                referencia);
+        }
+        catch (Exception ex)
+        {
+            errorConsulta = ex.Message;
+        }
+        finally
+        {
+            descargandoDetalle = false;
+        }
     }
 
     private async Task CambiarReporte(bool ocupacion)

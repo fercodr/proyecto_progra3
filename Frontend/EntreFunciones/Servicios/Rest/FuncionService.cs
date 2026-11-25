@@ -1,4 +1,5 @@
 using EntreFunciones.DTOSS;
+using EntreFunciones.Mappers;
 using EntreFunciones.ViewModels;
 using Microsoft.AspNetCore.Components.Authorization;
 using System.Globalization;
@@ -50,6 +51,74 @@ namespace EntreFunciones.Servicios.Rest
             int? idSala = null,
             string? tipoEvento = null)
         {
+            Dictionary<string, string?> parametros = ParametrosReporte(
+                desde, hasta, idSede, idSala, tipoEvento);
+            string url = UrlReporte("reportes", parametros);
+            List<FuncionDTO> dtos = await ConsultarLista<FuncionDTO>(url);
+            return dtos.Select(Convertir).ToList();
+        }
+
+        public async Task<byte[]> DescargarReporteOcupacion(
+            DateOnly? desde,
+            DateOnly? hasta,
+            int? idSede = null,
+            int? idSala = null)
+        {
+            Dictionary<string, string?> parametros = ParametrosReporte(
+                desde, hasta, idSede, idSala, null);
+            return await ConsultarBytes(
+                UrlReporte("reportes/ocupacion/pdf", parametros));
+        }
+
+        public async Task<byte[]> DescargarReporteIngresos(
+            DateOnly? desde,
+            DateOnly? hasta,
+            int? idSede = null,
+            string? tipoEvento = null)
+        {
+            Dictionary<string, string?> parametros = ParametrosReporte(
+                desde, hasta, idSede, null, tipoEvento);
+            return await ConsultarBytes(
+                UrlReporte("reportes/ingresos/pdf", parametros));
+        }
+
+        public async Task<byte[]> DescargarReporteDetalleOcupacion(int idEvento)
+        {
+            Dictionary<string, string?> parametros = new()
+            {
+                ["eventoId"] = idEvento.ToString(CultureInfo.InvariantCulture)
+            };
+            return await ConsultarBytes(
+                UrlReporte("reportes/ocupacion/detalle/pdf", parametros));
+        }
+
+        public async Task<byte[]> DescargarReporteDetalleIngresos(int idEvento)
+        {
+            Dictionary<string, string?> parametros = new()
+            {
+                ["eventoId"] = idEvento.ToString(CultureInfo.InvariantCulture)
+            };
+            return await ConsultarBytes(
+                UrlReporte("reportes/ingresos/detalle/pdf", parametros));
+        }
+
+        private string UrlReporte(
+            string subruta,
+            Dictionary<string, string?> parametros)
+        {
+            return HttpUtils.AgregarParametrosConsulta(
+                HttpUtils.ConstruirUrl(
+                    ConstruirUrlParaRuta("FuncionesReportes"), subruta),
+                parametros);
+        }
+
+        private static Dictionary<string, string?> ParametrosReporte(
+            DateOnly? desde,
+            DateOnly? hasta,
+            int? idSede,
+            int? idSala,
+            string? tipoEvento)
+        {
             if (desde.HasValue && hasta.HasValue && desde.Value > hasta.Value)
             {
                 throw new ArgumentException(
@@ -75,7 +144,7 @@ namespace EntreFunciones.Servicios.Rest
                     nameof(tipoEvento));
             }
 
-            Dictionary<string, string?> parametros = new()
+            return new Dictionary<string, string?>
             {
                 ["desde"] = desde?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                 ["hasta"] = hasta?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
@@ -83,13 +152,6 @@ namespace EntreFunciones.Servicios.Rest
                 ["salaId"] = idSala?.ToString(CultureInfo.InvariantCulture),
                 ["tipoEvento"] = tipoEventoNormalizado
             };
-
-            string url = HttpUtils.AgregarParametrosConsulta(
-                HttpUtils.ConstruirUrl(
-                    ConstruirUrlParaRuta("FuncionesReportes"), "reportes"),
-                parametros);
-            List<FuncionDTO> dtos = await ConsultarLista<FuncionDTO>(url);
-            return dtos.Select(Convertir).ToList();
         }
 
         internal static FuncionViewModel Convertir(FuncionDTO dto)
@@ -109,14 +171,9 @@ namespace EntreFunciones.Servicios.Rest
                 Sala = dto.NombreSala ?? string.Empty,
                 Estado = dto.Estado ?? string.Empty
             };
-            modelo.Evento = dto.Evento is null ? null : new EventoViewModel
-            {
-                Id = dto.Evento.Id,
-                IsActivo = dto.Evento.Activo,
-                Titulo = dto.Evento.Titulo,
-                Tipo = dto.Evento.Tipo,
-                Precio = (decimal)dto.Evento.Precio
-            };
+            modelo.Evento = dto.Evento is null
+                ? null
+                : EventoMapper.ToViewModel(dto.Evento);
             modelo.SedeRelacionada = ToViewModel(dto.Sede);
             modelo.SalaRelacionada = ToViewModel(dto.Sala);
             modelo.Aforo = dto.Sala?.Aforo ?? 0;

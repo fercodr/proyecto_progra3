@@ -102,14 +102,15 @@ else
                 {
                     (string sede, string ciudad) proxima = ProximaSedeYCiudad(evento.Id);
                     string tematica = Tematica(evento);
+                    string? imagenUrl = EntreFunciones.Mappers.EventoMapper.ResolverImagenUrl(evento.ImagenUrl, Nav.BaseUri);
 
                     <div class="col-12 col-sm-6 col-lg-4">
                         <div class="card event-card h-100">
                             <div class="event-poster">
-                                @if (TienePoster(evento.ImagenUrl))
+                                @if (imagenUrl is not null)
                                 {
-                                    @* Póster guardado en Amazon S3 *@
-                                    <img src="@evento.ImagenUrl" alt="Póster de @evento.Titulo" />
+                                    @* Póster local o almacenado en Amazon S3 *@
+                                    <img src="@imagenUrl" alt="Póster de @evento.Titulo" />
                                 }
                                 else
                                 {
@@ -224,12 +225,6 @@ else
         "ACTIVIDAD_CULTURAL" => TextoTipoActividad(evento.TipoActividad),
         _ => ""
     };
-
-    // Icono generico por tipo mientras el equipo decide como se van a manejar las imagenes
-    // reales de cada evento (ver decisiones-diseno-catalogo-rest.md). No depende de esa decision:
-    // es un icono decorativo de Bootstrap Icons, no una imagen propia del evento.
-    // Solo las URLs completas (de S3) son imágenes reales; las rutas viejas de datos-demo no existen
-    private static bool TienePoster(string? url) => url != null && url.StartsWith("http");
 
     private string IconoTipo(string tipo) => tipo switch
     {

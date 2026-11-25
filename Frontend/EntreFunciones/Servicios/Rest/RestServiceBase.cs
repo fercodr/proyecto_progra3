@@ -94,6 +94,15 @@ namespace EntreFunciones.Servicios.Rest
                 cabeceras: cabeceras);
         }
 
+        protected async Task<byte[]> ConsultarBytes(string url)
+        {
+            IReadOnlyDictionary<string, string> cabeceras =
+                await CrearCabeceras();
+            return await HttpUtils.DoGetBytes(
+                url,
+                cabeceras: cabeceras);
+        }
+
         protected async Task<TViewModel> Insert<TRequest>(TRequest payload)
         {
             IReadOnlyDictionary<string, string> cabeceras =
